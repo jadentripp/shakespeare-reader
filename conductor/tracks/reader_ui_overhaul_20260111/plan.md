@@ -1,6 +1,6 @@
 # Track Plan: Reader UI Overhaul
 
-## Phase 1: Immersive Layout & Styling
+## Phase 1: Immersive Layout & Styling [checkpoint: f9fd1fd]
 This phase focuses on the core reading environment, implementing the dual-column layout and the paper-like aesthetic.
 
 - [x] Task: Create a new `ReaderLayout` component to handle single vs dual column logic. 49c07dc
