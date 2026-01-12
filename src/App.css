@@ -1,0 +1,822 @@
+:root {
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+
+  color: #0f0f0f;
+  background-color: #f6f6f6;
+
+  --glass-blur: 20px;
+  --glass-saturate: 180%;
+  --glass-border: rgba(0, 0, 0, 0.10);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
+  --glass-surface: rgba(255, 255, 255, 0.65);
+  --glass-surface-strong: rgba(255, 255, 255, 0.82);
+  --glass-surface-subtle: rgba(255, 255, 255, 0.45);
+  --glass-text-muted: rgba(0, 0, 0, 0.62);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    radial-gradient(1200px 800px at 10% 10%, rgba(57, 108, 216, 0.18), transparent 60%),
+    radial-gradient(900px 700px at 90% 15%, rgba(123, 223, 242, 0.22), transparent 55%),
+    radial-gradient(1000px 900px at 40% 90%, rgba(178, 247, 177, 0.22), transparent 55%),
+    #f6f6f6;
+}
+
+.appShell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topBar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.topBarTitle {
+  font-weight: 700;
+}
+
+.topBarNav {
+  display: flex;
+  gap: 10px;
+}
+
+.navLink {
+  color: #333;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.navLink:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.main {
+  flex: 1;
+  min-height: 0;
+}
+
+.page {
+  padding: 12px;
+}
+
+.readerGrid {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 260px 1fr 360px;
+}
+
+.sidebar {
+  border-right: 1px solid var(--glass-border);
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  padding: 12px;
+  overflow: auto;
+}
+
+.threadPane {
+  border-left: 1px solid var(--glass-border);
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  padding: 12px;
+  overflow: auto;
+}
+
+.sidebarSection {
+  margin-bottom: 16px;
+}
+
+.sidebarTitle {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.sceneList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sceneButton {
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface-subtle);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  cursor: pointer;
+}
+
+.sceneButtonSelected {
+  background: rgba(57, 108, 216, 0.16);
+  border-color: rgba(57, 108, 216, 0.38);
+}
+
+.readingPane {
+  padding: 12px;
+  overflow: auto;
+}
+
+.readingHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.readingTitle {
+  font-weight: 700;
+}
+
+.readingActions {
+  display: flex;
+  gap: 8px;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.line {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.line:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.lineSelected {
+  background: rgba(57, 108, 216, 0.14);
+}
+
+.lineNo {
+  color: rgba(0, 0, 0, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.lineText {
+  white-space: pre-wrap;
+}
+
+.lineSpeaker {
+  font-weight: 700;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.msg {
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.msgUser {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.msgAssistant {
+  background: rgba(57, 108, 216, 0.06);
+}
+
+.msgRole {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 4px;
+}
+
+.msgContent {
+  white-space: pre-wrap;
+}
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  font: inherit;
+}
+
+.button,
+.buttonSecondary,
+.input,
+.select {
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  padding: 8px 10px;
+  font: inherit;
+  background: var(--glass-surface-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.button {
+  cursor: pointer;
+  background: #396cd8;
+  border-color: #396cd8;
+  color: #fff;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.buttonSecondary {
+  cursor: pointer;
+}
+
+.input,
+.select {
+  width: 100%;
+}
+
+.form {
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.muted {
+  color: var(--glass-text-muted);
+}
+
+.error {
+  color: #9b1c1c;
+  background: rgba(155, 28, 28, 0.08);
+  border: 1px solid rgba(155, 28, 28, 0.2);
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.bookGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin: 10px 0 18px;
+}
+
+.bookCard {
+  display: grid;
+  grid-template-columns: 68px 1fr;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-shadow);
+  color: inherit;
+  text-decoration: none;
+}
+
+.bookCover {
+  width: 68px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+}
+
+.bookCoverPlaceholder {
+  width: 68px;
+  height: 96px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.bookOpenLink {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+
+.bookCard:hover {
+  border-color: rgba(57, 108, 216, 0.45);
+}
+
+.catalogList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.catalogRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-shadow);
+}
+
+.bookShell {
+  height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 10px;
+}
+
+.bookReaderGrid {
+  height: calc(100vh - 48px);
+  display: grid;
+  grid-template-columns: 280px 1fr 360px;
+}
+
+.bookReaderGrid.zen {
+  grid-template-columns: 1fr;
+}
+
+.bookReaderGrid.zen .bookLeft,
+.bookReaderGrid.zen .bookRight {
+  display: none;
+}
+
+.bookLeft,
+.bookRight {
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.bookLeft {
+  border-right: 1px solid var(--glass-border);
+}
+
+.bookRight {
+  border-left: 1px solid var(--glass-border);
+}
+
+.bookCenter {
+  padding: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bookLeftTabs,
+.bookRightTabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.tab {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface-subtle);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  cursor: pointer;
+}
+
+.tabActive {
+  background: rgba(57, 108, 216, 0.12);
+  border-color: rgba(57, 108, 216, 0.35);
+}
+
+.panelScroll {
+  padding: 10px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.divider {
+  height: 1px;
+  background: var(--glass-border);
+  margin: 10px 0;
+}
+
+.tocList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tocItem {
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface-subtle);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  cursor: pointer;
+}
+
+.tocItem:hover {
+  border-color: rgba(57, 108, 216, 0.45);
+}
+
+.bookTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bookToolbar {
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-shadow);
+  padding: 10px;
+}
+
+.bookToolbarTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bookStatusPills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.pill {
+  font-size: 12px;
+  line-height: 16px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface-subtle);
+  color: var(--glass-text-muted);
+}
+
+.bookToolbarProgress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.range.bookProgressRange {
+  width: 100%;
+  flex: 1;
+  min-width: 180px;
+}
+
+.bookChapterFile {
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bookSubPanel {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.bookSettingsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  align-items: end;
+}
+
+.buttonToggleActive {
+  background: rgba(57, 108, 216, 0.12);
+  border-color: rgba(57, 108, 216, 0.35);
+}
+
+.selectionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.highlightBar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.selectionQuote {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.searchResults {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.searchHit {
+  text-align: left;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  cursor: pointer;
+}
+
+.searchSnippet {
+  margin-top: 4px;
+}
+
+.highlightList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.highlightRow {
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.highlightJump {
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.highlightQuote {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.colorDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.pre {
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+  font-size: 13px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  min-height: 120px;
+}
+
+.bookmarkList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.bookmarkRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bookmarkJump {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: var(--glass-surface-subtle);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  cursor: pointer;
+}
+
+.bookmarkCfi {
+  font-size: 12px;
+  opacity: 0.85;
+  word-break: break-all;
+}
+
+.bookTopControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bookHeaderLeft {
+  min-width: 0;
+}
+
+.bookControls {
+  display: flex;
+  gap: 8px;
+}
+
+.range {
+  width: 220px;
+}
+
+@media (max-width: 980px) {
+  .bookSettingsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .bookChapterFile {
+    display: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #f6f6f6;
+    background-color: #2f2f2f;
+
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-surface: rgba(20, 20, 22, 0.62);
+    --glass-surface-strong: rgba(20, 20, 22, 0.82);
+    --glass-surface-subtle: rgba(20, 20, 22, 0.45);
+    --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    --glass-text-muted: rgba(255, 255, 255, 0.68);
+  }
+
+  .topBar,
+  .sidebar,
+  .threadPane {
+    background: var(--glass-surface);
+    border-color: var(--glass-border);
+  }
+
+  .navLink {
+    color: #f6f6f6;
+  }
+
+  .navLink:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .buttonSecondary,
+  .input,
+  .select,
+  .textarea,
+  .sceneButton,
+  .msg {
+    background: var(--glass-surface-strong);
+    color: #f6f6f6;
+    border-color: var(--glass-border);
+  }
+
+  .bookCard,
+  .catalogRow {
+    background: var(--glass-surface);
+    border-color: var(--glass-border);
+  }
+
+  .bookLeft,
+  .bookRight {
+    background: var(--glass-surface);
+    border-color: var(--glass-border);
+  }
+
+  .tab,
+  .tocItem,
+  .searchHit,
+  .highlightRow,
+  .pre,
+  .bookmarkJump {
+    background: var(--glass-surface-strong);
+    color: #f6f6f6;
+    border-color: var(--glass-border);
+  }
+
+  .divider {
+    background: var(--glass-border);
+  }
+
+  .selectionBar {
+    border-color: var(--glass-border);
+    background: rgba(20, 20, 22, 0.55);
+  }
+
+  .muted {
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  .lineNo {
+    color: rgba(255, 255, 255, 0.55);
+  }
+}

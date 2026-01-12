@@ -3,7 +3,7 @@
 ## Phase 1: Foundation & Styling
 This phase focuses on setting up the global styles and typography that will define the app's aesthetic.
 
-- [ ] Task: Integrate Google Fonts (EB Garamond and Inter) into the project.
+- [~] Task: Integrate Google Fonts (EB Garamond and Inter) into the project.
 - [ ] Task: Define global CSS variables for the "Classic Academic" color palette and typography.
 - [ ] Task: Update global styles to apply the new typography and background colors.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Foundation & Styling' (Protocol in workflow.md)
