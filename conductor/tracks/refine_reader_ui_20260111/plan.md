@@ -16,7 +16,7 @@ Improving the library interface to provide a better overview of the available bo
 - [x] Task: Implement a "No books found" state for the library. [124d99d]
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Library Page Refinement' (Protocol in workflow.md)
 
-## Phase 3: Reader UI & Navigation
+## Phase 3: Reader UI & Navigation [checkpoint: 4fd204b]
 Polishing the reading experience and ensuring smooth transitions.
 
 - [x] Task: Update `BookPage.tsx` (and `MobiBookPage.tsx`) to use the new serif typography for content. [ebd4754]
