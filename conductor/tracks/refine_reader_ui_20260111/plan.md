@@ -13,7 +13,7 @@ Improving the library interface to provide a better overview of the available bo
 
 - [x] Task: Update the `LibraryPage.tsx` to fetch and display Author and Publication Year metadata. [cc8bf07]
 - [x] Task: Redesign the book list/grid items to align with the new visual guidelines. [8e63609]
-- [~] Task: Implement a "No books found" state for the library.
+- [x] Task: Implement a "No books found" state for the library. [124d99d]
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Library Page Refinement' (Protocol in workflow.md)
 
 ## Phase 3: Reader UI & Navigation
