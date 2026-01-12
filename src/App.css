@@ -327,40 +327,58 @@ body {
 
 .bookGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
-  margin: 10px 0 18px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 16px 0 24px;
 }
 
 .bookCard {
   display: grid;
-  grid-template-columns: 68px 1fr;
-  gap: 6px;
-  padding: 10px;
-  border-radius: 12px;
+  grid-template-columns: 80px 1fr;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 4px;
   border: 1px solid var(--glass-border);
   background: var(--glass-surface);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  box-shadow: var(--glass-shadow);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
   color: inherit;
   text-decoration: none;
 }
 
+.bookCard:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.bookTitle {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 4px;
+  color: var(--color-text-light);
+}
+
 .bookCover {
-  width: 68px;
-  height: 96px;
+  width: 80px;
+  height: 112px;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 2px;
   border: 1px solid var(--glass-border);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .bookCoverPlaceholder {
-  width: 68px;
-  height: 96px;
-  border-radius: 10px;
+  width: 80px;
+  height: 112px;
+  border-radius: 2px;
   border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .bookOpenLink {
@@ -369,30 +387,30 @@ body {
   display: block;
 }
 
-.bookCard:hover {
-  border-color: rgba(57, 108, 216, 0.45);
-}
-
 .catalogList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 10px 0;
+  gap: 12px;
+  margin: 16px 0;
 }
 
 .catalogRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 10px;
-  border-radius: 12px;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 4px;
   border: 1px solid var(--glass-border);
   background: var(--glass-surface);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  box-shadow: var(--glass-shadow);
 }
+
+@media (prefers-color-scheme: dark) {
+  .bookTitle {
+    color: var(--color-text-dark);
+  }
+}
+
 
 .bookShell {
   height: calc(100vh - 48px);
