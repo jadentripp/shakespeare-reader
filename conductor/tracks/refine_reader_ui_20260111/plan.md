@@ -8,7 +8,7 @@ This phase focuses on setting up the global styles and typography that will defi
 - [x] Task: Update global styles to apply the new typography and background colors. [c91d08f]
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Foundation & Styling' (Protocol in workflow.md)
 
-## Phase 2: Library Page Refinement
+## Phase 2: Library Page Refinement [checkpoint: 87525ef]
 Improving the library interface to provide a better overview of the available books.
 
 - [x] Task: Update the `LibraryPage.tsx` to fetch and display Author and Publication Year metadata. [cc8bf07]
