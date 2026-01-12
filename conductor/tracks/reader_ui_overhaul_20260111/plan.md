@@ -14,10 +14,8 @@ This phase focuses on the core reading environment, implementing the dual-column
 - [x] Task: Update the reader iframe to reactively apply style changes from the panel. 79b1a1a
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Appearance Customization Panel' (Protocol in workflow.md) 6b3eb34
 
-## Phase 3: Hierarchical Table of Contents
-Redesigning the sidebar into a structured, position-aware Act/Scene navigator.
-
+## Phase 3: Hierarchical Table of Contents [checkpoint: 4a95d49]
 - [x] Task: Refactor `parseSceneLinks` to extract a nested Act > Scene hierarchy. 5012b04
 - [x] Task: Redesign the sidebar UI to display the new hierarchy with refined sans-serif styles. 5012b04
 - [x] Task: Implement "active" item tracking based on the current page/cfi. 5012b04
-- [~] Task: Conductor - User Manual Verification 'Phase 3: Hierarchical Table of Contents' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Hierarchical Table of Contents' (Protocol in workflow.md) 4a95d49
