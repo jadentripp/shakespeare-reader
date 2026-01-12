@@ -5,6 +5,17 @@ import ReaderLayout from "../components/ReaderLayout";
 import AppearancePanel from "../components/AppearancePanel";
 import { useReaderAppearance } from "../lib/appearance";
 
+export interface Scene {
+  label: string;
+  href: string;
+}
+
+export interface Act {
+  label: string;
+  href: string;
+  scenes: Scene[];
+}
+
 function injectHead(html: string, css: string): string {
   const styleTag = `<style>${css}</style>`;
   const headInsert = `${styleTag}`.trim();
@@ -14,24 +25,34 @@ function injectHead(html: string, css: string): string {
   return `<!doctype html><html><head>${headInsert}</head><body>${html}</body></html>`;
 }
 
-function parseSceneLinks(html: string): Array<{ label: string; href: string }> {
+export function parseSceneLinksHierarchical(html: string): Act[] {
   try {
     const doc = new DOMParser().parseFromString(html, "text/html");
-    const seen = new Set<string>();
-    const out: Array<{ label: string; href: string }> = [];
+    const out: Act[] = [];
+    let currentAct: Act | null = null;
+
     const anchors = Array.from(doc.querySelectorAll('a[href^="#"]')) as HTMLAnchorElement[];
     for (const a of anchors) {
       const href = a.getAttribute("href") ?? "";
       const label = (a.textContent ?? "").trim().replace(/\s+/g, " ");
       if (!href || href === "#" || !label) continue;
+
       const upper = label.toUpperCase();
-      if (!upper.includes("SCENE") && !upper.includes("ACT")) continue;
-      const key = `${href}::${label}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push({ label, href });
+      const isAct = upper.includes("ACT");
+      const isScene = upper.includes("SCENE");
+
+      if (isAct) {
+        currentAct = { label, href, scenes: [] };
+        out.push(currentAct);
+      } else if (isScene) {
+        if (!currentAct) {
+          currentAct = { label: "Front Matter", href: "#", scenes: [] };
+          out.push(currentAct);
+        }
+        currentAct.scenes.push({ label, href });
+      }
     }
-    return out.slice(0, 500);
+    return out;
   } catch {
     return [];
   }
@@ -47,6 +68,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   const [zen, setZen] = useState(false);
   const [sceneFilter, setSceneFilter] = useState("");
   const [showAppearance, setShowAppearance] = useState(false);
+  const [activeHref, setActiveHref] = useState("");
 
   const {
     fontFamily,
@@ -57,11 +79,15 @@ export default function MobiBookPage(props: { bookId: number }) {
     setMargin
   } = useReaderAppearance(id);
 
-  const filteredScenes = useMemo(() => {
-    const raw = htmlQ.data ? parseSceneLinks(htmlQ.data) : [];
+  const hierarchicalToC = useMemo(() => {
+    const raw = htmlQ.data ? parseSceneLinksHierarchical(htmlQ.data) : [];
     if (!sceneFilter) return raw;
+    
     const f = sceneFilter.toLowerCase();
-    return raw.filter(s => s.label.toLowerCase().includes(f));
+    return raw.map(act => ({
+      ...act,
+      scenes: act.scenes.filter(s => s.label.toLowerCase().includes(f) || act.label.toLowerCase().includes(f))
+    })).filter(act => act.scenes.length > 0 || act.label.toLowerCase().includes(f));
   }, [htmlQ.data, sceneFilter]);
 
   const srcDoc = useMemo(() => {
@@ -114,6 +140,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   };
 
   const gotoHref = (href: string) => {
+    setActiveHref(href);
     if (iframeRef.current?.contentWindow) {
       const doc = iframeRef.current.contentDocument;
       if (doc) {
@@ -166,7 +193,7 @@ export default function MobiBookPage(props: { bookId: number }) {
           </button>
 
           <button 
-            className={`buttonSecondary ${zen ? 'buttonToggleActive' : ''}`}
+            className={`buttonSecondary ${zen ? 'buttonToggleActive' : ''}`} 
             onClick={() => setZen(!zen)}
           >
             {zen ? 'Exit Zen' : 'Zen'}
@@ -181,29 +208,58 @@ export default function MobiBookPage(props: { bookId: number }) {
 
       <div className={`bookReaderGrid ${zen ? 'zen' : ''}`} style={{ height: "calc(100vh - 64px)" }}>
         <aside className="readerSidebar">
-          <div className="muted" style={{ marginBottom: 8 }}>
-            Scenes / Acts
+          <div className="muted" style={{ marginBottom: 8, fontSize: '0.8rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            Table of Contents
           </div>
           <input 
             className="input" 
-            placeholder="Filter" 
+            placeholder="Filter scenes..." 
             value={sceneFilter} 
             onChange={(e) => setSceneFilter(e.currentTarget.value)} 
           />
-          <div style={{ height: 10 }} />
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {filteredScenes.length === 0 ? (
-              <div className="muted">No scene links found.</div>
+          <div style={{ height: 16 }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {hierarchicalToC.length === 0 ? (
+              <div className="muted">No matches found.</div>
             ) : (
-              filteredScenes.map((s) => (
-                <button
-                  key={`${s.href}:${s.label}`}
-                  className="buttonSecondary"
-                  style={{ textAlign: "left" }}
-                  onClick={() => gotoHref(s.href)}
-                >
-                  {s.label}
-                </button>
+              hierarchicalToC.map((act) => (
+                <div key={`${act.href}:${act.label}`} className="tocActGroup">
+                  <div 
+                    className="tocActLabel"
+                    style={{ 
+                      fontWeight: 700, 
+                      fontSize: '0.9rem', 
+                      marginBottom: 4, 
+                      color: 'var(--color-accent)',
+                      cursor: act.href !== '#' ? 'pointer' : 'default'
+                    }}
+                    onClick={() => act.href !== '#' && gotoHref(act.href)}
+                  >
+                    {act.label}
+                  </div>
+                  <div className="tocSceneList" style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: 8 }}>
+                    {act.scenes.map((scene) => (
+                      <button
+                        key={`${scene.href}:${scene.label}`}
+                        className={`tocSceneButton ${activeHref === scene.href ? 'active' : ''}`}
+                        style={{ 
+                          textAlign: "left",
+                          background: 'transparent',
+                          border: 'none',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.85rem',
+                          color: activeHref === scene.href ? 'var(--color-accent)' : 'inherit',
+                          fontWeight: activeHref === scene.href ? 600 : 400
+                        }}
+                        onClick={() => gotoHref(scene.href)}
+                      >
+                        {scene.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))
             )}
           </div>

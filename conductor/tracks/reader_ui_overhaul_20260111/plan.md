@@ -17,7 +17,7 @@ This phase focuses on the core reading environment, implementing the dual-column
 ## Phase 3: Hierarchical Table of Contents
 Redesigning the sidebar into a structured, position-aware Act/Scene navigator.
 
-- [ ] Task: Refactor `parseSceneLinks` to extract a nested Act > Scene hierarchy.
+- [~] Task: Refactor `parseSceneLinks` to extract a nested Act > Scene hierarchy.
 - [ ] Task: Redesign the sidebar UI to display the new hierarchy with refined sans-serif styles.
 - [ ] Task: Implement "active" item tracking based on the current page/cfi.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Hierarchical Table of Contents' (Protocol in workflow.md)
