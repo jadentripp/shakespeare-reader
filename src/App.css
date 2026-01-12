@@ -446,43 +446,27 @@ body {
 .bookReaderGrid {
   height: calc(100vh - 48px);
   display: grid;
-  grid-template-columns: 280px 1fr 360px;
+  grid-template-columns: 300px 1fr;
+  transition: grid-template-columns 0.3s ease;
 }
 
 .bookReaderGrid.zen {
-  grid-template-columns: 1fr;
+  grid-template-columns: 0px 1fr;
 }
 
-.bookReaderGrid.zen .bookLeft,
-.bookReaderGrid.zen .bookRight {
+.bookReaderGrid.zen .readerSidebar {
   display: none;
 }
 
-.bookLeft,
-.bookRight {
-  background: var(--glass-surface);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.bookLeft {
+.readerSidebar {
   border-right: 1px solid var(--glass-border);
-}
-
-.bookRight {
-  border-left: 1px solid var(--glass-border);
-}
-
-.bookCenter {
+  background: var(--glass-surface);
+  overflow: auto;
   padding: 12px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
+
+.bookGrid {
+
 
 .bookLeftTabs,
 .bookRightTabs {

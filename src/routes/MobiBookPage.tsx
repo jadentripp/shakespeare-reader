@@ -83,6 +83,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   const [totalPages, setTotalPages] = useState(1);
   const [pageInput, setPageInput] = useState("");
   const [sceneFilter, setSceneFilter] = useState("");
+  const [zen, setZen] = useState(false);
 
   const setPosM = useMutation({ mutationFn: setBookPosition });
 
@@ -321,6 +322,14 @@ export default function MobiBookPage(props: { bookId: number }) {
           </div>
         </div>
         <div className="row" style={{ marginLeft: "auto" }}>
+          <button 
+            className={`buttonSecondary ${zen ? 'buttonToggleActive' : ''}`} 
+            onClick={() => setZen(!zen)}
+            title="Zen Mode (Distraction Free)"
+          >
+            {zen ? "Show Menu" : "Zen"}
+          </button>
+          <div className="divider" style={{ width: 1, height: 24, margin: '0 8px', background: 'var(--glass-border)' }} />
           <button className="buttonSecondary" onClick={prev} disabled={currentPage <= 1}>
             Prev
           </button>
@@ -343,8 +352,8 @@ export default function MobiBookPage(props: { bookId: number }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", height: "calc(100vh - 64px)" }}>
-        <aside style={{ borderRight: "1px solid rgba(0,0,0,0.08)", overflow: "auto", padding: 12 }}>
+      <div className={`bookReaderGrid ${zen ? 'zen' : ''}`} style={{ height: "calc(100vh - 64px)" }}>
+        <aside className="readerSidebar">
           <div className="muted" style={{ marginBottom: 8 }}>
             Scenes / Acts
           </div>
