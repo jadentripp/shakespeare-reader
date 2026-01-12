@@ -16,6 +16,15 @@
   --glass-surface-subtle: rgba(255, 255, 255, 0.45);
   --glass-text-muted: rgba(0, 0, 0, 0.62);
 
+  /* Classic Academic Palette */
+  --font-serif: 'EB Garamond', serif;
+  --font-sans: 'Inter', sans-serif;
+  --color-bg-light: #f8f5f2;
+  --color-text-light: #2d3748;
+  --color-bg-dark: #1a202c;
+  --color-text-dark: #cbd5e0;
+  --color-accent: #c0392b;
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
