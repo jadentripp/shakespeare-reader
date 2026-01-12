@@ -19,7 +19,7 @@ Improving the library interface to provide a better overview of the available bo
 ## Phase 3: Reader UI & Navigation
 Polishing the reading experience and ensuring smooth transitions.
 
-- [~] Task: Update `BookPage.tsx` (and `MobiBookPage.tsx`) to use the new serif typography for content.
+- [x] Task: Update `BookPage.tsx` (and `MobiBookPage.tsx`) to use the new serif typography for content. [ebd4754]
 - [ ] Task: Implement a toggleable "Distraction-Free" mode in the reader.
 - [ ] Task: Add basic font size controls (Increase/Decrease) to the reader UI.
 - [ ] Task: Ensure the "Back to Library" navigation is prominent and consistent.
