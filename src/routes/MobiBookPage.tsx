@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { getBook, getBookHtml } from "../lib/tauri";
 import ReaderLayout from "../components/ReaderLayout";
+import AppearancePanel from "../components/AppearancePanel";
+import { useReaderAppearance } from "../lib/appearance";
 
 function injectHead(html: string, css: string): string {
   const styleTag = `<style>${css}</style>`;
@@ -41,10 +43,19 @@ export default function MobiBookPage(props: { bookId: number }) {
   const htmlQ = useQuery({ queryKey: ["bookHtml", id], queryFn: () => getBookHtml(id) });
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [fontSize, setFontSize] = useState(1.15);
   const [columns, setColumns] = useState<1 | 2>(1);
   const [zen, setZen] = useState(false);
   const [sceneFilter, setSceneFilter] = useState("");
+  const [showAppearance, setShowAppearance] = useState(false);
+
+  const {
+    fontFamily,
+    lineHeight,
+    margin,
+    setFontFamily,
+    setLineHeight,
+    setMargin
+  } = useReaderAppearance(id);
 
   const filteredScenes = useMemo(() => {
     const raw = htmlQ.data ? parseSceneLinks(htmlQ.data) : [];
@@ -63,10 +74,10 @@ export default function MobiBookPage(props: { bookId: number }) {
         --color-text-dark: #cbd5e0;
       }
       body {
-        font-family: 'EB Garamond', serif;
-        line-height: 1.65;
-        font-size: ${fontSize}rem;
-        padding: 40px;
+        font-family: ${fontFamily};
+        line-height: ${lineHeight};
+        font-size: 1.15rem;
+        padding: 40px ${margin}px;
         margin: 0;
         color: var(--color-text-light);
         background-color: transparent;
@@ -88,7 +99,7 @@ export default function MobiBookPage(props: { bookId: number }) {
       `;
     }
     return injectHead(htmlQ.data, css);
-  }, [htmlQ.data, fontSize, columns]);
+  }, [htmlQ.data, fontFamily, lineHeight, margin, columns]);
 
   const prev = () => {
     if (iframeRef.current?.contentWindow) {
@@ -124,12 +135,27 @@ export default function MobiBookPage(props: { bookId: number }) {
           <span style={{ marginLeft: 12, fontWeight: 600 }}>{bookQ.data?.title}</span>
         </div>
 
-        <div className="row" style={{ marginLeft: "auto", gap: 8 }}>
-          <div className="row" style={{ gap: 4 }}>
-            <button className="buttonSecondary" onClick={() => setFontSize(f => Math.max(0.8, f - 0.1))} title="Decrease Font Size">A-</button>
-            <button className="buttonSecondary" onClick={() => setFontSize(f => Math.min(2.0, f + 0.1))} title="Increase Font Size">A+</button>
-          </div>
-          
+        <div className="row" style={{ marginLeft: "auto", gap: 8, position: 'relative' }}>
+          <button 
+            className={`buttonSecondary ${showAppearance ? 'buttonToggleActive' : ''}`}
+            onClick={() => setShowAppearance(!showAppearance)}
+          >
+            Appearance
+          </button>
+
+          {showAppearance && (
+            <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 100, marginTop: 8 }}>
+              <AppearancePanel 
+                fontFamily={fontFamily}
+                lineHeight={lineHeight}
+                margin={margin}
+                onFontFamilyChange={setFontFamily}
+                onLineHeightChange={setLineHeight}
+                onMarginChange={setMargin}
+              />
+            </div>
+          )}
+
           <div className="divider" style={{ width: 1, height: 24, margin: '0 4px', background: 'var(--glass-border)' }} />
           
           <button 
@@ -140,7 +166,7 @@ export default function MobiBookPage(props: { bookId: number }) {
           </button>
 
           <button 
-            className={`buttonSecondary ${zen ? 'buttonToggleActive' : ''}`} 
+            className={`buttonSecondary ${zen ? 'buttonToggleActive' : ''}`}
             onClick={() => setZen(!zen)}
           >
             {zen ? 'Exit Zen' : 'Zen'}

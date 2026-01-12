@@ -22,11 +22,16 @@ describe('AppearancePanel', () => {
 
   it('renders correctly with default props', () => {
     render(<AppearancePanel {...defaultProps} />);
+    // @ts-ignore
     expect(screen.getByText(/Appearance/i)).toBeInTheDocument();
+    // @ts-ignore
     expect(screen.getByLabelText(/Font Family/i)).toBeInTheDocument();
+    // @ts-ignore
     expect(screen.getByLabelText(/Line Height/i)).toBeInTheDocument();
+    // @ts-ignore
     expect(screen.getByLabelText(/Horizontal Margin/i)).toBeInTheDocument();
   });
+
 
   it('calls onFontFamilyChange when font selection changes', () => {
     render(<AppearancePanel {...defaultProps} />);
