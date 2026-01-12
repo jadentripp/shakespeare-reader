@@ -12,7 +12,7 @@ This phase focuses on setting up the global styles and typography that will defi
 Improving the library interface to provide a better overview of the available books.
 
 - [x] Task: Update the `LibraryPage.tsx` to fetch and display Author and Publication Year metadata. [cc8bf07]
-- [ ] Task: Redesign the book list/grid items to align with the new visual guidelines.
+- [x] Task: Redesign the book list/grid items to align with the new visual guidelines. [8e63609]
 - [ ] Task: Implement a "No books found" state for the library.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Library Page Refinement' (Protocol in workflow.md)
 
