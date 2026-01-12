@@ -1,6 +1,6 @@
 # Track Plan: Refine the Reader UI and Library Management
 
-## Phase 1: Foundation & Styling
+## Phase 1: Foundation & Styling [checkpoint: 08a447e]
 This phase focuses on setting up the global styles and typography that will define the app's aesthetic.
 
 - [x] Task: Integrate Google Fonts (EB Garamond and Inter) into the project. [fc1b214]
