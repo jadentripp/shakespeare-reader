@@ -13,8 +13,8 @@ Implementing the pop-over menu for user-controlled typography and spacing.
 
 - [x] Task: Create an `AppearancePanel` component with font selection and margin/line-height sliders. 7b8bc6d
 - [x] Task: Implement state management for reader appearance settings (persisted in local storage). c5b07ff
-- [~] Task: Update the reader iframe to reactively apply style changes from the panel.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Appearance Customization Panel' (Protocol in workflow.md)
+- [x] Task: Update the reader iframe to reactively apply style changes from the panel. 79b1a1a
+- [~] Task: Conductor - User Manual Verification 'Phase 2: Appearance Customization Panel' (Protocol in workflow.md)
 
 ## Phase 3: Hierarchical Table of Contents
 Redesigning the sidebar into a structured, position-aware Act/Scene navigator.
