@@ -88,6 +88,12 @@ body {
   background: rgba(0, 0, 0, 0.05);
 }
 
+.navLink.active {
+  background: rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
 .main {
   flex: 1;
   min-height: 0;

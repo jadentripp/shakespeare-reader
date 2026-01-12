@@ -10,12 +10,12 @@ export default function AppLayout() {
   return (
     <div className="appShell">
       <header className="topBar">
-        <div className="topBarTitle">Shakespeare Reader</div>
+        <div className="topBarTitle" style={{ fontFamily: 'var(--font-serif)', fontSize: '1.2rem' }}>Shakespeare Reader</div>
         <nav className="topBarNav">
-          <Link to="/" className="navLink">
+          <Link to="/" className="navLink" activeProps={{ className: 'navLink active' }}>
             Library
           </Link>
-          <Link to="/settings" className="navLink">
+          <Link to="/settings" className="navLink" activeProps={{ className: 'navLink active' }}>
             Settings
           </Link>
         </nav>
