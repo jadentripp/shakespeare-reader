@@ -40,6 +40,7 @@ async fn download_gutenberg_mobi(
     gutenberg_id: i64,
     title: String,
     authors: String,
+    publication_year: Option<i32>,
     cover_url: Option<String>,
     mobi_url: String,
 ) -> Result<i64, String> {
@@ -55,6 +56,7 @@ async fn download_gutenberg_mobi(
         gutenberg_id,
         title,
         authors,
+        publication_year,
         cover_url,
         mobi_path,
         html_path,

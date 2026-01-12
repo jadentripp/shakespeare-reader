@@ -5,6 +5,7 @@ export type Book = {
   gutenberg_id: number;
   title: string;
   authors: string;
+  publication_year: number | null;
   cover_url: string | null;
   mobi_path: string | null;
   html_path: string | null;
@@ -16,12 +17,17 @@ export type BookPosition = {
   updated_at: string;
 };
 
-export type GutendexAuthor = { name: string };
+export type GutendexAuthor = {
+  name: string;
+  birth_year: number | null;
+  death_year: number | null;
+};
 
 export type GutendexBook = {
   id: number;
   title: string;
   authors: GutendexAuthor[];
+  copyright: boolean | null;
   formats: Record<string, string>;
   download_count?: number;
 };
@@ -64,6 +70,7 @@ export async function downloadGutenbergMobi(params: {
   gutenbergId: number;
   title: string;
   authors: string;
+  publicationYear: number | null;
   coverUrl: string | null;
   mobiUrl: string;
 }): Promise<number> {
@@ -71,6 +78,7 @@ export async function downloadGutenbergMobi(params: {
     gutenbergId: params.gutenbergId,
     title: params.title,
     authors: params.authors,
+    publicationYear: params.publicationYear,
     coverUrl: params.coverUrl,
     mobiUrl: params.mobiUrl,
   });

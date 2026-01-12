@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GutendexAuthor {
     pub name: String,
+    pub birth_year: Option<i32>,
+    pub death_year: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -10,6 +12,7 @@ pub struct GutendexBook {
     pub id: i64,
     pub title: String,
     pub authors: Vec<GutendexAuthor>,
+    pub copyright: Option<bool>,
     pub formats: std::collections::HashMap<String, String>,
     pub download_count: Option<i64>,
 }

@@ -23,7 +23,12 @@ function coverUrl(book: GutendexBook): string | null {
 }
 
 function authorsString(book: GutendexBook): string {
-  return (book.authors ?? []).map((a) => a.name).join(", ") || "";
+  return (book.authors ?? []).map((a) => {
+    if (a.birth_year || a.death_year) {
+      return `${a.name} (${a.birth_year ?? "?"}–${a.death_year ?? "?"})`;
+    }
+    return a.name;
+  }).join(", ") || "";
 }
 
 type DownloadStatus = "queued" | "downloading" | "done" | "failed";
@@ -31,6 +36,7 @@ type DownloadTask = {
   gutenbergId: number;
   title: string;
   authors: string;
+  publicationYear: number | null;
   coverUrl: string | null;
   mobiUrl: string;
   status: DownloadStatus;
@@ -132,6 +138,7 @@ export default function LibraryPage() {
             gutenbergId: next.gutenbergId,
             title: next.title,
             authors: next.authors,
+            publicationYear: next.publicationYear,
             coverUrl: next.coverUrl,
             mobiUrl: next.mobiUrl,
           });
@@ -188,6 +195,7 @@ export default function LibraryPage() {
               gutenbergId: b.id,
               title: b.title,
               authors: authorsString(b),
+              publicationYear: null,
               coverUrl: coverUrl(b),
               mobiUrl,
             });
@@ -384,6 +392,7 @@ export default function LibraryPage() {
                 <Link to="/book/$bookId" params={{ bookId: String(b.id) }} className="bookOpenLink">
                   <div className="bookTitle">{b.title}</div>
                   <div className="muted">{b.authors}</div>
+                  {b.publication_year && <div className="muted">Published: {b.publication_year}</div>}
                   <div className="muted">#{b.gutenberg_id}</div>
                 </Link>
                 <div className="row" style={{ justifyContent: "space-between", marginTop: 8 }}>
@@ -437,6 +446,7 @@ export default function LibraryPage() {
                           gutenbergId: b.id,
                           title: b.title,
                           authors: authorsString(b),
+                          publicationYear: null,
                           coverUrl: coverUrl(b),
                           mobiUrl,
                         });

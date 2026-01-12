@@ -9,6 +9,7 @@ pub struct Book {
     pub gutenberg_id: i64,
     pub title: String,
     pub authors: String,
+    pub publication_year: Option<i32>,
     pub cover_url: Option<String>,
     pub mobi_path: Option<String>,
     pub html_path: Option<String>,
@@ -49,6 +50,7 @@ CREATE TABLE IF NOT EXISTS book (
   gutenberg_id INTEGER NOT NULL UNIQUE,
   title TEXT NOT NULL,
   authors TEXT NOT NULL,
+  publication_year INTEGER,
   cover_url TEXT,
   mobi_path TEXT,
   html_path TEXT,
@@ -57,15 +59,11 @@ CREATE TABLE IF NOT EXISTS book (
 CREATE INDEX IF NOT EXISTS idx_book_title ON book(title);
 
 CREATE TABLE IF NOT EXISTS book_position (
-  book_id INTEGER PRIMARY KEY REFERENCES book(id) ON DELETE CASCADE,
-  cfi TEXT NOT NULL,
-  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-);
-"#,
-    )
+...
     .context("failed to initialize sqlite schema")?;
 
     // Best-effort migration for older DBs.
+    let _ = conn.execute("ALTER TABLE book ADD COLUMN publication_year INTEGER", []);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN mobi_path TEXT", []);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN html_path TEXT", []);
 
@@ -77,20 +75,22 @@ pub fn upsert_book(
     gutenberg_id: i64,
     title: String,
     authors: String,
+    publication_year: Option<i32>,
     cover_url: Option<String>,
     mobi_path: String,
     html_path: String,
 ) -> Result<i64, anyhow::Error> {
     let conn = open(app_handle)?;
     conn.execute(
-        "INSERT INTO book(gutenberg_id, title, authors, cover_url, mobi_path, html_path) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+        "INSERT INTO book(gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
          ON CONFLICT(gutenberg_id) DO UPDATE SET
            title=excluded.title,
            authors=excluded.authors,
+           publication_year=excluded.publication_year,
            cover_url=excluded.cover_url,
            mobi_path=excluded.mobi_path,
            html_path=excluded.html_path",
-        params![gutenberg_id, title, authors, cover_url, mobi_path, html_path],
+        params![gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path],
     )?;
 
     let id: i64 = conn.query_row(
@@ -104,7 +104,7 @@ pub fn upsert_book(
 pub fn list_books(app_handle: &AppHandle) -> Result<Vec<Book>, anyhow::Error> {
     let conn = open(app_handle)?;
     let mut stmt = conn.prepare(
-        "SELECT id, gutenberg_id, title, authors, cover_url, mobi_path, html_path, created_at FROM book ORDER BY title ASC",
+        "SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, created_at FROM book ORDER BY title ASC",
     )?;
 
     let rows = stmt
@@ -114,10 +114,11 @@ pub fn list_books(app_handle: &AppHandle) -> Result<Vec<Book>, anyhow::Error> {
                 gutenberg_id: row.get(1)?,
                 title: row.get(2)?,
                 authors: row.get(3)?,
-                cover_url: row.get(4)?,
-                mobi_path: row.get(5)?,
-                html_path: row.get(6)?,
-                created_at: row.get(7)?,
+                publication_year: row.get(4)?,
+                cover_url: row.get(5)?,
+                mobi_path: row.get(6)?,
+                html_path: row.get(7)?,
+                created_at: row.get(8)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -128,7 +129,7 @@ pub fn list_books(app_handle: &AppHandle) -> Result<Vec<Book>, anyhow::Error> {
 pub fn get_book(app_handle: &AppHandle, book_id: i64) -> Result<Book, anyhow::Error> {
     let conn = open(app_handle)?;
     conn.query_row(
-        "SELECT id, gutenberg_id, title, authors, cover_url, mobi_path, html_path, created_at FROM book WHERE id = ?1",
+        "SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, created_at FROM book WHERE id = ?1",
         params![book_id],
         |row| {
             Ok(Book {
@@ -136,10 +137,11 @@ pub fn get_book(app_handle: &AppHandle, book_id: i64) -> Result<Book, anyhow::Er
                 gutenberg_id: row.get(1)?,
                 title: row.get(2)?,
                 authors: row.get(3)?,
-                cover_url: row.get(4)?,
-                mobi_path: row.get(5)?,
-                html_path: row.get(6)?,
-                created_at: row.get(7)?,
+                publication_year: row.get(4)?,
+                cover_url: row.get(5)?,
+                mobi_path: row.get(6)?,
+                html_path: row.get(7)?,
+                created_at: row.get(8)?,
             })
         },
     )
