@@ -1,29 +1,33 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
 :root {
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
 
-  color: var(--color-text-light);
-  background-color: var(--color-bg-light);
+  color: var(--color-text);
+  background-color: var(--color-bg);
 
-  --glass-blur: 20px;
-  --glass-saturate: 180%;
-  --glass-border: rgba(0, 0, 0, 0.10);
-  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
-  --glass-surface: rgba(255, 255, 255, 0.65);
-  --glass-surface-strong: rgba(255, 255, 255, 0.82);
-  --glass-surface-subtle: rgba(255, 255, 255, 0.45);
-  --glass-text-muted: rgba(0, 0, 0, 0.62);
+  --font-serif: "Fraunces", serif;
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
 
-  /* Classic Academic Palette */
-  --font-serif: 'EB Garamond', serif;
-  --font-sans: 'Inter', sans-serif;
-  --color-bg-light: #f8f5f2;
-  --color-text-light: #2d3748;
-  --color-bg-dark: #1a202c;
-  --color-text-dark: #cbd5e0;
-  --color-accent: #c0392b;
+  --color-bg: #f4efe7;
+  --color-surface: #fffaf3;
+  --color-surface-strong: #ffffff;
+  --color-border: #e3d9c7;
+  --color-text: #1f2328;
+  --color-muted: #5c6570;
+  --color-accent: #b24a2f;
+  --color-accent-strong: #8f2f1c;
+  --color-accent-soft: #f4ddd6;
+  --color-page: #fbf7f0;
+  --color-page-ink: #2c2722;
+  --color-page-muted: #6d645c;
+  --color-page-rule: rgba(44, 39, 34, 0.18);
+
+  --shadow-1: 0 8px 24px rgba(31, 35, 40, 0.08);
+  --shadow-2: 0 12px 40px rgba(31, 35, 40, 0.12);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -44,10 +48,10 @@ body {
 
 body {
   background:
-    radial-gradient(1200px 800px at 10% 10%, rgba(57, 108, 216, 0.18), transparent 60%),
-    radial-gradient(900px 700px at 90% 15%, rgba(123, 223, 242, 0.22), transparent 55%),
-    radial-gradient(1000px 900px at 40% 90%, rgba(178, 247, 177, 0.22), transparent 55%),
-    var(--color-bg-light);
+    radial-gradient(1200px 800px at 10% 10%, rgba(178, 132, 92, 0.18), transparent 60%),
+    radial-gradient(900px 700px at 90% 15%, rgba(180, 86, 70, 0.12), transparent 55%),
+    radial-gradient(1000px 900px at 40% 90%, rgba(250, 214, 160, 0.22), transparent 55%),
+    var(--color-bg);
 }
 
 .appShell {
@@ -62,10 +66,9 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 12px;
-  border-bottom: 1px solid var(--glass-border);
-  background: var(--glass-surface);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
 }
 
 .topBarTitle {
@@ -78,20 +81,20 @@ body {
 }
 
 .navLink {
-  color: #333;
+  color: var(--color-text);
   text-decoration: none;
   padding: 6px 10px;
   border-radius: 8px;
 }
 
 .navLink:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--color-accent-soft);
 }
 
 .navLink.active {
-  background: rgba(0, 0, 0, 0.08);
+  background: var(--color-accent-soft);
   font-weight: 600;
-  color: var(--color-accent);
+  color: var(--color-accent-strong);
 }
 
 .main {
@@ -110,19 +113,15 @@ body {
 }
 
 .sidebar {
-  border-right: 1px solid var(--glass-border);
-  background: var(--glass-surface);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
   padding: 12px;
   overflow: auto;
 }
 
 .threadPane {
-  border-left: 1px solid var(--glass-border);
-  background: var(--glass-surface);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
   padding: 12px;
   overflow: auto;
 }
@@ -146,16 +145,14 @@ body {
   text-align: left;
   padding: 8px 10px;
   border-radius: 10px;
-  border: 1px solid var(--glass-border);
-  background: var(--glass-surface-subtle);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-strong);
   cursor: pointer;
 }
 
 .sceneButtonSelected {
-  background: rgba(57, 108, 216, 0.16);
-  border-color: rgba(57, 108, 216, 0.38);
+  background: var(--color-accent-soft);
+  border-color: rgba(178, 74, 47, 0.45);
 }
 
 .readingPane {
@@ -196,15 +193,15 @@ body {
 }
 
 .line:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(178, 74, 47, 0.08);
 }
 
 .lineSelected {
-  background: rgba(57, 108, 216, 0.14);
+  background: rgba(178, 74, 47, 0.16);
 }
 
 .lineNo {
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba(31, 35, 40, 0.5);
   font-variant-numeric: tabular-nums;
 }
 
@@ -224,22 +221,22 @@ body {
 }
 
 .msg {
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 8px;
 }
 
 .msgUser {
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--color-surface-strong);
 }
 
 .msgAssistant {
-  background: rgba(57, 108, 216, 0.06);
+  background: rgba(178, 74, 47, 0.08);
 }
 
 .msgRole {
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--color-muted);
   margin-bottom: 4px;
 }
 
@@ -259,10 +256,8 @@ body {
   resize: vertical;
   padding: 8px;
   border-radius: 10px;
-  border: 1px solid var(--glass-border);
-  background: var(--glass-surface-strong);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-strong);
   font: inherit;
 }
 
@@ -271,19 +266,19 @@ body {
 .input,
 .select {
   border-radius: 10px;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--color-border);
   padding: 8px 10px;
   font: inherit;
-  background: var(--glass-surface-strong);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  background: var(--color-surface-strong);
 }
 
 .button {
   cursor: pointer;
-  background: #396cd8;
-  border-color: #396cd8;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
   color: #fff;
+  box-shadow: var(--shadow-1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .button:disabled {
@@ -293,6 +288,29 @@ body {
 
 .buttonSecondary {
   cursor: pointer;
+  color: var(--color-text);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.button:hover {
+  background: var(--color-accent-strong);
+  border-color: var(--color-accent-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-2);
+}
+
+.buttonSecondary:hover {
+  background: var(--color-accent-soft);
+  border-color: rgba(178, 74, 47, 0.35);
+}
+
+.button:focus-visible,
+.buttonSecondary:focus-visible,
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .input,
@@ -320,13 +338,13 @@ body {
 }
 
 .muted {
-  color: var(--glass-text-muted);
+  color: var(--color-muted);
 }
 
 .error {
-  color: #9b1c1c;
-  background: rgba(155, 28, 28, 0.08);
-  border: 1px solid rgba(155, 28, 28, 0.2);
+  color: #7d1e10;
+  background: rgba(178, 74, 47, 0.12);
+  border: 1px solid rgba(178, 74, 47, 0.35);
   border-radius: 10px;
   padding: 8px;
 }
@@ -334,9 +352,9 @@ body {
 .emptyState {
   padding: 48px 24px;
   text-align: center;
-  border: 1px dashed var(--glass-border);
+  border: 1px dashed var(--color-border);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--color-surface);
   margin: 16px 0;
 }
 
@@ -344,14 +362,14 @@ body {
   font-family: var(--font-serif);
   font-size: 1.4rem;
   margin-bottom: 8px;
-  color: var(--color-text-light);
+  color: var(--color-text);
 }
 
 .readerContent {
   font-family: var(--font-serif);
   line-height: 1.6;
   font-size: 1.1rem;
-  color: var(--color-text-light);
+  color: var(--color-text);
 }
 
 .bookGrid {
@@ -367,9 +385,9 @@ body {
   gap: 12px;
   padding: 16px;
   border-radius: 4px;
-  border: 1px solid var(--glass-border);
-  background: var(--glass-surface);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
   transition: all 0.2s ease;
   color: inherit;
   text-decoration: none;
@@ -377,7 +395,7 @@ body {
 
 .bookCard:hover {
   border-color: var(--color-accent);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-2);
   transform: translateY(-2px);
 }
 
@@ -387,7 +405,7 @@ body {
   font-weight: 600;
   line-height: 1.3;
   margin-bottom: 4px;
-  color: var(--color-text-light);
+  color: var(--color-text);
 }
 
 .bookCover {
@@ -395,16 +413,16 @@ body {
   height: 112px;
   object-fit: cover;
   border-radius: 2px;
-  border: 1px solid var(--glass-border);
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border);
+  box-shadow: 2px 6px 12px rgba(31, 35, 40, 0.16);
 }
 
 .bookCoverPlaceholder {
   width: 80px;
   height: 112px;
   border-radius: 2px;
-  border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--color-border);
+  background: rgba(31, 35, 40, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -430,8 +448,8 @@ body {
   gap: 16px;
   padding: 16px;
   border-radius: 4px;
-  border: 1px solid var(--glass-border);
-  background: var(--glass-surface);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .bookShell {
@@ -445,43 +463,25 @@ body {
 .bookReaderGrid {
   height: calc(100vh - 48px);
   display: grid;
-  grid-template-columns: 300px 1fr;
-  transition: grid-template-columns 0.3s ease;
-}
-
-.bookReaderGrid.zen {
-  grid-template-columns: 0px 1fr;
-}
-
-.bookReaderGrid.zen .readerSidebar {
-  display: none;
-}
-
-.readerSidebar {
-  border-right: 1px solid var(--glass-border);
-  background: var(--glass-surface);
-  overflow: auto;
-  padding: 12px;
+  grid-template-columns: 1fr;
 }
 
 .tab {
   padding: 6px 10px;
   border-radius: 10px;
-  border: 1px solid var(--glass-border);
-  background: var(--glass-surface-subtle);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-strong);
   cursor: pointer;
 }
 
 .tabActive {
-  background: rgba(57, 108, 216, 0.12);
-  border-color: rgba(57, 108, 216, 0.35);
+  background: var(--color-accent-soft);
+  border-color: rgba(178, 74, 47, 0.35);
 }
 
 .divider {
   height: 1px;
-  background: var(--glass-border);
+  background: var(--color-border);
   margin: 10px 0;
 }
 
@@ -491,44 +491,68 @@ body {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
+}
+
+.bookHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bookToolbar {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow-1);
 }
 
 .buttonToggleActive {
-  background: rgba(57, 108, 216, 0.12);
-  border-color: rgba(57, 108, 216, 0.35);
+  background: var(--color-accent-soft);
+  border-color: rgba(178, 74, 47, 0.35);
 }
 
 .muted {
-  color: var(--glass-text-muted);
+  color: var(--color-muted);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    color: var(--color-text-dark);
-    background-color: var(--color-bg-dark);
+    color: #f6f3ee;
+    background-color: #141311;
 
-    --glass-border: rgba(255, 255, 255, 0.12);
-    --glass-surface: rgba(20, 20, 22, 0.62);
-    --glass-surface-strong: rgba(20, 20, 22, 0.82);
-    --glass-surface-subtle: rgba(20, 20, 22, 0.45);
-    --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-    --glass-text-muted: rgba(255, 255, 255, 0.68);
+    --color-bg: #141311;
+    --color-surface: #1d1b18;
+    --color-surface-strong: #24211d;
+    --color-border: rgba(255, 255, 255, 0.12);
+    --color-text: #f6f3ee;
+    --color-muted: rgba(255, 255, 255, 0.65);
+    --color-accent: #d06b4c;
+    --color-accent-strong: #b24a2f;
+    --color-accent-soft: rgba(208, 107, 76, 0.22);
+    --color-page: #1f1b17;
+    --color-page-ink: #f1e9dc;
+    --color-page-muted: rgba(241, 233, 220, 0.7);
+    --color-page-rule: rgba(241, 233, 220, 0.22);
   }
 
   .topBar,
   .sidebar,
-  .threadPane,
-  .readerSidebar {
-    background: var(--glass-surface);
-    border-color: var(--glass-border);
+  .threadPane {
+    background: var(--color-surface);
+    border-color: var(--color-border);
   }
 
   .navLink {
-    color: #f6f6f6;
+    color: var(--color-text);
   }
 
   .navLink:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(208, 107, 76, 0.18);
   }
 
   .buttonSecondary,
@@ -538,44 +562,52 @@ body {
   .sceneButton,
   .msg,
   .tab {
-    background: var(--glass-surface-strong);
-    color: #f6f6f6;
-    border-color: var(--glass-border);
+    background: var(--color-surface-strong);
+    color: var(--color-text);
+    border-color: var(--color-border);
   }
 
   .bookCard,
   .catalogRow {
-    background: var(--glass-surface);
-    border-color: var(--glass-border);
+    background: var(--color-surface);
+    border-color: var(--color-border);
   }
 
   .divider {
-    background: var(--glass-border);
+    background: var(--color-border);
   }
 
   .muted {
-    color: rgba(255, 255, 255, 0.65);
+    color: var(--color-muted);
   }
 }
 
 .reader-layout-single {
-  max-width: 800px;
   margin: 0 auto;
   height: 100%;
-  background: var(--color-bg-light);
-  box-shadow: 0 0 50px rgba(0,0,0,0.05);
+  width: 100%;
+  max-width: none;
+  background: var(--color-page);
+  box-shadow: var(--shadow-2);
+  border-radius: 18px;
+  border: 1px solid var(--color-border);
   position: relative;
   overflow: hidden;
+  animation: pageEnter 240ms ease-out;
 }
 
 .reader-layout-dual {
-  max-width: 1200px;
   margin: 0 auto;
   height: 100%;
-  background: var(--color-bg-light);
-  box-shadow: 0 0 50px rgba(0,0,0,0.05);
+  width: 100%;
+  max-width: none;
+  background: var(--color-page);
+  box-shadow: var(--shadow-2);
+  border-radius: 18px;
+  border: 1px solid var(--color-border);
   position: relative;
   overflow: hidden;
+  animation: pageEnter 240ms ease-out;
 }
 
 /* Paper texture effect */
@@ -588,29 +620,25 @@ body {
   right: 0;
   bottom: 0;
   background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
-  opacity: 0.05;
+  opacity: 0.04;
   pointer-events: none;
   z-index: 1;
-}
-
-.reader-layout-dual::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 1px;
-  height: 100%;
-  background: rgba(0,0,0,0.1);
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  z-index: 2;
 }
 
 @media (prefers-color-scheme: dark) {
   .reader-layout-single,
   .reader-layout-dual {
-    background: var(--color-bg-dark);
+    background: var(--color-page);
   }
-  .reader-layout-dual::after {
-    background: rgba(255,255,255,0.1);
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

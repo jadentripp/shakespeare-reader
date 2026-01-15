@@ -23,9 +23,17 @@ pub struct BookPosition {
 }
 
 fn db_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, anyhow::Error> {
-    Ok(app_handle
-        .path()
-        .resolve("shakespeare-reader.sqlite", BaseDirectory::AppLocalData)?)
+    if let Ok(override_path) = std::env::var("SHAKESPEARE_DB_PATH") {
+        return Ok(std::path::PathBuf::from(override_path));
+    }
+    let mut base = std::env::current_dir()
+        .unwrap_or(app_handle.path().resolve(".", BaseDirectory::AppLocalData)?);
+    if base.file_name().and_then(|s| s.to_str()) == Some("src-tauri") {
+        if let Some(parent) = base.parent() {
+            base = parent.to_path_buf();
+        }
+    }
+    Ok(base.join("tmp").join("shakespeare-reader.sqlite"))
 }
 
 fn open(app_handle: &AppHandle) -> Result<Connection, anyhow::Error> {
@@ -154,9 +162,13 @@ pub fn get_book(app_handle: &AppHandle, book_id: i64) -> Result<Book, anyhow::Er
     .context("failed to get book")
 }
 
-pub fn delete_book(app_handle: &AppHandle, book_id: i64) -> Result<(), anyhow::Error> {
+pub fn hard_delete_book(app_handle: &AppHandle, book_id: i64) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
-    conn.execute("DELETE FROM book WHERE id = ?1", params![book_id])?;
+    conn.execute("DELETE FROM book_position WHERE book_id = ?1", params![book_id])?;
+    let deleted = conn.execute("DELETE FROM book WHERE id = ?1", params![book_id])?;
+    if deleted == 0 {
+        anyhow::bail!("No book deleted for id {}", book_id);
+    }
     Ok(())
 }
 

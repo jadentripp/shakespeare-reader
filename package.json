@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "db:reset": "rm -f ./tmp/shakespeare-reader.sqlite ./src-tauri/tmp/shakespeare-reader.sqlite && rm -rf ./tmp/books ./src-tauri/tmp/books",
     "test": "vitest"
   },
   "dependencies": {

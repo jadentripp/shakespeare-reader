@@ -68,10 +68,27 @@ async fn download_gutenberg_mobi(
 fn get_book_html(app_handle: AppHandle, book_id: i64) -> Result<String, String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
     let book = db::get_book(&app_handle, book_id).map_err(|e| e.to_string())?;
-    let path = book
-        .html_path
-        .ok_or_else(|| "Book has no html_path (download it first)".to_string())?;
-    books::read_html_string(path).map_err(|e| e.to_string())
+    let html_path = book.html_path.clone();
+    let mobi_path = book.mobi_path.clone();
+
+    let mut html = if let Some(path) = html_path {
+        books::read_html_string(path).map_err(|e| e.to_string())?
+    } else {
+        String::new()
+    };
+
+    if (html.is_empty() || books::looks_like_mojibake(&html)) && mobi_path.is_some() {
+        let mobi_path = mobi_path.unwrap();
+        let new_path = books::extract_mobi_to_html(&app_handle, book.gutenberg_id, mobi_path)
+            .map_err(|e| e.to_string())?;
+        html = books::read_html_string(new_path).map_err(|e| e.to_string())?;
+    }
+
+    if html.is_empty() {
+        return Err("Book has no html_path or mobi_path (download it first)".to_string());
+    }
+
+    Ok(html)
 }
 
 #[tauri::command]
@@ -87,16 +104,18 @@ fn set_book_position(app_handle: AppHandle, book_id: i64, cfi: String) -> Result
 }
 
 #[tauri::command]
-fn delete_book(app_handle: AppHandle, book_id: i64) -> Result<(), String> {
+fn hard_delete_book(app_handle: AppHandle, book_id: i64) -> Result<(), String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
     let book = db::get_book(&app_handle, book_id).map_err(|e| e.to_string())?;
+
     if let Some(path) = book.mobi_path.clone() {
         books::delete_mobi_file(path).map_err(|e| e.to_string())?;
     }
     if let Some(path) = book.html_path.clone() {
         books::delete_html_file(path).map_err(|e| e.to_string())?;
     }
-    db::delete_book(&app_handle, book_id).map_err(|e| e.to_string())
+
+    db::hard_delete_book(&app_handle, book_id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -135,7 +154,7 @@ pub fn run() {
             get_book_html,
             get_book_position,
             set_book_position,
-            delete_book,
+            hard_delete_book,
             set_setting,
             get_setting,
             openai_chat,

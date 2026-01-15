@@ -25,7 +25,7 @@ vi.mock('../lib/tauri', () => ({
     previous: null,
     results: [],
   }),
-  deleteBook: vi.fn(),
+  hardDeleteBook: vi.fn(),
   downloadGutenbergMobi: vi.fn(),
 }));
 
