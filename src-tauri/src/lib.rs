@@ -5,6 +5,7 @@ mod openai;
 
 use db::{Book, BookPosition};
 use tauri::AppHandle;
+use std::fs;
 
 #[tauri::command]
 fn db_init(app_handle: AppHandle) -> Result<(), String> {
@@ -71,13 +72,22 @@ fn get_book_html(app_handle: AppHandle, book_id: i64) -> Result<String, String> 
     let html_path = book.html_path.clone();
     let mobi_path = book.mobi_path.clone();
 
+    let mut has_invalid_controls = false;
     let mut html = if let Some(path) = html_path {
+        if let Ok(bytes) = fs::read(&path) {
+            has_invalid_controls = books::has_invalid_controls(&bytes);
+        }
         books::read_html_string(path).map_err(|e| e.to_string())?
     } else {
         String::new()
     };
 
-    if (html.is_empty() || books::looks_like_mojibake(&html)) && mobi_path.is_some() {
+    if (html.is_empty()
+        || books::looks_like_mojibake(&html)
+        || books::contains_replacement(&html)
+        || has_invalid_controls)
+        && mobi_path.is_some()
+    {
         let mobi_path = mobi_path.unwrap();
         let new_path = books::extract_mobi_to_html(&app_handle, book.gutenberg_id, mobi_path)
             .map_err(|e| e.to_string())?;
