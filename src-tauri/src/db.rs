@@ -59,7 +59,13 @@ CREATE TABLE IF NOT EXISTS book (
 CREATE INDEX IF NOT EXISTS idx_book_title ON book(title);
 
 CREATE TABLE IF NOT EXISTS book_position (
-...
+  book_id INTEGER PRIMARY KEY,
+  cfi TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE
+);
+"#,
+    )
     .context("failed to initialize sqlite schema")?;
 
     // Best-effort migration for older DBs.

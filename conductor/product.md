@@ -13,7 +13,8 @@ Shakespeare Reader is a high-performance, elegant desktop application built with
 
 ## Core Features
 *   **Digital Library:** Organize and browse a collection of books retrieved from sources like Project Gutenberg (Gutendex).
-*   **Advanced Reader:** A high-quality reading interface supporting standard e-book formats and potentially MOBI files.
+*   **Advanced Reader:** A premium "Classic Academic" reading environment featuring immersive paper-like textures, dual-column "open book" layouts, and a hierarchical navigation system (Act > Scene).
+*   **Appearance Customization:** Advanced typography controls including font switching (EB Garamond, Baskerville, etc.), line height, and margin adjustments.
 *   **Offline Access:** Local database (SQLite) for storing book metadata and content.
 *   **AI Integration:** Built-in support for OpenAI to assist in understanding archaic language and providing deep literary analysis.
 

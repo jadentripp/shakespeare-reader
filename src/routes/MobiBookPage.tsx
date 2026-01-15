@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getBook, getBookHtml } from "../lib/tauri";
 import ReaderLayout from "../components/ReaderLayout";
 import AppearancePanel from "../components/AppearancePanel";
@@ -23,6 +23,16 @@ function injectHead(html: string, css: string): string {
     return html.replace(/<head(\s[^>]*)?>/i, (m) => `${m}\n${headInsert}`);
   }
   return `<!doctype html><html><head>${headInsert}</head><body>${html}</body></html>`;
+}
+
+function wrapBody(html: string): string {
+  if (html.includes('id="reader-root"')) return html;
+  if (/<body[\s>]/i.test(html)) {
+    return html
+      .replace(/<body(\s[^>]*)?>/i, (m) => `${m}<div id="reader-root">`)
+      .replace(/<\/body>/i, "</div></body>");
+  }
+  return `<!doctype html><html><head></head><body><div id="reader-root">${html}</div></body></html>`;
 }
 
 export function parseSceneLinksHierarchical(html: string): Act[] {
@@ -92,21 +102,52 @@ export default function MobiBookPage(props: { bookId: number }) {
 
   const srcDoc = useMemo(() => {
     if (!htmlQ.data) return "";
+    const gap = columns === 2 ? 80 : 0;
     let css = `
       :root {
         --color-bg-light: #f8f5f2;
         --color-text-light: #2d3748;
         --color-bg-dark: #1a202c;
         --color-text-dark: #cbd5e0;
+        --page-gap: ${gap}px;
+        --page-width: ${
+          columns === 2
+            ? `calc((100vw - (${margin * 2}px + var(--page-gap))) / 2)`
+            : `calc(100vw - (${margin * 2}px))`
+        };
+      }
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
       }
       body {
         font-family: ${fontFamily};
         line-height: ${lineHeight};
         font-size: 1.15rem;
-        padding: 40px ${margin}px;
-        margin: 0;
         color: var(--color-text-light);
         background-color: transparent;
+      }
+      #reader-root {
+        height: 100vh;
+        padding: 40px ${margin}px;
+        box-sizing: border-box;
+        column-fill: auto;
+        column-width: var(--page-width);
+        column-gap: var(--page-gap);
+        column-count: auto;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-behavior: smooth;
+        scroll-snap-type: x mandatory;
+      }
+      #reader-root::-webkit-scrollbar {
+        display: none;
+      }
+      #reader-root > * {
+        break-inside: avoid;
       }
       @media (prefers-color-scheme: dark) {
         body {
@@ -114,41 +155,52 @@ export default function MobiBookPage(props: { bookId: number }) {
         }
       }
     `;
-    if (columns === 2) {
-      css += `
-        body {
-          column-count: 2;
-          column-gap: 80px;
-          height: 100vh;
-          box-sizing: border-box;
-        }
-      `;
-    }
-    return injectHead(htmlQ.data, css);
+    return injectHead(wrapBody(htmlQ.data), css);
   }, [htmlQ.data, fontFamily, lineHeight, margin, columns]);
 
+  const getScrollRoot = () => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc) return null;
+    return (doc.getElementById("reader-root") as HTMLElement | null) ?? doc.documentElement;
+  };
+
   const prev = () => {
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.scrollBy({ left: -window.innerWidth, behavior: 'smooth' });
-    }
+    const root = getScrollRoot();
+    if (!root) return;
+    const width = iframeRef.current?.clientWidth || window.innerWidth;
+    root.scrollBy({ left: -width, behavior: "smooth" });
   };
 
   const next = () => {
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.scrollBy({ left: window.innerWidth, behavior: 'smooth' });
-    }
+    const root = getScrollRoot();
+    if (!root) return;
+    const width = iframeRef.current?.clientWidth || window.innerWidth;
+    root.scrollBy({ left: width, behavior: "smooth" });
   };
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && /input|textarea|select|button/i.test(target.tagName)) return;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        prev();
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        next();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const gotoHref = (href: string) => {
     setActiveHref(href);
-    if (iframeRef.current?.contentWindow) {
-      const doc = iframeRef.current.contentDocument;
-      if (doc) {
-        const target = doc.querySelector(href);
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth' });
-        }
-      }
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc) return;
+    const target = doc.querySelector(href) as HTMLElement | null;
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", inline: "start", block: "start" });
     }
   };
 
