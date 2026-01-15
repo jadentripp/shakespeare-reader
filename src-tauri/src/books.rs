@@ -12,8 +12,13 @@ fn find_mobi_header_offset(rec0: &[u8]) -> Option<usize> {
 
 fn mobi_text_encoding(rec0: &[u8]) -> Option<u32> {
     let off = find_mobi_header_offset(rec0)?;
-    // MOBI header: text encoding is a 32-bit big-endian integer at offset 0x1C from MOBI.
-    be_u32(rec0, off + 0x1c)
+    // MOBI header: text encoding is a 32-bit big-endian integer at offset 0x0C from MOBI.
+    be_u32(rec0, off + 0x0c)
+}
+
+fn mobi_extra_data_flags(rec0: &[u8]) -> u16 {
+    // Extra data flags live at offset 0xF2 from the start of record 0.
+    be_u16(rec0, 0xf2).unwrap_or(0)
 }
 
 fn decode_mobi_text(rec0: &[u8], text_bytes: &[u8]) -> String {
@@ -36,15 +41,13 @@ fn decode_mobi_text(rec0: &[u8], text_bytes: &[u8]) -> String {
             cp.to_string()
         }
         _ => {
-            // Heuristic: try UTF-8 first; if it produces lots of replacement chars, fall back to 1252.
-            let (utf8, _, _) = encoding_rs::UTF_8.decode(text_bytes);
-            let s = utf8.to_string();
-            let repl = s.chars().filter(|&c| c == '\u{FFFD}').count();
-            if repl >= 4 {
+            // Heuristic: try UTF-8 first; if it has decode errors, fall back to 1252.
+            let (utf8, _, had_errors) = encoding_rs::UTF_8.decode(text_bytes);
+            if had_errors {
                 let (cp, _, _) = encoding_rs::WINDOWS_1252.decode(text_bytes);
                 cp.to_string()
             } else {
-                s
+                utf8.to_string()
             }
         }
     }
@@ -117,6 +120,16 @@ pub fn looks_like_mojibake(s: &str) -> bool {
         "Â ",
     ];
     markers.iter().any(|m| s.contains(m))
+}
+
+pub fn contains_replacement(s: &str) -> bool {
+    s.chars().any(|c| c == '\u{FFFD}')
+}
+
+pub fn has_invalid_controls(bytes: &[u8]) -> bool {
+    bytes.iter().any(|b| {
+        *b < 0x20 && !matches!(*b, b'\n' | b'\r' | b'\t')
+    })
 }
 
 pub fn fix_mojibake(s: &str) -> Option<String> {
@@ -289,6 +302,54 @@ fn escape_html(s: &str) -> String {
     out
 }
 
+fn trim_trailing_record_data(rec: &[u8], extra_flags: u16) -> usize {
+    if rec.is_empty() || extra_flags == 0 {
+        return rec.len();
+    }
+    let last = *rec.last().unwrap();
+    if last & 0x80 == 0 {
+        return rec.len();
+    }
+
+    let mut size: usize = 0;
+    let mut shift = 0usize;
+    let mut bytes_used = 0usize;
+    let mut pos = rec.len();
+    while pos > 0 {
+        let b = rec[pos - 1];
+        size |= ((b & 0x7f) as usize) << shift;
+        bytes_used += 1;
+        pos -= 1;
+        if b & 0x80 != 0 {
+            break;
+        }
+        shift += 7;
+        if shift > 28 {
+            break;
+        }
+    }
+    let total = size + bytes_used;
+    if total > rec.len() {
+        return rec.len();
+    }
+    rec.len() - total
+}
+
+fn strip_invalid_controls(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for ch in s.chars() {
+        if ch == '\n' || ch == '\r' || ch == '\t' {
+            out.push(ch);
+            continue;
+        }
+        if ch.is_control() {
+            continue;
+        }
+        out.push(ch);
+    }
+    out
+}
+
 fn find_ci(haystack: &[u8], needle: &[u8], start: usize) -> Option<usize> {
     if needle.is_empty() || haystack.len() < needle.len() {
         return None;
@@ -372,6 +433,7 @@ pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path
     let compression = be_u16(rec0, 0).unwrap_or(1);
     let text_len = be_u32(rec0, 4).unwrap_or(0) as usize;
     let record_count = be_u16(rec0, 8).unwrap_or(0) as usize;
+    let extra_flags = mobi_extra_data_flags(rec0);
 
     if record_count == 0 {
         anyhow::bail!("MOBI has no text records");
@@ -386,10 +448,19 @@ pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path
             break;
         }
         let rec = &bytes[start..end];
+        let trimmed_len = trim_trailing_record_data(rec, extra_flags);
+        let rec = &rec[..trimmed_len];
         match compression {
-            1 => out.extend_from_slice(rec),
-            2 => out.extend_from_slice(&palmdoc_decompress(rec)),
-            _ => out.extend_from_slice(rec),
+            1 => {
+                out.extend_from_slice(rec);
+            }
+            2 => {
+                let decompressed = palmdoc_decompress(rec);
+                out.extend_from_slice(&decompressed);
+            }
+            _ => {
+                out.extend_from_slice(rec);
+            }
         }
         if text_len > 0 && out.len() >= text_len {
             out.truncate(text_len);
@@ -403,7 +474,7 @@ pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path
     }
 
     // MOBI text streams are commonly Windows-1252 or UTF-8 depending on header.
-    let text = decode_mobi_text(rec0, &out);
+    let text = strip_invalid_controls(&decode_mobi_text(rec0, &out));
     let html = if text.to_lowercase().contains("<html") {
         if let Some(body) = extract_body_fragments(&text) {
             format!(
@@ -432,8 +503,15 @@ pub fn delete_mobi_file(mobi_path: String) -> Result<(), anyhow::Error> {
 pub fn read_html_string(html_path: String) -> Result<String, anyhow::Error> {
     let bytes = fs::read(html_path)?;
     let encoding = detect_html_encoding(&bytes).unwrap_or(encoding_rs::UTF_8);
-    let (cow, _, _) = encoding.decode(&bytes);
-    let text = cow.to_string();
+    let (cow, _, had_errors) = encoding.decode(&bytes);
+    let mut text = strip_invalid_controls(&cow.to_string());
+    if had_errors || contains_replacement(&text) {
+        let (cp, _, _) = encoding_rs::WINDOWS_1252.decode(&bytes);
+        let fallback = strip_invalid_controls(&cp.to_string());
+        if !contains_replacement(&fallback) {
+            text = fallback;
+        }
+    }
     Ok(fix_mojibake(&text).unwrap_or(text))
 }
 
