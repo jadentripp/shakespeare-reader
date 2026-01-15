@@ -1,4 +1,5 @@
 use std::{fs, path::PathBuf, time::{Duration, Instant}};
+use std::env;
 
 use tauri::{path::BaseDirectory, AppHandle, Manager};
 
@@ -19,12 +20,20 @@ fn decode_mobi_text(rec0: &[u8], text_bytes: &[u8]) -> String {
     let enc = mobi_text_encoding(rec0);
     match enc {
         Some(1252) => {
+            let (utf8, _, had_errors) = encoding_rs::UTF_8.decode(text_bytes);
+            if !had_errors {
+                return utf8.to_string();
+            }
             let (cow, _, _) = encoding_rs::WINDOWS_1252.decode(text_bytes);
             cow.to_string()
         }
         Some(65001) => {
-            let (cow, _, _) = encoding_rs::UTF_8.decode(text_bytes);
-            cow.to_string()
+            let (utf8, _, had_errors) = encoding_rs::UTF_8.decode(text_bytes);
+            if !had_errors {
+                return utf8.to_string();
+            }
+            let (cp, _, _) = encoding_rs::WINDOWS_1252.decode(text_bytes);
+            cp.to_string()
         }
         _ => {
             // Heuristic: try UTF-8 first; if it produces lots of replacement chars, fall back to 1252.
@@ -38,6 +47,92 @@ fn decode_mobi_text(rec0: &[u8], text_bytes: &[u8]) -> String {
                 s
             }
         }
+    }
+}
+
+fn encoding_from_bom(bytes: &[u8]) -> Option<&'static encoding_rs::Encoding> {
+    if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
+        return Some(encoding_rs::UTF_8);
+    }
+    if bytes.starts_with(&[0xFE, 0xFF]) {
+        return Some(encoding_rs::UTF_16BE);
+    }
+    if bytes.starts_with(&[0xFF, 0xFE]) {
+        return Some(encoding_rs::UTF_16LE);
+    }
+    None
+}
+
+fn extract_label(haystack: &str, key: &str) -> Option<String> {
+    let idx = haystack.find(key)?;
+    let mut i = idx + key.len();
+    let bytes = haystack.as_bytes();
+    while i < bytes.len() {
+        let c = bytes[i] as char;
+        if c.is_whitespace() || c == '"' || c == '\'' {
+            i += 1;
+            continue;
+        }
+        break;
+    }
+    let start = i;
+    while i < bytes.len() {
+        let c = bytes[i] as char;
+        if c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.' {
+            i += 1;
+            continue;
+        }
+        break;
+    }
+    if i > start {
+        Some(haystack[start..i].to_string())
+    } else {
+        None
+    }
+}
+
+fn detect_html_encoding(bytes: &[u8]) -> Option<&'static encoding_rs::Encoding> {
+    if let Some(enc) = encoding_from_bom(bytes) {
+        return Some(enc);
+    }
+    let slice_len = bytes.len().min(8192);
+    let mut lowered: Vec<u8> = Vec::with_capacity(slice_len);
+    for &b in &bytes[..slice_len] {
+        let lb = if (b'A'..=b'Z').contains(&b) { b + 32 } else { b };
+        lowered.push(lb);
+    }
+    let haystack = String::from_utf8_lossy(&lowered);
+    if let Some(label) = extract_label(&haystack, "charset=") {
+        return encoding_rs::Encoding::for_label(label.trim().as_bytes());
+    }
+    if let Some(label) = extract_label(&haystack, "encoding=") {
+        return encoding_rs::Encoding::for_label(label.trim().as_bytes());
+    }
+    None
+}
+
+pub fn looks_like_mojibake(s: &str) -> bool {
+    let markers = [
+        "â€™", "â€œ", "â€�", "â€”", "â€“", "â€¦", "â€˜", "Ã©", "Ã¨", "Ãª", "Ã¡", "Ã³", "Ã­", "Ãú", "Ã±",
+        "Â ",
+    ];
+    markers.iter().any(|m| s.contains(m))
+}
+
+pub fn fix_mojibake(s: &str) -> Option<String> {
+    if !looks_like_mojibake(s) {
+        return None;
+    }
+    let (bytes, _, had_errors) = encoding_rs::WINDOWS_1252.encode(s);
+    if had_errors {
+        return None;
+    }
+    let (utf8, _, _) = encoding_rs::UTF_8.decode(&bytes);
+    let fixed = utf8.to_string();
+    if looks_like_mojibake(&fixed) {
+        None
+    } else {
+        Some(fixed)
     }
 }
 
@@ -70,9 +165,22 @@ async fn throttle_gutenberg_if_needed(url: &str) {
 }
 
 pub fn books_dir(app_handle: &AppHandle) -> Result<PathBuf, anyhow::Error> {
-    let dir = app_handle
-        .path()
-        .resolve("books", BaseDirectory::AppLocalData)?;
+    if let Ok(db_path) = env::var("SHAKESPEARE_DB_PATH") {
+        let db_path = PathBuf::from(db_path);
+        if let Some(parent) = db_path.parent() {
+            let dir = parent.join("books");
+            fs::create_dir_all(&dir)?;
+            return Ok(dir);
+        }
+    }
+
+    let mut base = env::current_dir().unwrap_or(app_handle.path().resolve(".", BaseDirectory::AppLocalData)?);
+    if base.file_name().and_then(|s| s.to_str()) == Some("src-tauri") {
+        if let Some(parent) = base.parent() {
+            base = parent.to_path_buf();
+        }
+    }
+    let dir = base.join("tmp").join("books");
     fs::create_dir_all(&dir)?;
     Ok(dir)
 }
@@ -181,6 +289,54 @@ fn escape_html(s: &str) -> String {
     out
 }
 
+fn find_ci(haystack: &[u8], needle: &[u8], start: usize) -> Option<usize> {
+    if needle.is_empty() || haystack.len() < needle.len() {
+        return None;
+    }
+    for i in start..=haystack.len().saturating_sub(needle.len()) {
+        if haystack[i..i + needle.len()]
+            .iter()
+            .zip(needle.iter())
+            .all(|(a, b)| a.to_ascii_lowercase() == *b)
+        {
+            return Some(i);
+        }
+    }
+    None
+}
+
+fn extract_body_fragments(html: &str) -> Option<String> {
+    let bytes = html.as_bytes();
+    let mut cursor = 0;
+    let mut parts: Vec<&str> = Vec::new();
+
+    loop {
+        let body_start = find_ci(bytes, b"<body", cursor)?;
+        let body_tag_end = bytes[body_start..]
+            .iter()
+            .position(|&b| b == b'>')
+            .map(|off| body_start + off)?;
+        let body_close = match find_ci(bytes, b"</body>", body_tag_end + 1) {
+            Some(pos) => pos,
+            None => break,
+        };
+
+        if body_tag_end + 1 <= body_close && body_close <= html.len() {
+            let inner = &html[body_tag_end + 1..body_close];
+            if !inner.trim().is_empty() {
+                parts.push(inner);
+            }
+        }
+        cursor = body_close + "</body>".len();
+    }
+
+    if parts.is_empty() {
+        None
+    } else {
+        Some(parts.join("\n"))
+    }
+}
+
 pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path: String) -> Result<String, anyhow::Error> {
     let dir = books_dir(app_handle)?;
     let out_path = dir.join(format!("{}.mobi.html", gutenberg_id));
@@ -249,7 +405,14 @@ pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path
     // MOBI text streams are commonly Windows-1252 or UTF-8 depending on header.
     let text = decode_mobi_text(rec0, &out);
     let html = if text.to_lowercase().contains("<html") {
-        text
+        if let Some(body) = extract_body_fragments(&text) {
+            format!(
+                "<!doctype html><html><head><meta charset=\"utf-8\"></head><body>{}</body></html>",
+                body
+            )
+        } else {
+            text
+        }
     } else {
         format!(
             "<!doctype html><html><head><meta charset=\"utf-8\"></head><body><pre>{}</pre></body></html>",
@@ -268,7 +431,10 @@ pub fn delete_mobi_file(mobi_path: String) -> Result<(), anyhow::Error> {
 
 pub fn read_html_string(html_path: String) -> Result<String, anyhow::Error> {
     let bytes = fs::read(html_path)?;
-    Ok(String::from_utf8_lossy(&bytes).to_string())
+    let encoding = detect_html_encoding(&bytes).unwrap_or(encoding_rs::UTF_8);
+    let (cow, _, _) = encoding.decode(&bytes);
+    let text = cow.to_string();
+    Ok(fix_mojibake(&text).unwrap_or(text))
 }
 
 pub fn delete_html_file(html_path: String) -> Result<(), anyhow::Error> {

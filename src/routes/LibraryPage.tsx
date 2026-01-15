@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  deleteBook,
+  hardDeleteBook,
   downloadGutenbergMobi,
   gutendexShakespearePage,
   listBooks,
@@ -83,7 +83,7 @@ export default function LibraryPage() {
   }, [booksQ.data]);
 
   const deleteM = useMutation({
-    mutationFn: deleteBook,
+    mutationFn: hardDeleteBook,
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["books"] });
     },

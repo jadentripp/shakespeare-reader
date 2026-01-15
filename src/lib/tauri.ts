@@ -56,8 +56,8 @@ export async function getBook(bookId: number): Promise<Book> {
   return await invoke("get_book", { bookId });
 }
 
-export async function deleteBook(bookId: number): Promise<void> {
-  await invoke("delete_book", { bookId });
+export async function hardDeleteBook(bookId: number): Promise<void> {
+  await invoke("hard_delete_book", { bookId });
 }
 
 export async function gutendexShakespearePage(pageUrl?: string | null): Promise<GutendexResponse> {
