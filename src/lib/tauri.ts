@@ -44,6 +44,32 @@ export type ChatMessage = {
   content: string;
 };
 
+export type Highlight = {
+  id: number;
+  book_id: number;
+  start_path: string;
+  start_offset: number;
+  end_path: string;
+  end_offset: number;
+  text: string;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type HighlightMessage = {
+  id: number;
+  highlight_id: number;
+  role: "system" | "user" | "assistant";
+  content: string;
+  created_at: string;
+};
+
+export type OpenAiKeyStatus = {
+  has_env_key: boolean;
+  has_saved_key: boolean;
+};
+
 export async function dbInit(): Promise<void> {
   await invoke("db_init");
 }
@@ -104,6 +130,64 @@ export async function getSetting(key: string): Promise<string | null> {
   return await invoke("get_setting", { key });
 }
 
+export async function listHighlights(bookId: number): Promise<Highlight[]> {
+  return await invoke("list_highlights", { bookId });
+}
+
+export async function createHighlight(params: {
+  bookId: number;
+  startPath: string;
+  startOffset: number;
+  endPath: string;
+  endOffset: number;
+  text: string;
+  note?: string | null;
+}): Promise<Highlight> {
+  return await invoke("create_highlight", {
+    bookId: params.bookId,
+    startPath: params.startPath,
+    startOffset: params.startOffset,
+    endPath: params.endPath,
+    endOffset: params.endOffset,
+    text: params.text,
+    note: params.note ?? null,
+  });
+}
+
+export async function updateHighlightNote(params: {
+  highlightId: number;
+  note?: string | null;
+}): Promise<Highlight> {
+  return await invoke("update_highlight_note", {
+    highlightId: params.highlightId,
+    note: params.note ?? null,
+  });
+}
+
+export async function listHighlightMessages(highlightId: number): Promise<HighlightMessage[]> {
+  return await invoke("list_highlight_messages", { highlightId });
+}
+
+export async function addHighlightMessage(params: {
+  highlightId: number;
+  role: "system" | "user" | "assistant";
+  content: string;
+}): Promise<HighlightMessage> {
+  return await invoke("add_highlight_message", {
+    highlightId: params.highlightId,
+    role: params.role,
+    content: params.content,
+  });
+}
+
+export async function openAiKeyStatus(): Promise<OpenAiKeyStatus> {
+  return await invoke("openai_key_status");
+}
+
 export async function openAiChat(messages: ChatMessage[]): Promise<string> {
   return await invoke("openai_chat", { messages });
+}
+
+export async function openAiListModels(): Promise<string[]> {
+  return await invoke("openai_list_models");
 }

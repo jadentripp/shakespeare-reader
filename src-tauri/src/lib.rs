@@ -3,7 +3,7 @@ mod db;
 mod gutendex;
 mod openai;
 
-use db::{Book, BookPosition};
+use db::{Book, BookPosition, Highlight, HighlightMessage};
 use tauri::AppHandle;
 use std::fs;
 
@@ -141,12 +141,87 @@ fn get_setting(app_handle: AppHandle, key: String) -> Result<Option<String>, Str
 }
 
 #[tauri::command]
+fn list_highlights(app_handle: AppHandle, book_id: i64) -> Result<Vec<Highlight>, String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::list_highlights(&app_handle, book_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn create_highlight(
+    app_handle: AppHandle,
+    book_id: i64,
+    start_path: String,
+    start_offset: i64,
+    end_path: String,
+    end_offset: i64,
+    text: String,
+    note: Option<String>,
+) -> Result<Highlight, String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::create_highlight(
+        &app_handle,
+        book_id,
+        start_path,
+        start_offset,
+        end_path,
+        end_offset,
+        text,
+        note,
+    )
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn update_highlight_note(
+    app_handle: AppHandle,
+    highlight_id: i64,
+    note: Option<String>,
+) -> Result<Highlight, String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::update_highlight_note(&app_handle, highlight_id, note).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn list_highlight_messages(
+    app_handle: AppHandle,
+    highlight_id: i64,
+) -> Result<Vec<HighlightMessage>, String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::list_highlight_messages(&app_handle, highlight_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn add_highlight_message(
+    app_handle: AppHandle,
+    highlight_id: i64,
+    role: String,
+    content: String,
+) -> Result<HighlightMessage, String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::add_highlight_message(&app_handle, highlight_id, role, content).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn openai_key_status(app_handle: AppHandle) -> Result<openai::KeyStatus, String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    openai::key_status(&app_handle).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn openai_chat(
     app_handle: AppHandle,
     messages: Vec<openai::ChatMessage>,
 ) -> Result<String, String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
     openai::chat(&app_handle, messages)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn openai_list_models(app_handle: AppHandle) -> Result<Vec<String>, String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    openai::list_models(&app_handle)
         .await
         .map_err(|e| e.to_string())
 }
@@ -167,7 +242,14 @@ pub fn run() {
             hard_delete_book,
             set_setting,
             get_setting,
+            list_highlights,
+            create_highlight,
+            update_highlight_note,
+            list_highlight_messages,
+            add_highlight_message,
+            openai_key_status,
             openai_chat,
+            openai_list_models,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

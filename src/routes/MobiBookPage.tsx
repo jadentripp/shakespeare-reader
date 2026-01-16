@@ -1,6 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getBook, getBookHtml } from "../lib/tauri";
+import {
+  addHighlightMessage,
+  createHighlight,
+  getBook,
+  getBookHtml,
+  listHighlightMessages,
+  listHighlights,
+  openAiChat,
+  updateHighlightNote
+} from "../lib/tauri";
 import ReaderLayout from "../components/ReaderLayout";
 import AppearancePanel from "../components/AppearancePanel";
 import { useReaderAppearance } from "../lib/appearance";
@@ -17,6 +26,23 @@ export interface Act {
 }
 
 const DESIRED_PAGE_WIDTH = 750;
+const HIGHLIGHT_PROMPT =
+  "You are an assistant embedded in a Shakespeare reader. Respond with concise, thoughtful guidance using the selected highlight as context.";
+
+type PendingHighlight = {
+  startPath: number[];
+  startOffset: number;
+  endPath: number[];
+  endOffset: number;
+  text: string;
+  rect: { top: number; left: number; width: number; height: number };
+};
+
+type LocalChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+};
 
 function injectHead(html: string, css: string): string {
   const styleTag = `<style>${css}</style>`;
@@ -79,13 +105,23 @@ export default function MobiBookPage(props: { bookId: number }) {
   const id = props.bookId;
   const bookQ = useQuery({ queryKey: ["book", id], queryFn: () => getBook(id) });
   const htmlQ = useQuery({ queryKey: ["bookHtml", id], queryFn: () => getBookHtml(id) });
+  const highlightsQ = useQuery({ queryKey: ["bookHighlights", id], queryFn: () => listHighlights(id) });
+  const queryClient = useQueryClient();
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const rootRef = useRef<HTMLElement | null>(null);
+  const docRef = useRef<Document | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const layoutRafRef = useRef<number | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const saveTimeoutRef = useRef<number | null>(null);
   const lockTimeoutRef = useRef<number | null>(null);
+  const selectionTimeoutRef = useRef<number | null>(null);
+  const scrollHandlerRef = useRef<((event: Event) => void) | null>(null);
+  const wheelHandlerRef = useRef<((event: WheelEvent) => void) | null>(null);
+  const selectionHandlerRef = useRef<(() => void) | null>(null);
+  const highlightClickRef = useRef<((event: Event) => void) | null>(null);
   const pageLockRef = useRef(1);
   const restoredRef = useRef(false);
   const pendingRestoreRef = useRef<{ page?: number } | null>(null);
@@ -94,6 +130,14 @@ export default function MobiBookPage(props: { bookId: number }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [jumpPage, setJumpPage] = useState("");
+  const [pendingHighlight, setPendingHighlight] = useState<PendingHighlight | null>(null);
+  const [selectedHighlightId, setSelectedHighlightId] = useState<number | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [contextText, setContextText] = useState("");
+  const [generalMessages, setGeneralMessages] = useState<LocalChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatSending, setChatSending] = useState(false);
+  const [iframeReady, setIframeReady] = useState(false);
 
   const {
     fontFamily,
@@ -270,6 +314,16 @@ export default function MobiBookPage(props: { bookId: number }) {
       ::selection {
         background: var(--page-mark);
       }
+      .readerHighlight {
+        background: rgba(255, 223, 128, 0.55);
+        box-shadow: inset 0 -0.05em 0 rgba(178, 74, 47, 0.45);
+        border-radius: 4px;
+        padding: 0 0.08em;
+      }
+      .readerHighlightActive {
+        background: rgba(178, 74, 47, 0.25);
+        box-shadow: inset 0 -0.12em 0 rgba(178, 74, 47, 0.65);
+      }
       @media (prefers-color-scheme: dark) {
         :root {
           --page-ink: #f1e9dc;
@@ -295,6 +349,150 @@ export default function MobiBookPage(props: { bookId: number }) {
     const doc = iframeRef.current?.contentDocument;
     if (!doc) return null;
     return (doc.getElementById("reader-root") as HTMLElement | null) ?? doc.documentElement;
+  };
+
+  const getNodePath = (root: Node, node: Node): number[] | null => {
+    const path: number[] = [];
+    let current: Node | null = node;
+    while (current && current !== root) {
+      const parent = current.parentNode;
+      if (!parent) return null;
+      const index = Array.prototype.indexOf.call(parent.childNodes, current);
+      if (index < 0) return null;
+      path.unshift(index);
+      current = parent;
+    }
+    if (current !== root) return null;
+    return path;
+  };
+
+  const resolveNodePath = (root: Node, path: number[]): Node | null => {
+    let current: Node | null = root;
+    for (const index of path) {
+      if (!current || !current.childNodes[index]) return null;
+      current = current.childNodes[index];
+    }
+    return current;
+  };
+
+  const clearExistingHighlights = (doc: Document) => {
+    const spans = Array.from(doc.querySelectorAll("span.readerHighlight"));
+    for (const span of spans) {
+      const parent = span.parentNode;
+      if (!parent) continue;
+      while (span.firstChild) {
+        parent.insertBefore(span.firstChild, span);
+      }
+      parent.removeChild(span);
+      parent.normalize();
+    }
+  };
+
+  const applyHighlightToRange = (range: Range, highlightId: number) => {
+    const doc = range.startContainer.ownerDocument;
+    const walker = doc.createTreeWalker(
+      range.commonAncestorContainer,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: (node) => {
+          if (!range.intersectsNode(node)) return NodeFilter.FILTER_REJECT;
+          if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+
+    const nodes: Text[] = [];
+    while (walker.nextNode()) {
+      nodes.push(walker.currentNode as Text);
+    }
+
+    for (const node of nodes) {
+      const text = node.nodeValue ?? "";
+      let start = 0;
+      let end = text.length;
+      if (node === range.startContainer) start = range.startOffset;
+      if (node === range.endContainer) end = range.endOffset;
+      if (start === end) continue;
+
+      const before = text.slice(0, start);
+      const middle = text.slice(start, end);
+      const after = text.slice(end);
+      const fragment = doc.createDocumentFragment();
+
+      if (before) fragment.appendChild(doc.createTextNode(before));
+      const span = doc.createElement("span");
+      span.className = "readerHighlight";
+      span.dataset.highlightId = String(highlightId);
+      span.textContent = middle;
+      fragment.appendChild(span);
+      if (after) fragment.appendChild(doc.createTextNode(after));
+
+      node.parentNode?.replaceChild(fragment, node);
+    }
+  };
+
+  const renderHighlights = (activeId?: number | null) => {
+    const doc = iframeRef.current?.contentDocument;
+    const root = getScrollRoot();
+    if (!doc || !root || !highlightsQ.data) return;
+    clearExistingHighlights(doc);
+    for (const highlight of highlightsQ.data) {
+      let startPath: number[];
+      let endPath: number[];
+      try {
+        startPath = JSON.parse(highlight.start_path);
+        endPath = JSON.parse(highlight.end_path);
+      } catch {
+        continue;
+      }
+      const startNode = resolveNodePath(root, startPath);
+      const endNode = resolveNodePath(root, endPath);
+      if (!startNode || !endNode) continue;
+      const range = doc.createRange();
+      range.setStart(startNode, highlight.start_offset);
+      range.setEnd(endNode, highlight.end_offset);
+      applyHighlightToRange(range, highlight.id);
+    }
+
+    if (activeId) {
+      const activeEls = doc.querySelectorAll(
+        `span.readerHighlight[data-highlight-id="${activeId}"]`
+      );
+      activeEls.forEach((el) => el.classList.add("readerHighlightActive"));
+    }
+  };
+
+  const getCurrentPageContext = () => {
+    const doc = iframeRef.current?.contentDocument;
+    const root = getScrollRoot();
+    if (!doc || !root) return "";
+    const { pageWidth, gap } = getPageMetrics();
+    if (!pageWidth) return "";
+    const stride = pageWidth + gap;
+    const pageLeft = Math.max(0, (currentPage - 1) * stride);
+    const pageRight = pageLeft + pageWidth;
+    const rootRect = root.getBoundingClientRect();
+    const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const pieces: string[] = [];
+    while (walker.nextNode()) {
+      const node = walker.currentNode as Text;
+      if (!node.nodeValue || !node.nodeValue.trim()) continue;
+      const range = doc.createRange();
+      range.selectNodeContents(node);
+      const rects = Array.from(range.getClientRects());
+      const intersects = rects.some((rect) => {
+        const left = rect.left - rootRect.left + root.scrollLeft;
+        const right = rect.right - rootRect.left + root.scrollLeft;
+        return right >= pageLeft && left <= pageRight;
+      });
+      if (intersects) {
+        pieces.push(node.nodeValue.trim().replace(/\s+/g, " "));
+      }
+    }
+    const text = pieces.join(" ").trim();
+    if (!text) return "";
+    return text.length > 1200 ? `${text.slice(0, 1200)}…` : text;
   };
 
   const getPageMetrics = () => {
@@ -469,8 +667,27 @@ export default function MobiBookPage(props: { bookId: number }) {
         window.clearTimeout(lockTimeoutRef.current);
         lockTimeoutRef.current = null;
       }
+      if (selectionTimeoutRef.current !== null) {
+        window.clearTimeout(selectionTimeoutRef.current);
+        selectionTimeoutRef.current = null;
+      }
       resizeObserverRef.current?.disconnect();
       resizeObserverRef.current = null;
+      if (rootRef.current && scrollHandlerRef.current) {
+        rootRef.current.removeEventListener("scroll", scrollHandlerRef.current);
+      }
+      if (rootRef.current && wheelHandlerRef.current) {
+        rootRef.current.removeEventListener("wheel", wheelHandlerRef.current);
+      }
+      if (docRef.current && selectionHandlerRef.current) {
+        docRef.current.removeEventListener("mouseup", selectionHandlerRef.current);
+        docRef.current.removeEventListener("keyup", selectionHandlerRef.current);
+      }
+      if (rootRef.current && highlightClickRef.current) {
+        rootRef.current.removeEventListener("click", highlightClickRef.current);
+      }
+      rootRef.current = null;
+      docRef.current = null;
     };
   }, []);
 
@@ -497,26 +714,94 @@ export default function MobiBookPage(props: { bookId: number }) {
     const root = getScrollRoot();
     if (!doc || !root) return;
 
+    docRef.current = doc;
+    rootRef.current = root;
     syncPageMetrics();
     const handleScroll = () => {
       schedulePaginationUpdate();
       scheduleLock();
     };
+    scrollHandlerRef.current = handleScroll;
     root.addEventListener("scroll", handleScroll, { passive: true });
-    root.addEventListener(
-      "wheel",
-      (event) => {
-        if (Math.abs(event.deltaX) > 0 || event.shiftKey) {
-          event.preventDefault();
-        }
-      },
-      { passive: false }
-    );
+    const handleWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaX) > 0 || event.shiftKey) {
+        event.preventDefault();
+      }
+    };
+    wheelHandlerRef.current = handleWheel;
+    root.addEventListener("wheel", handleWheel, { passive: false });
     resizeObserverRef.current?.disconnect();
     resizeObserverRef.current = new ResizeObserver(() => scheduleLayoutRebuild());
     resizeObserverRef.current.observe(root);
 
+    const handleSelection = () => {
+      if (selectionTimeoutRef.current !== null) {
+        window.clearTimeout(selectionTimeoutRef.current);
+      }
+      selectionTimeoutRef.current = window.setTimeout(() => {
+        selectionTimeoutRef.current = null;
+        const selection = doc.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+          setPendingHighlight(null);
+          return;
+        }
+        const range = selection.getRangeAt(0);
+        if (range.collapsed) {
+          setPendingHighlight(null);
+          return;
+        }
+        const rootNode = rootRef.current ?? root;
+        if (!rootNode.contains(range.startContainer) || !rootNode.contains(range.endContainer)) {
+          setPendingHighlight(null);
+          return;
+        }
+        const startPath = getNodePath(rootNode, range.startContainer);
+        const endPath = getNodePath(rootNode, range.endContainer);
+        const text = range.toString().trim();
+        if (!startPath || !endPath || !text) {
+          setPendingHighlight(null);
+          return;
+        }
+        const rangeRect = range.getBoundingClientRect();
+        const iframeRect = iframeRef.current?.getBoundingClientRect();
+        const containerRect = containerRef.current?.getBoundingClientRect();
+        if (!iframeRect || !containerRect) {
+          setPendingHighlight(null);
+          return;
+        }
+        setPendingHighlight({
+          startPath,
+          startOffset: range.startOffset,
+          endPath,
+          endOffset: range.endOffset,
+          text,
+          rect: {
+            top: iframeRect.top + rangeRect.top - containerRect.top,
+            left: iframeRect.left + rangeRect.left - containerRect.left,
+            width: rangeRect.width,
+            height: rangeRect.height,
+          },
+        });
+      }, 40);
+    };
+
+    selectionHandlerRef.current = handleSelection;
+    doc.addEventListener("mouseup", handleSelection);
+    doc.addEventListener("keyup", handleSelection);
+
+    const handleHighlightClick = (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      const highlightEl = target?.closest?.(".readerHighlight") as HTMLElement | null;
+      const highlightId = highlightEl?.dataset?.highlightId;
+      if (highlightId) {
+        setSelectedHighlightId(Number(highlightId));
+      }
+    };
+    highlightClickRef.current = handleHighlightClick;
+    root.addEventListener("click", handleHighlightClick);
+
     scheduleLayoutRebuild();
+    setIframeReady(true);
   };
 
   useEffect(() => {
@@ -531,6 +816,169 @@ export default function MobiBookPage(props: { bookId: number }) {
       restoredRef.current = true;
     }
   }, [totalPages]);
+
+  useEffect(() => {
+    if (!iframeReady || !highlightsQ.data) return;
+    renderHighlights(selectedHighlightId);
+  }, [iframeReady, highlightsQ.data]);
+
+  useEffect(() => {
+    if (!iframeReady) return;
+    renderHighlights(selectedHighlightId);
+  }, [selectedHighlightId, iframeReady]);
+
+  const selectedHighlight = useMemo(() => {
+    return highlightsQ.data?.find((highlight) => highlight.id === selectedHighlightId) ?? null;
+  }, [highlightsQ.data, selectedHighlightId]);
+
+  useEffect(() => {
+    if (!selectedHighlightId || !highlightsQ.data) return;
+    const exists = highlightsQ.data.some((highlight) => highlight.id === selectedHighlightId);
+    if (!exists) {
+      setSelectedHighlightId(null);
+    }
+  }, [highlightsQ.data, selectedHighlightId]);
+
+  useEffect(() => {
+    if (selectedHighlight) {
+      setNoteDraft(selectedHighlight.note ?? "");
+    } else {
+      setNoteDraft("");
+    }
+  }, [selectedHighlight?.id]);
+
+  useEffect(() => {
+    if (!iframeReady) return;
+    if (selectedHighlight) {
+      setContextText(selectedHighlight.text);
+      return;
+    }
+    setContextText(getCurrentPageContext());
+  }, [iframeReady, selectedHighlight?.id, currentPage]);
+
+  const messagesQ = useQuery({
+    queryKey: ["highlightMessages", selectedHighlightId],
+    queryFn: () => listHighlightMessages(selectedHighlightId ?? 0),
+    enabled: !!selectedHighlightId,
+  });
+
+  const handleCreateHighlight = async () => {
+    if (!pendingHighlight) return;
+    const highlight = await createHighlight({
+      bookId: id,
+      startPath: JSON.stringify(pendingHighlight.startPath),
+      startOffset: pendingHighlight.startOffset,
+      endPath: JSON.stringify(pendingHighlight.endPath),
+      endOffset: pendingHighlight.endOffset,
+      text: pendingHighlight.text,
+      note: "",
+    });
+    setPendingHighlight(null);
+    await queryClient.invalidateQueries({ queryKey: ["bookHighlights", id] });
+    setSelectedHighlightId(highlight.id);
+  };
+
+  const handleSaveNote = async () => {
+    if (!selectedHighlight) return;
+    await updateHighlightNote({
+      highlightId: selectedHighlight.id,
+      note: noteDraft.trim() ? noteDraft.trim() : null,
+    });
+    await queryClient.invalidateQueries({ queryKey: ["bookHighlights", id] });
+  };
+
+  const scrollToHighlight = (highlightId: number) => {
+    const doc = iframeRef.current?.contentDocument;
+    const el = doc?.querySelector(`span.readerHighlight[data-highlight-id="${highlightId}"]`) as
+      | HTMLElement
+      | null;
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    }
+  };
+
+  const buildLocalMessage = (role: "user" | "assistant", content: string): LocalChatMessage => ({
+    id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    role,
+    content,
+  });
+
+  const sendChat = async () => {
+    if (!chatInput.trim()) return;
+    const input = chatInput.trim();
+    setChatSending(true);
+    setChatInput("");
+    try {
+      if (selectedHighlight) {
+        await addHighlightMessage({
+          highlightId: selectedHighlight.id,
+          role: "user",
+          content: input,
+        });
+        const messages = messagesQ.data ?? [];
+        const systemContent = [
+          HIGHLIGHT_PROMPT,
+          `Highlight: "${selectedHighlight.text}"`,
+          selectedHighlight.note ? `Note: ${selectedHighlight.note}` : null,
+        ]
+          .filter(Boolean)
+          .join("\n");
+        const response = await openAiChat([
+          { role: "system", content: systemContent },
+          ...messages.map((message) => ({ role: message.role, content: message.content })),
+          { role: "user", content: input },
+        ]);
+        await addHighlightMessage({
+          highlightId: selectedHighlight.id,
+          role: "assistant",
+          content: response,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["highlightMessages", selectedHighlight.id],
+        });
+      } else {
+        const nextMessages = [...generalMessages, { role: "user" as const, content: input }];
+        setGeneralMessages((prev) => [...prev, buildLocalMessage("user", input)]);
+        const systemContent = [
+          HIGHLIGHT_PROMPT,
+          contextText ? `Current page context: "${contextText}"` : "Current page context unavailable.",
+        ]
+          .filter(Boolean)
+          .join("\n");
+        const response = await openAiChat([
+          { role: "system", content: systemContent },
+          ...nextMessages.map((message) => ({ role: message.role, content: message.content })),
+        ]);
+        setGeneralMessages((prev) => [...prev, buildLocalMessage("assistant", response)]);
+      }
+    } catch (error: any) {
+      const errorMessage = String(error?.message ?? error);
+      if (selectedHighlight) {
+        await addHighlightMessage({
+          highlightId: selectedHighlight.id,
+          role: "assistant",
+          content: errorMessage,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["highlightMessages", selectedHighlight.id],
+        });
+      } else {
+        setGeneralMessages((prev) => [...prev, buildLocalMessage("assistant", errorMessage)]);
+      }
+    } finally {
+      setChatSending(false);
+    }
+  };
+
+  const chatMessages = selectedHighlight
+    ? (messagesQ.data ?? []).map((message) => ({
+        id: String(message.id),
+        role: message.role,
+        content: message.content,
+      }))
+    : generalMessages;
+
+  const contextLabel = selectedHighlight ? "Highlight Context" : "Current Page Context";
 
   if (htmlQ.isLoading) return <div className="page">Loading Book Content...</div>;
   if (htmlQ.isError) {
@@ -613,7 +1061,7 @@ export default function MobiBookPage(props: { bookId: number }) {
       </div>
 
       <div className="bookReaderGrid" style={{ height: "calc(100vh - 64px)" }}>
-        <main style={{ position: "relative", overflow: "hidden" }}>
+        <main style={{ position: "relative", overflow: "hidden" }} ref={containerRef}>
           <ReaderLayout
             columns={columns}
             style={{ width: readerWidth, maxWidth: "100%", margin: "0 auto" }}
@@ -627,7 +1075,124 @@ export default function MobiBookPage(props: { bookId: number }) {
               onLoad={handleIframeLoad}
             />
           </ReaderLayout>
+          {pendingHighlight ? (
+            <div
+              className="highlightToolbar"
+              style={{
+                top: Math.max(16, pendingHighlight.rect.top - 44),
+                left: pendingHighlight.rect.left + pendingHighlight.rect.width / 2,
+              }}
+            >
+              <button className="button" onClick={handleCreateHighlight}>
+                Highlight &amp; Note
+              </button>
+              <button className="buttonSecondary" onClick={() => setPendingHighlight(null)}>
+                Cancel
+              </button>
+            </div>
+          ) : null}
         </main>
+        <aside className="highlightPane">
+          <div className="highlightPaneHeader">
+            <div>
+              <div className="highlightPaneTitle">Highlights &amp; Notes</div>
+              <div className="muted">
+                {highlightsQ.data ? `${highlightsQ.data.length} saved` : "Loading highlights..."}
+              </div>
+            </div>
+            <button
+              className="buttonSecondary"
+              onClick={() => {
+                setSelectedHighlightId(null);
+                setNoteDraft("");
+              }}
+            >
+              Clear
+            </button>
+          </div>
+          <div className="highlightList">
+            {highlightsQ.data?.length ? (
+              highlightsQ.data.map((highlight) => (
+                <button
+                  key={highlight.id}
+                  className={`highlightCard ${
+                    highlight.id === selectedHighlightId ? "highlightCardActive" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedHighlightId(highlight.id);
+                    scrollToHighlight(highlight.id);
+                  }}
+                >
+                  <div className="highlightText">“{highlight.text}”</div>
+                  <div className="highlightMeta">
+                    {highlight.note ? "Note attached" : "No note yet"}
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="emptyState">
+                <div className="emptyStateTitle">Highlight your favorite lines</div>
+                <div className="muted">Select text in the reader to add a note and start a chat.</div>
+              </div>
+            )}
+          </div>
+
+          <div className="highlightDetail">
+            {selectedHighlight ? (
+              <>
+                <div className="highlightDetailHeader">Note</div>
+                <textarea
+                  className="textarea"
+                  value={noteDraft}
+                  onChange={(e) => setNoteDraft(e.currentTarget.value)}
+                  placeholder="Leave a note about this passage…"
+                />
+                <div className="row">
+                  <button className="buttonSecondary" onClick={handleSaveNote}>
+                    Save note
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="muted">Select a highlight to attach a note or keep chatting on this page.</div>
+            )}
+
+            <div className="highlightDetailHeader" style={{ marginTop: 16 }}>
+              {contextLabel}
+            </div>
+            <div className="highlightContext">
+              {contextText || "No readable context found on this page yet."}
+            </div>
+
+            <div className="highlightDetailHeader" style={{ marginTop: 16 }}>
+              Chat
+            </div>
+            <div className="highlightChat">
+              {chatMessages.length ? (
+                chatMessages.map((message) => (
+                  <div key={message.id} className={`highlightChatBubble role-${message.role}`}>
+                    <div className="highlightChatRole">{message.role}</div>
+                    <div className="highlightChatContent">{message.content}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="muted">Ask a question to begin.</div>
+              )}
+            </div>
+            <div className="highlightChatComposer">
+              <textarea
+                className="textarea"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.currentTarget.value)}
+                placeholder="Ask about the meaning, context, or interpretation…"
+                style={{ minHeight: 80 }}
+              />
+              <button className="button" onClick={sendChat} disabled={chatSending}>
+                {chatSending ? "Sending…" : "Send"}
+              </button>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
   );
