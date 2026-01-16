@@ -22,6 +22,29 @@ pub struct BookPosition {
     pub updated_at: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Highlight {
+    pub id: i64,
+    pub book_id: i64,
+    pub start_path: String,
+    pub start_offset: i64,
+    pub end_path: String,
+    pub end_offset: i64,
+    pub text: String,
+    pub note: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HighlightMessage {
+    pub id: i64,
+    pub highlight_id: i64,
+    pub role: String,
+    pub content: String,
+    pub created_at: String,
+}
+
 fn db_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, anyhow::Error> {
     if let Ok(override_path) = std::env::var("SHAKESPEARE_DB_PATH") {
         return Ok(std::path::PathBuf::from(override_path));
@@ -41,7 +64,9 @@ fn open(app_handle: &AppHandle) -> Result<Connection, anyhow::Error> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    Ok(Connection::open(path)?)
+    let conn = Connection::open(path)?;
+    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+    Ok(conn)
 }
 
 pub fn init(app_handle: &AppHandle) -> Result<(), anyhow::Error> {
@@ -72,6 +97,31 @@ CREATE TABLE IF NOT EXISTS book_position (
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS highlight (
+  id INTEGER PRIMARY KEY,
+  book_id INTEGER NOT NULL,
+  start_path TEXT NOT NULL,
+  start_offset INTEGER NOT NULL,
+  end_path TEXT NOT NULL,
+  end_offset INTEGER NOT NULL,
+  text TEXT NOT NULL,
+  note TEXT,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_highlight_book ON highlight(book_id);
+
+CREATE TABLE IF NOT EXISTS highlight_message (
+  id INTEGER PRIMARY KEY,
+  highlight_id INTEGER NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  FOREIGN KEY(highlight_id) REFERENCES highlight(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_highlight_message_highlight ON highlight_message(highlight_id);
 "#,
     )
     .context("failed to initialize sqlite schema")?;
@@ -164,6 +214,11 @@ pub fn get_book(app_handle: &AppHandle, book_id: i64) -> Result<Book, anyhow::Er
 
 pub fn hard_delete_book(app_handle: &AppHandle, book_id: i64) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
+    conn.execute(
+        "DELETE FROM highlight_message WHERE highlight_id IN (SELECT id FROM highlight WHERE book_id = ?1)",
+        params![book_id],
+    )?;
+    conn.execute("DELETE FROM highlight WHERE book_id = ?1", params![book_id])?;
     conn.execute("DELETE FROM book_position WHERE book_id = ?1", params![book_id])?;
     let deleted = conn.execute("DELETE FROM book WHERE id = ?1", params![book_id])?;
     if deleted == 0 {
@@ -217,4 +272,159 @@ pub fn get_setting(app_handle: &AppHandle, key: String) -> Result<Option<String>
     )
     .optional()
     .context("failed to read setting")
+}
+
+pub fn list_highlights(app_handle: &AppHandle, book_id: i64) -> Result<Vec<Highlight>, anyhow::Error> {
+    let conn = open(app_handle)?;
+    let mut stmt = conn.prepare(
+        "SELECT id, book_id, start_path, start_offset, end_path, end_offset, text, note, created_at, updated_at
+         FROM highlight WHERE book_id = ?1 ORDER BY created_at DESC",
+    )?;
+    let rows = stmt
+        .query_map(params![book_id], |row| {
+            Ok(Highlight {
+                id: row.get(0)?,
+                book_id: row.get(1)?,
+                start_path: row.get(2)?,
+                start_offset: row.get(3)?,
+                end_path: row.get(4)?,
+                end_offset: row.get(5)?,
+                text: row.get(6)?,
+                note: row.get(7)?,
+                created_at: row.get(8)?,
+                updated_at: row.get(9)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
+pub fn create_highlight(
+    app_handle: &AppHandle,
+    book_id: i64,
+    start_path: String,
+    start_offset: i64,
+    end_path: String,
+    end_offset: i64,
+    text: String,
+    note: Option<String>,
+) -> Result<Highlight, anyhow::Error> {
+    let conn = open(app_handle)?;
+    conn.execute(
+        "INSERT INTO highlight(book_id, start_path, start_offset, end_path, end_offset, text, note)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![
+            book_id,
+            start_path,
+            start_offset,
+            end_path,
+            end_offset,
+            text,
+            note
+        ],
+    )?;
+    let id = conn.last_insert_rowid();
+    conn.query_row(
+        "SELECT id, book_id, start_path, start_offset, end_path, end_offset, text, note, created_at, updated_at
+         FROM highlight WHERE id = ?1",
+        params![id],
+        |row| {
+            Ok(Highlight {
+                id: row.get(0)?,
+                book_id: row.get(1)?,
+                start_path: row.get(2)?,
+                start_offset: row.get(3)?,
+                end_path: row.get(4)?,
+                end_offset: row.get(5)?,
+                text: row.get(6)?,
+                note: row.get(7)?,
+                created_at: row.get(8)?,
+                updated_at: row.get(9)?,
+            })
+        },
+    )
+    .context("failed to create highlight")
+}
+
+pub fn update_highlight_note(
+    app_handle: &AppHandle,
+    highlight_id: i64,
+    note: Option<String>,
+) -> Result<Highlight, anyhow::Error> {
+    let conn = open(app_handle)?;
+    conn.execute(
+        "UPDATE highlight SET note = ?1, updated_at=(strftime('%Y-%m-%dT%H:%M:%fZ','now')) WHERE id = ?2",
+        params![note, highlight_id],
+    )?;
+    conn.query_row(
+        "SELECT id, book_id, start_path, start_offset, end_path, end_offset, text, note, created_at, updated_at
+         FROM highlight WHERE id = ?1",
+        params![highlight_id],
+        |row| {
+            Ok(Highlight {
+                id: row.get(0)?,
+                book_id: row.get(1)?,
+                start_path: row.get(2)?,
+                start_offset: row.get(3)?,
+                end_path: row.get(4)?,
+                end_offset: row.get(5)?,
+                text: row.get(6)?,
+                note: row.get(7)?,
+                created_at: row.get(8)?,
+                updated_at: row.get(9)?,
+            })
+        },
+    )
+    .context("failed to update highlight note")
+}
+
+pub fn list_highlight_messages(
+    app_handle: &AppHandle,
+    highlight_id: i64,
+) -> Result<Vec<HighlightMessage>, anyhow::Error> {
+    let conn = open(app_handle)?;
+    let mut stmt = conn.prepare(
+        "SELECT id, highlight_id, role, content, created_at
+         FROM highlight_message WHERE highlight_id = ?1 ORDER BY created_at ASC",
+    )?;
+    let rows = stmt
+        .query_map(params![highlight_id], |row| {
+            Ok(HighlightMessage {
+                id: row.get(0)?,
+                highlight_id: row.get(1)?,
+                role: row.get(2)?,
+                content: row.get(3)?,
+                created_at: row.get(4)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
+pub fn add_highlight_message(
+    app_handle: &AppHandle,
+    highlight_id: i64,
+    role: String,
+    content: String,
+) -> Result<HighlightMessage, anyhow::Error> {
+    let conn = open(app_handle)?;
+    conn.execute(
+        "INSERT INTO highlight_message(highlight_id, role, content) VALUES (?1, ?2, ?3)",
+        params![highlight_id, role, content],
+    )?;
+    let id = conn.last_insert_rowid();
+    conn.query_row(
+        "SELECT id, highlight_id, role, content, created_at FROM highlight_message WHERE id = ?1",
+        params![id],
+        |row| {
+            Ok(HighlightMessage {
+                id: row.get(0)?,
+                highlight_id: row.get(1)?,
+                role: row.get(2)?,
+                content: row.get(3)?,
+                created_at: row.get(4)?,
+            })
+        },
+    )
+    .context("failed to add highlight message")
 }
