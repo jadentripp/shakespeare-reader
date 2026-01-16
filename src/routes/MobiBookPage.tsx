@@ -139,6 +139,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   const selectionHandlerRef = useRef<(() => void) | null>(null);
   const highlightClickRef = useRef<((event: Event) => void) | null>(null);
   const linkClickRef = useRef<((event: MouseEvent) => void) | null>(null);
+  const headingIndexRef = useRef<Array<{ norm: string; el: HTMLElement }> | null>(null);
   const pageLockRef = useRef(1);
   const restoredRef = useRef(false);
   const pendingRestoreRef = useRef<{ page?: number } | null>(null);
@@ -548,6 +549,166 @@ export default function MobiBookPage(props: { bookId: number }) {
     return Math.min(total, Math.max(1, page));
   };
 
+  const resetHeadingIndex = () => {
+    headingIndexRef.current = null;
+  };
+
+  const normalizeLinkText = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/&nbsp;/g, " ")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const buildHeadingIndex = (doc: Document) => {
+    const nodes = Array.from(doc.querySelectorAll("h1, h2, h3, h4, h5, h6")) as HTMLElement[];
+    headingIndexRef.current = nodes
+      .map((el) => ({ el, norm: normalizeLinkText(el.textContent ?? "") }))
+      .filter((entry) => entry.norm.length > 0);
+    return headingIndexRef.current;
+  };
+
+  const getHeadingIndex = () => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc) return [];
+    return headingIndexRef.current ?? buildHeadingIndex(doc);
+  };
+
+  const getOffsetLeftForRect = (rect: DOMRect) => {
+    const root = getScrollRoot();
+    if (!root) return null;
+    const rootRect = root.getBoundingClientRect();
+    return rect.left - rootRect.left + root.scrollLeft;
+  };
+
+  const jumpToElement = (element: HTMLElement) => {
+    const root = getScrollRoot();
+    if (!root) {
+      return { ok: false, reason: "no root" as const };
+    }
+    syncPageMetrics();
+    const rect = getElementRect(element);
+    if (!rect) {
+      return { ok: false, reason: "no rect" as const };
+    }
+    const rootRect = root.getBoundingClientRect();
+    const offsetLeft = rect.left - rootRect.left + root.scrollLeft;
+    const metrics = getPageMetrics();
+    const stride = metrics.pageWidth + metrics.gap;
+    const page = stride ? Math.max(1, Math.floor(offsetLeft / stride) + 1) : 1;
+    const maxLeft = Math.max(0, root.scrollWidth - root.clientWidth);
+    const targetLeft = Math.min(maxLeft, Math.max(0, offsetLeft));
+    pageLockRef.current = page;
+    root.scrollLeft = targetLeft;
+    schedulePaginationUpdate();
+    return {
+      ok: true,
+      rect,
+      page,
+      offsetLeft,
+      targetLeft,
+      pageWidth: metrics.pageWidth,
+      gap: metrics.gap,
+      stride,
+      scrollWidth: root.scrollWidth,
+      rootWidth: root.clientWidth,
+    };
+  };
+
+  const findHeadingByText = (text: string, referenceEl?: HTMLElement | null) => {
+    const target = normalizeLinkText(text);
+    if (!target) return null;
+    const entries = getHeadingIndex();
+    const exact = entries.filter((entry) => entry.norm === target);
+    const fuzzy = entries.filter(
+      (entry) => entry.norm.includes(target) || target.includes(entry.norm)
+    );
+    const candidates = exact.length ? exact : fuzzy;
+    if (!candidates.length) return null;
+    const refRect = referenceEl ? getElementRect(referenceEl) : null;
+    const refOffset = refRect ? getOffsetLeftForRect(refRect) : null;
+    const scored = candidates
+      .map((entry) => {
+        const rect = getElementRect(entry.el);
+        const offsetLeft = rect ? getOffsetLeftForRect(rect) : null;
+        return { el: entry.el, offsetLeft };
+      })
+      .filter((entry) => entry.offsetLeft !== null) as Array<{
+      el: HTMLElement;
+      offsetLeft: number;
+    }>;
+    if (!scored.length) return candidates[0].el;
+    if (refOffset !== null) {
+      const after = scored
+        .filter((entry) => entry.offsetLeft > refOffset + 12)
+        .sort((a, b) => a.offsetLeft - b.offsetLeft);
+      if (after.length) return after[0].el;
+    }
+    scored.sort((a, b) => a.offsetLeft - b.offsetLeft);
+    return scored[0].el;
+  };
+
+  const getElementRect = (element: HTMLElement) => {
+    const rects = Array.from(element.getClientRects());
+    const directRect = rects.find((rect) => rect.width || rect.height) ?? rects[0];
+    if (directRect) return directRect;
+    const doc = element.ownerDocument;
+    if (doc) {
+      const range = doc.createRange();
+      try {
+        range.selectNode(element);
+      } catch {
+        // noop
+      }
+      const rangeRects = Array.from(range.getClientRects());
+      const rangeRect = rangeRects.find((rect) => rect.width || rect.height) ?? rangeRects[0];
+      if (rangeRect) return rangeRect;
+    }
+    const fallback =
+      element.nextElementSibling ?? element.previousElementSibling ?? element.parentElement;
+    if (fallback && fallback instanceof HTMLElement) {
+      return fallback.getBoundingClientRect();
+    }
+    return null;
+  };
+
+  const isElement = (node: any): node is Element => {
+    return !!node && typeof node === "object" && node.nodeType === 1;
+  };
+
+  const isTextNode = (node: any): node is Text => {
+    return !!node && typeof node === "object" && node.nodeType === 3;
+  };
+
+  const getEventTargetElement = (target: EventTarget | null) => {
+    if (!target) return null;
+    if (isElement(target)) return target as HTMLElement;
+    if (isTextNode(target)) {
+      return (target as Text).parentElement;
+    }
+    return null;
+  };
+
+  const findHighlightFromEvent = (event: Event) => {
+    const target = getEventTargetElement(event.target);
+    return (target?.closest?.(".readerHighlight") as HTMLElement | null) ?? null;
+  };
+
+  const syncPageLockFromScroll = () => {
+    const root = getScrollRoot();
+    if (!root) return;
+    const { pageWidth, gap, paddingLeft, paddingRight, scrollWidth } = getPageMetrics();
+    if (!pageWidth) return;
+    const stride = pageWidth + gap;
+    const usableWidth = Math.max(0, scrollWidth - paddingLeft - paddingRight);
+    const total = Math.max(1, Math.ceil((usableWidth + gap) / stride));
+    const page = Math.min(total, Math.max(1, Math.round(root.scrollLeft / stride) + 1));
+    pageLockRef.current = page;
+    schedulePaginationUpdate();
+  };
+
   const getHighlightPage = (highlightId: number) => {
     const doc = iframeRef.current?.contentDocument;
     if (!doc) return null;
@@ -737,7 +898,7 @@ export default function MobiBookPage(props: { bookId: number }) {
         docRef.current.removeEventListener("keyup", selectionHandlerRef.current);
       }
       if (docRef.current && linkClickRef.current) {
-        docRef.current.removeEventListener("click", linkClickRef.current);
+        docRef.current.removeEventListener("click", linkClickRef.current, true);
       }
       if (rootRef.current && highlightClickRef.current) {
         rootRef.current.removeEventListener("click", highlightClickRef.current);
@@ -846,8 +1007,7 @@ export default function MobiBookPage(props: { bookId: number }) {
     doc.addEventListener("keyup", handleSelection);
 
     const handleHighlightClick = (event: Event) => {
-      const target = event.target as HTMLElement | null;
-      const highlightEl = target?.closest?.(".readerHighlight") as HTMLElement | null;
+      const highlightEl = findHighlightFromEvent(event);
       const highlightId = highlightEl?.dataset?.highlightId;
       if (highlightId) {
         setSelectedHighlightId(Number(highlightId));
@@ -859,14 +1019,31 @@ export default function MobiBookPage(props: { bookId: number }) {
     const handleLinkClick = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0) return;
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      const target = event.target as HTMLElement | null;
-      const anchor = target?.closest?.("a") as HTMLAnchorElement | null;
+      const eventTargetEl = getEventTargetElement(event.target);
+      const anchor = (eventTargetEl?.closest?.("a") as HTMLAnchorElement | null) ?? null;
       if (!anchor) return;
-      const href = anchor.getAttribute("href") ?? "";
-      if (!href || href === "#") return;
-      const hashIndex = href.indexOf("#");
-      if (hashIndex < 0) return;
-      const rawHash = href.slice(hashIndex + 1);
+      const hrefAttr = anchor.getAttribute("href") ?? "";
+      const lowerHref = hrefAttr.toLowerCase();
+      if (lowerHref.startsWith("kindle:pos:")) {
+        event.preventDefault();
+        const linkText = anchor.textContent ?? "";
+        const headingMatch = findHeadingByText(linkText, anchor);
+        if (headingMatch) {
+          const jump = jumpToElement(headingMatch);
+          return;
+        }
+        return;
+      }
+      const anchorHash = anchor.hash ?? "";
+      let rawHash = "";
+      if (anchorHash && anchorHash !== "#") {
+        rawHash = anchorHash.startsWith("#") ? anchorHash.slice(1) : anchorHash;
+      } else {
+        if (!hrefAttr || hrefAttr === "#") return;
+        const hashIndex = hrefAttr.indexOf("#");
+        if (hashIndex < 0) return;
+        rawHash = hrefAttr.slice(hashIndex + 1);
+      }
       if (!rawHash) return;
       let targetId = rawHash;
       try {
@@ -874,25 +1051,26 @@ export default function MobiBookPage(props: { bookId: number }) {
       } catch {
         targetId = rawHash;
       }
-      const doc = anchor.ownerDocument;
-      const targetEl =
-        (doc.getElementById(targetId) as HTMLElement | null) ??
-        (doc.getElementsByName(targetId)[0] as HTMLElement | undefined);
-      if (!targetEl || (rootRef.current && !rootRef.current.contains(targetEl))) return;
+      const ownerDoc = anchor.ownerDocument;
+      const anchorTargetEl =
+        (ownerDoc.getElementById(targetId) as HTMLElement | null) ??
+        (ownerDoc.getElementsByName(targetId)[0] as HTMLElement | undefined);
       event.preventDefault();
-      const page = getPageForRect(targetEl.getBoundingClientRect());
-      if (page) {
-        scrollToPage(page);
-      } else {
-        targetEl.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+      if (!anchorTargetEl) {
+        return;
       }
+      jumpToElement(anchorTargetEl);
     };
     linkClickRef.current = handleLinkClick;
-    doc.addEventListener("click", handleLinkClick);
+    doc.addEventListener("click", handleLinkClick, true);
 
     scheduleLayoutRebuild();
     setIframeReady(true);
   };
+
+  useEffect(() => {
+    resetHeadingIndex();
+  }, [iframeReady, htmlQ.data]);
 
   useEffect(() => {
     if (restoredRef.current) return;
@@ -1008,17 +1186,12 @@ export default function MobiBookPage(props: { bookId: number }) {
   const scrollToHighlight = (highlightId: number) => {
     let attempts = 0;
     const attempt = () => {
-      const page = getHighlightPage(highlightId);
-      if (page) {
-        scrollToPage(page);
-        return;
-      }
       const doc = iframeRef.current?.contentDocument;
       const el = doc?.querySelector(`span.readerHighlight[data-highlight-id="${highlightId}"]`) as
         | HTMLElement
         | null;
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+        jumpToElement(el);
         return;
       }
       if (attempts === 0 && iframeReady && highlightsQ.data) {
