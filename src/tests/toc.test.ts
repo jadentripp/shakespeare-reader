@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { parseSceneLinksHierarchical } from '../routes/MobiBookPage';
+import { parseSceneLinksHierarchical } from "../lib/readerHtml";
 
 describe('parseSceneLinksHierarchical', () => {
   it('should group scenes under acts', () => {
