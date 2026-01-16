@@ -138,6 +138,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   const wheelHandlerRef = useRef<((event: WheelEvent) => void) | null>(null);
   const selectionHandlerRef = useRef<(() => void) | null>(null);
   const highlightClickRef = useRef<((event: Event) => void) | null>(null);
+  const linkClickRef = useRef<((event: MouseEvent) => void) | null>(null);
   const pageLockRef = useRef(1);
   const restoredRef = useRef(false);
   const pendingRestoreRef = useRef<{ page?: number } | null>(null);
@@ -148,6 +149,8 @@ export default function MobiBookPage(props: { bookId: number }) {
   const [jumpPage, setJumpPage] = useState("");
   const [pendingHighlight, setPendingHighlight] = useState<PendingHighlight | null>(null);
   const [selectedHighlightId, setSelectedHighlightId] = useState<number | null>(null);
+  const [highlightLibraryExpanded, setHighlightLibraryExpanded] = useState(false);
+  const [highlightPageMap, setHighlightPageMap] = useState<Record<number, number>>({});
   const [noteDraft, setNoteDraft] = useState("");
   const [contextText, setContextText] = useState("");
   const [generalMessages, setGeneralMessages] = useState<LocalChatMessage[]>([]);
@@ -372,12 +375,12 @@ export default function MobiBookPage(props: { bookId: number }) {
     const path: number[] = [];
     let current: Node | null = node;
     while (current && current !== root) {
-      const parent = current.parentNode;
-      if (!parent) return null;
-      const index = Array.prototype.indexOf.call(parent.childNodes, current);
+      const parentNode: Node | null = current.parentNode;
+      if (!parentNode) return null;
+      const index = Array.prototype.indexOf.call(parentNode.childNodes, current);
       if (index < 0) return null;
       path.unshift(index);
-      current = parent;
+      current = parentNode;
     }
     if (current !== root) return null;
     return path;
@@ -407,6 +410,7 @@ export default function MobiBookPage(props: { bookId: number }) {
 
   const applyHighlightToRange = (range: Range, highlightId: number) => {
     const doc = range.startContainer.ownerDocument;
+    if (!doc) return;
     const walker = doc.createTreeWalker(
       range.commonAncestorContainer,
       NodeFilter.SHOW_TEXT,
@@ -529,6 +533,39 @@ export default function MobiBookPage(props: { bookId: number }) {
     return { pageWidth, gap, paddingLeft, paddingRight, scrollWidth: root.scrollWidth };
   };
 
+  const getPageForRect = (rect: DOMRect) => {
+    const root = getScrollRoot();
+    if (!root) return null;
+    const { pageWidth, gap, paddingLeft, paddingRight, scrollWidth } = getPageMetrics();
+    if (!pageWidth) return null;
+    const stride = pageWidth + gap;
+    const rootRect = root.getBoundingClientRect();
+    const offsetLeft = rect.left - rootRect.left + root.scrollLeft;
+    const page = Math.floor(offsetLeft / stride) + 1;
+    if (!Number.isFinite(page)) return null;
+    const usableWidth = Math.max(0, scrollWidth - paddingLeft - paddingRight);
+    const total = Math.max(1, Math.ceil((usableWidth + gap) / stride));
+    return Math.min(total, Math.max(1, page));
+  };
+
+  const getHighlightPage = (highlightId: number) => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc) return null;
+    const elements = Array.from(
+      doc.querySelectorAll(`span.readerHighlight[data-highlight-id="${highlightId}"]`)
+    ) as HTMLElement[];
+    if (!elements.length) return null;
+    let bestRect: DOMRect | null = null;
+    for (const el of elements) {
+      const rect = el.getBoundingClientRect();
+      if (!bestRect || rect.left < bestRect.left) {
+        bestRect = rect;
+      }
+    }
+    if (!bestRect) return null;
+    return getPageForRect(bestRect);
+  };
+
   const syncPageMetrics = () => {
     const root = getScrollRoot();
     if (!root) return;
@@ -588,7 +625,6 @@ export default function MobiBookPage(props: { bookId: number }) {
     const usableWidth = Math.max(0, scrollWidth - paddingLeft - paddingRight);
     const stride = pageWidth + gap;
     const total = Math.max(1, Math.ceil((usableWidth + gap) / stride));
-    const current = Math.min(total, Math.max(1, Math.round(root.scrollLeft / stride) + 1));
     setTotalPages(total);
     const lockedPage = Math.min(total, Math.max(1, pageLockRef.current));
     setCurrentPage(lockedPage);
@@ -699,6 +735,9 @@ export default function MobiBookPage(props: { bookId: number }) {
       if (docRef.current && selectionHandlerRef.current) {
         docRef.current.removeEventListener("mouseup", selectionHandlerRef.current);
         docRef.current.removeEventListener("keyup", selectionHandlerRef.current);
+      }
+      if (docRef.current && linkClickRef.current) {
+        docRef.current.removeEventListener("click", linkClickRef.current);
       }
       if (rootRef.current && highlightClickRef.current) {
         rootRef.current.removeEventListener("click", highlightClickRef.current);
@@ -817,6 +856,40 @@ export default function MobiBookPage(props: { bookId: number }) {
     highlightClickRef.current = handleHighlightClick;
     root.addEventListener("click", handleHighlightClick);
 
+    const handleLinkClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest?.("a") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      const href = anchor.getAttribute("href") ?? "";
+      if (!href || href === "#") return;
+      const hashIndex = href.indexOf("#");
+      if (hashIndex < 0) return;
+      const rawHash = href.slice(hashIndex + 1);
+      if (!rawHash) return;
+      let targetId = rawHash;
+      try {
+        targetId = decodeURIComponent(rawHash);
+      } catch {
+        targetId = rawHash;
+      }
+      const doc = anchor.ownerDocument;
+      const targetEl =
+        (doc.getElementById(targetId) as HTMLElement | null) ??
+        (doc.getElementsByName(targetId)[0] as HTMLElement | undefined);
+      if (!targetEl || (rootRef.current && !rootRef.current.contains(targetEl))) return;
+      event.preventDefault();
+      const page = getPageForRect(targetEl.getBoundingClientRect());
+      if (page) {
+        scrollToPage(page);
+      } else {
+        targetEl.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+      }
+    };
+    linkClickRef.current = handleLinkClick;
+    doc.addEventListener("click", handleLinkClick);
+
     scheduleLayoutRebuild();
     setIframeReady(true);
   };
@@ -843,6 +916,34 @@ export default function MobiBookPage(props: { bookId: number }) {
     if (!iframeReady) return;
     renderHighlights(selectedHighlightId);
   }, [selectedHighlightId, iframeReady]);
+
+  useEffect(() => {
+    if (!highlightLibraryExpanded) {
+      setHighlightPageMap({});
+      return;
+    }
+    if (!iframeReady || !highlightsQ.data) return;
+    const handle = window.requestAnimationFrame(() => {
+      const nextMap: Record<number, number> = {};
+      for (const highlight of highlightsQ.data) {
+        const page = getHighlightPage(highlight.id);
+        if (page) {
+          nextMap[highlight.id] = page;
+        }
+      }
+      setHighlightPageMap(nextMap);
+    });
+    return () => window.cancelAnimationFrame(handle);
+  }, [
+    highlightLibraryExpanded,
+    iframeReady,
+    highlightsQ.data,
+    columns,
+    fontFamily,
+    lineHeight,
+    margin,
+    totalPages,
+  ]);
 
   const selectedHighlight = useMemo(() => {
     return highlightsQ.data?.find((highlight) => highlight.id === selectedHighlightId) ?? null;
@@ -905,13 +1006,30 @@ export default function MobiBookPage(props: { bookId: number }) {
   };
 
   const scrollToHighlight = (highlightId: number) => {
-    const doc = iframeRef.current?.contentDocument;
-    const el = doc?.querySelector(`span.readerHighlight[data-highlight-id="${highlightId}"]`) as
-      | HTMLElement
-      | null;
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
-    }
+    let attempts = 0;
+    const attempt = () => {
+      const page = getHighlightPage(highlightId);
+      if (page) {
+        scrollToPage(page);
+        return;
+      }
+      const doc = iframeRef.current?.contentDocument;
+      const el = doc?.querySelector(`span.readerHighlight[data-highlight-id="${highlightId}"]`) as
+        | HTMLElement
+        | null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+        return;
+      }
+      if (attempts === 0 && iframeReady && highlightsQ.data) {
+        renderHighlights(highlightId);
+      }
+      if (attempts < 4) {
+        attempts += 1;
+        window.requestAnimationFrame(attempt);
+      }
+    };
+    attempt();
   };
 
   const buildLocalMessage = (role: "user" | "assistant", content: string): LocalChatMessage => ({
@@ -999,6 +1117,8 @@ export default function MobiBookPage(props: { bookId: number }) {
   const chatContextHint = selectedHighlight
     ? "Responses are grounded in the selected highlight."
     : "Responses use the current page context.";
+  const highlightListHeight = highlightLibraryExpanded ? "h-60" : "h-28";
+  const highlightToggleLabel = highlightLibraryExpanded ? "Collapse" : "Expand";
 
   if (htmlQ.isLoading) {
     return <div className="px-4 py-6 text-sm text-muted-foreground">Loading book content...</div>;
@@ -1140,37 +1260,51 @@ export default function MobiBookPage(props: { bookId: number }) {
             <CardContent className="flex-1 min-h-0 overflow-hidden pb-6">
               <div className="flex h-full flex-col gap-4">
                 <div className="space-y-2">
-                  <div className="text-sm font-semibold">Highlights</div>
-                  <ScrollArea className="h-28 pr-3">
-                  {highlightsQ.data?.length ? (
-                    <div className="space-y-2">
-                      {highlightsQ.data.map((highlight) => (
-                        <Button
-                          key={highlight.id}
-                          variant={highlight.id === selectedHighlightId ? "secondary" : "outline"}
-                          className={cn(
-                            "h-auto w-full justify-start whitespace-normal text-left",
-                            highlight.id === selectedHighlightId && "border-primary/40"
-                          )}
-                          onClick={() => {
-                            setSelectedHighlightId(highlight.id);
-                            scrollToHighlight(highlight.id);
-                          }}
-                        >
-                          <div className="space-y-1">
-                            <div className="text-sm font-medium leading-snug">“{highlight.text}”</div>
-                            <div className="text-xs text-muted-foreground">
-                              {highlight.note ? "Note attached" : "No note yet"}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-semibold">Highlights</div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => setHighlightLibraryExpanded((prev) => !prev)}
+                      type="button"
+                    >
+                      {highlightToggleLabel}
+                    </Button>
+                  </div>
+                  <ScrollArea className={cn("pr-3", highlightListHeight)}>
+                    {highlightsQ.data?.length ? (
+                      <div className="space-y-2">
+                        {highlightsQ.data.map((highlight) => (
+                          <Button
+                            key={highlight.id}
+                            variant={highlight.id === selectedHighlightId ? "secondary" : "outline"}
+                            className={cn(
+                              "h-auto w-full justify-start whitespace-normal text-left",
+                              highlight.id === selectedHighlightId && "border-primary/40"
+                            )}
+                            onClick={() => {
+                              setSelectedHighlightId(highlight.id);
+                              scrollToHighlight(highlight.id);
+                            }}
+                          >
+                            <div className="space-y-1">
+                              <div className="text-sm font-medium leading-snug">“{highlight.text}”</div>
+                              <div className="text-xs text-muted-foreground">
+                                {highlight.note ? "Note attached" : "No note yet"}
+                                {highlightPageMap[highlight.id]
+                                  ? ` • Page ${highlightPageMap[highlight.id]}`
+                                  : null}
+                              </div>
                             </div>
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-                      Select text in the reader to add a note and start a chat.
-                    </div>
-                  )}
+                          </Button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                        Select text in the reader to add a note and start a chat.
+                      </div>
+                    )}
                   </ScrollArea>
                 </div>
 
