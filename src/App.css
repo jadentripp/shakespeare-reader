@@ -463,7 +463,8 @@ body {
 .bookReaderGrid {
   height: calc(100vh - 48px);
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
 }
 
 .tab {
@@ -502,6 +503,142 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.highlightToolbar {
+  position: absolute;
+  transform: translate(-50%, 0);
+  display: inline-flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-2);
+  z-index: 10;
+}
+
+.highlightPane {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
+  padding: 12px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.highlightPaneHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.highlightPaneTitle {
+  font-weight: 700;
+}
+
+.highlightList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.highlightCard {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 10px;
+  background: var(--color-surface-strong);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.highlightCard:hover {
+  border-color: rgba(178, 74, 47, 0.45);
+  background: var(--color-accent-soft);
+}
+
+.highlightCardActive {
+  border-color: rgba(178, 74, 47, 0.65);
+  background: rgba(178, 74, 47, 0.12);
+}
+
+.highlightText {
+  font-family: var(--font-serif);
+  font-size: 0.98rem;
+  line-height: 1.4;
+}
+
+.highlightMeta {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.highlightDetail {
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.highlightDetailHeader {
+  font-weight: 600;
+}
+
+.highlightContext {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-strong);
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+.highlightChat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.highlightChatBubble {
+  border-radius: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-strong);
+}
+
+.highlightChatBubble.role-assistant {
+  background: rgba(178, 74, 47, 0.08);
+  border-color: rgba(178, 74, 47, 0.25);
+}
+
+.highlightChatRole {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  margin-bottom: 4px;
+}
+
+.highlightChatContent {
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+}
+
+.highlightChatComposer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .bookToolbar {
