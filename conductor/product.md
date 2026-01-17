@@ -1,24 +1,24 @@
 # Initial Concept
-A desktop e-book and play reader application built with Tauri, React, and Rust, specifically designed for reading and managing Shakespearean works and other digital books (MOBI format support detected).
+AI Reader is an AI-powered desktop reader for public-domain books and long-form literature. Browse Project Gutenberg via Gutendex, download .mobi files locally, and read with a focused, paginated layout. Highlights, notes, and AI chat help you study and explore the text.
 
-# Product Guide - Shakespeare Reader
+# Product Definition - AI Reader
 
-## Vision
-Shakespeare Reader is a high-performance, elegant desktop application built with Tauri, React, and Rust. It provides a specialized environment for reading, managing, and interacting with the works of William Shakespeare and other digital texts. By leveraging local SQLite storage and modern web technologies, it offers a fast, offline-first experience for literature enthusiasts.
+## Target Audience
+- **Literature Enthusiasts:** Readers who enjoy classic works and want a modern, focused digital reading experience.
+- **Students & Researchers:** Individuals studying complex texts who benefit from highlights, notes, and AI-driven insights or summaries.
+- **Language Learners:** Users reading in a non-native language who can use the AI assistant to explain archaic phrasing or summarize sections in modern English.
 
-## Target Users
-*   **Students and Scholars:** Individuals who need a reliable tool for studying classic texts with features like library management and (planned) annotation support.
-*   **Classic Literature Enthusiasts:** Casual readers looking for a beautiful, distraction-free interface to enjoy plays and poetry.
-*   **AI-Assisted Readers:** Users who want to leverage LLMs (integrated via OpenAI) to explain complex passages or provide historical context.
+## Core Value Proposition
+AI Reader transforms the experience of reading public domain literature from a passive activity into an interactive exploration. It combines a high-quality, distraction-free reading interface with powerful AI tools to help users deeper understand and engage with classic texts.
 
-## Core Features
-*   **Digital Library:** Organize and browse a collection of books retrieved from sources like Project Gutenberg (Gutendex).
-*   **Advanced Reader:** A premium "Classic Academic" reading environment featuring immersive paper-like textures, dual-column "open book" layouts, and a hierarchical navigation system (Act > Scene).
-*   **Appearance Customization:** Advanced typography controls including font switching (EB Garamond, Baskerville, etc.), line height, and margin adjustments.
-*   **Offline Access:** Local database (SQLite) for storing book metadata and content.
-*   **AI Integration:** Built-in support for OpenAI to assist in understanding archaic language and providing deep literary analysis.
+## Key Features
+- **Seamless Discovery:** Integrated search for Project Gutenberg via Gutendex with curated collections.
+- **Local Library Management:** Efficient download and storage of books for offline reading.
+- **Premium Reading Experience:** A paginated, customizable reader supporting single or two-column layouts.
+- **Active Reading Tools:** Robust highlighting and note-taking capabilities with easy browsing.
+- **AI-Powered Insights:** Context-aware chat assistant for summaries, explanations, and analysis of specific passages or pages.
 
-## Success Criteria
-*   **Speed:** Near-instant loading of large play scripts.
-*   **Extensibility:** Ease of adding new book sources or reading formats.
-*   **User Experience:** A clean, focused interface that puts the text first.
+## Success Metrics
+- **Engagement:** Frequency and duration of reading sessions.
+- **Retention:** Number of books downloaded and completed within the app.
+- **AI Utility:** Frequency of AI assistant interactions and positive user feedback on summary quality.

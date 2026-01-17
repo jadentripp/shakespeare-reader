@@ -1,18 +1,29 @@
-# Tech Stack - Shakespeare Reader
+# Technology Stack - AI Reader
 
 ## Frontend
-*   **React (v19):** Core UI library for building a responsive and interactive reader.
-*   **TypeScript:** Ensures type safety and improves developer experience across the frontend.
-*   **TanStack Router:** Handles complex navigation within the desktop application.
-*   **TanStack Query:** Manages asynchronous data fetching, caching, and state synchronization with the Rust backend.
-*   **Vite:** High-performance build tool and dev server.
+- **Framework:** React 19 (TypeScript)
+- **Build Tool:** Vite
+- **Routing:** TanStack Router
+- **Data Fetching:** TanStack Query
 
-## Backend (Tauri)
-*   **Rust:** Provides the robust, high-performance foundation for system-level operations and the application core.
-*   **Tauri (v2):** Framework for building cross-platform desktop apps with web technologies and a Rust backend.
-*   **SQLite (via rusqlite):** Local relational database for storing book metadata, user settings, and offline content.
-*   **reqwest:** Async HTTP client for interacting with external APIs like Gutendex and OpenAI.
-*   **serde / serde_json:** Efficient serialization and deserialization of data between Rust and the frontend.
+## Styling & UI
+- **Styling:** Tailwind CSS 4
+- **Components:** Radix UI Primitives
+- **Icons:** Lucide React
 
-## Project Management & Tooling
-*   **Bun:** Fast JavaScript runtime, package manager, and bundler.
+## Desktop Shell
+- **Core:** Tauri 2 (Rust)
+- **Capabilities:** System notifications, file system access, window management.
+
+## Data & Backend
+- **Database:** SQLite (managed via Rust/rusqlite)
+- **Networking:** reqwest (Rust), TanStack Query (Frontend)
+
+## AI & Services
+- **LLM Provider:** OpenAI API
+- **Book Source:** Project Gutenberg (via Gutendex API)
+
+## Development & Infrastructure
+- **Package Manager:** Bun
+- **Testing:** Vitest, React Testing Library
+- **Language:** TypeScript 5.x, Rust 2021 Edition
