@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, X, Trash2 } from "lucide-react";
+import { Search, X, Trash2, Play, Pause, RotateCcw, Trash, CheckCircle2, RefreshCw, Download, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +28,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   CATALOG_BY_KEY,
   CATALOG_GROUPS,
@@ -489,65 +495,121 @@ export default function LibraryPage() {
 
   const filteredCatalogResults = useMemo(() => catalogQ.data?.results ?? [], [catalogQ.data]);
 
+  const hasQueueActivity = counts.downloading > 0 || counts.queued > 0 || counts.failed > 0 || counts.done > 0;
+
   return (
+    <TooltipProvider>
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6">
+      {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Library</h2>
           <p className="text-sm text-muted-foreground">
-            Curated Project Gutenberg collections + main categories (DRM-free)
+            Browse Project Gutenberg's DRM-free collection
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+
+        <div className="flex items-center gap-2">
+          {/* Main download action */}
           <Button
             onClick={startOrResumeBulk}
             disabled={bulkScan.running || !canBulkScan}
-            title={
-              !canBulkScan
-                ? "Pick a category or enter a search term to scan Gutenberg."
-                : activeCatalog.kind === "all"
-                  ? "Downloads all matching items that have a .mobi on Gutenberg"
-                  : `Downloads all ${activeCatalog.label} items that have a .mobi on Gutenberg`
-            }
+            className="gap-2"
           >
+            <Download className="h-4 w-4" />
             {bulkScan.running
-              ? activeCatalog.kind === "all"
-                ? `Scanning results… (${bulkScan.enqueued} queued, ${bulkScan.scanned} scanned)`
-                : `Scanning catalog… (${bulkScan.enqueued} queued, ${bulkScan.scanned} scanned)`
-              : scanMatches && bulkScan.done
-                ? activeCatalog.kind === "all"
-                  ? "Rescan search results"
-                  : `Rescan ${activeCatalog.label} catalog`
-                : scanMatches && bulkScan.scanned > 0
-                  ? "Resume scan"
-                  : activeCatalog.kind === "all"
-                    ? "Download all matching (.mobi)"
-                    : `Download all ${activeCatalog.label} (.mobi)`}
+              ? `Scanning… (${bulkScan.enqueued} queued)`
+              : scanMatches && bulkScan.scanned > 0
+                ? "Resume download"
+                : `Download ${activeCatalog.kind === "all" ? "results" : activeCatalog.label}`}
           </Button>
-          <Button variant="outline" onClick={() => setPaused(true)} disabled={paused}>
-            Pause
-          </Button>
-          <Button variant="outline" onClick={resumeAll} disabled={!paused}>
-            Resume
-          </Button>
-          <Button variant="outline" onClick={retryFailed} disabled={counts.failed === 0} title="Retry all failed downloads">
-            Retry failed
-          </Button>
-          <Button variant="outline" onClick={clearFailed} disabled={counts.failed === 0} title="Remove failed items from the queue">
-            Clear failed
-          </Button>
-          <Button variant="outline" onClick={clearDone} disabled={counts.done === 0} title="Remove completed items from the queue">
-            Clear done
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setCatalogPageUrl(null);
-              void qc.invalidateQueries({ queryKey: ["gutendex"] });
-            }}
-          >
-            Refresh catalog
-          </Button>
+
+          {/* Queue controls - only show when there's activity */}
+          {hasQueueActivity && (
+            <div className="flex items-center rounded-lg border border-border/60 bg-muted/30 p-1">
+              {/* Pause/Resume toggle */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => paused ? resumeAll() : setPaused(true)}
+                  >
+                    {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{paused ? "Resume downloads" : "Pause downloads"}</TooltipContent>
+              </Tooltip>
+
+              {/* Retry failed */}
+              {counts.failed > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      onClick={retryFailed}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Retry {counts.failed} failed</TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* Clear menu */}
+              {(counts.failed > 0 || counts.done > 0) && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 gap-1 px-2">
+                      <Trash className="h-3.5 w-3.5" />
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-40 p-1">
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
+                      onClick={clearDone}
+                      disabled={counts.done === 0}
+                    >
+                      <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                      Clear completed
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                      onClick={clearFailed}
+                      disabled={counts.failed === 0}
+                    >
+                      <Trash className="h-4 w-4" />
+                      Clear failed
+                    </button>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
+          )}
+
+          {/* Refresh */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => {
+                  setCatalogPageUrl(null);
+                  void qc.invalidateQueries({ queryKey: ["gutendex"] });
+                }}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Refresh catalog</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -586,17 +648,68 @@ export default function LibraryPage() {
         </CardContent>
       </Card>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-        <Badge variant="secondary">Downloading {counts.downloading}</Badge>
-        <Badge variant="secondary">Queued {counts.queued}</Badge>
-        <Badge variant={counts.failed ? "destructive" : "secondary"}>Failed {counts.failed}</Badge>
-        <Badge variant="secondary">Done {counts.done}</Badge>
-        {paused ? <Badge variant="outline">Paused</Badge> : null}
-        {active ? <span className="text-sm">Now: {active.title}</span> : null}
-        {scanMatches && bulkScan.error ? (
-          <span className="text-sm text-destructive">Scan error: {bulkScan.error}</span>
-        ) : null}
-      </div>
+      {/* Download status bar - only show when there's queue activity */}
+      {hasQueueActivity && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-2.5">
+          {/* Status indicators */}
+          <div className="flex items-center gap-3 text-sm">
+            {counts.downloading > 0 && (
+              <span className="flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                </span>
+                <span className="font-medium">{counts.downloading}</span>
+                <span className="text-muted-foreground">downloading</span>
+              </span>
+            )}
+            {counts.queued > 0 && (
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+                <span className="font-medium text-foreground">{counts.queued}</span>
+                queued
+              </span>
+            )}
+            {counts.failed > 0 && (
+              <span className="flex items-center gap-1.5 text-destructive">
+                <span className="h-2 w-2 rounded-full bg-destructive" />
+                <span className="font-medium">{counts.failed}</span>
+                failed
+              </span>
+            )}
+            {counts.done > 0 && (
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="font-medium text-foreground">{counts.done}</span>
+                completed
+              </span>
+            )}
+          </div>
+
+          {/* Divider */}
+          {active && <div className="h-4 w-px bg-border" />}
+
+          {/* Current download */}
+          {active && (
+            <span className="flex-1 truncate text-sm text-muted-foreground">
+              <span className="text-foreground">{active.title}</span>
+            </span>
+          )}
+
+          {/* Paused indicator */}
+          {paused && (
+            <Badge variant="outline" className="gap-1 border-amber-500/50 text-amber-600 dark:text-amber-500">
+              <Pause className="h-3 w-3" />
+              Paused
+            </Badge>
+          )}
+
+          {/* Error */}
+          {scanMatches && bulkScan.error && (
+            <span className="text-sm text-destructive">Error: {bulkScan.error}</span>
+          )}
+        </div>
+      )}
 
       {queue.length > 0 ? (
         <Card>
@@ -874,5 +987,6 @@ export default function LibraryPage() {
         </CardContent>
       </Card>
     </div>
+    </TooltipProvider>
   );
 }
