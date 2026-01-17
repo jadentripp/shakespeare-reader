@@ -95,10 +95,14 @@ export async function gutendexShakespearePage(pageUrl?: string | null): Promise<
 export async function gutendexCatalogPage(params: {
   catalogKey: string;
   pageUrl?: string | null;
+  searchQuery?: string | null;
+  topic?: string | null;
 }): Promise<GutendexResponse> {
   return await invoke("gutendex_catalog_page", {
     catalogKey: params.catalogKey,
     pageUrl: params.pageUrl ?? null,
+    searchQuery: params.searchQuery ?? null,
+    topic: params.topic ?? null,
   });
 }
 
@@ -172,6 +176,10 @@ export async function updateHighlightNote(params: {
     highlightId: params.highlightId,
     note: params.note ?? null,
   });
+}
+
+export async function deleteHighlight(highlightId: number): Promise<void> {
+  await invoke("delete_highlight", { highlightId });
 }
 
 export async function listHighlightMessages(highlightId: number): Promise<HighlightMessage[]> {

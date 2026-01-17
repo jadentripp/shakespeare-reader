@@ -18,7 +18,7 @@ async fn gutendex_shakespeare_page(
     page_url: Option<String>,
 ) -> Result<gutendex::GutendexResponse, String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
-    gutendex::search_catalog("shakespeare", page_url)
+    gutendex::search_catalog("shakespeare", page_url, None, None)
         .await
         .map_err(|e| e.to_string())
 }
@@ -28,9 +28,11 @@ async fn gutendex_catalog_page(
     app_handle: AppHandle,
     catalog_key: String,
     page_url: Option<String>,
+    search_query: Option<String>,
+    topic: Option<String>,
 ) -> Result<gutendex::GutendexResponse, String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
-    gutendex::search_catalog(&catalog_key, page_url)
+    gutendex::search_catalog(&catalog_key, page_url, search_query, topic)
         .await
         .map_err(|e| e.to_string())
 }
@@ -194,6 +196,15 @@ fn update_highlight_note(
 }
 
 #[tauri::command]
+fn delete_highlight(
+    app_handle: AppHandle,
+    highlight_id: i64,
+) -> Result<(), String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::delete_highlight(&app_handle, highlight_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn list_highlight_messages(
     app_handle: AppHandle,
     highlight_id: i64,
@@ -258,6 +269,7 @@ pub fn run() {
             list_highlights,
             create_highlight,
             update_highlight_note,
+            delete_highlight,
             list_highlight_messages,
             add_highlight_message,
             openai_key_status,

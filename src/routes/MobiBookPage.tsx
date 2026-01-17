@@ -1,13 +1,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReaderPane from "@/components/reader/ReaderPane";
-import ReaderSidebar from "@/components/reader/ReaderSidebar";
+import HighlightsSidebar from "@/components/reader/HighlightsSidebar";
+import ChatSidebar from "@/components/reader/ChatSidebar";
 import ReaderTopBar from "@/components/reader/ReaderTopBar";
 import { injectHead, wrapBody } from "@/lib/readerHtml";
 import type { ChatPrompt, LocalChatMessage, PendingHighlight } from "@/lib/readerTypes";
 import {
   addHighlightMessage,
   createHighlight,
+  deleteHighlight,
   getBook,
   getBookHtml,
   listHighlightMessages,
@@ -22,9 +24,6 @@ const HIGHLIGHT_PROMPT =
   "You are an assistant embedded in an AI reader. Respond with concise, thoughtful guidance using the selected highlight as context.";
 const CHAT_PROMPTS: ChatPrompt[] = [
   { label: "Summarize", prompt: "Summarize this passage in modern English." },
-  { label: "Explain imagery", prompt: "Explain the imagery and symbolism in this passage." },
-  { label: "Character intent", prompt: "What does this reveal about the character's intent or motivation?" },
-  { label: "Historical context", prompt: "Provide historical or cultural context for this line." },
 ];
 
 export default function MobiBookPage(props: { bookId: number }) {
@@ -607,19 +606,6 @@ export default function MobiBookPage(props: { bookId: number }) {
     return (target?.closest?.(".readerHighlight") as HTMLElement | null) ?? null;
   };
 
-  const syncPageLockFromScroll = () => {
-    const root = getScrollRoot();
-    if (!root) return;
-    const { pageWidth, gap, paddingLeft, paddingRight, scrollWidth } = getPageMetrics();
-    if (!pageWidth) return;
-    const stride = pageWidth + gap;
-    const usableWidth = Math.max(0, scrollWidth - paddingLeft - paddingRight);
-    const total = Math.max(1, Math.ceil((usableWidth + gap) / stride));
-    const page = Math.min(total, Math.max(1, Math.round(root.scrollLeft / stride) + 1));
-    pageLockRef.current = page;
-    schedulePaginationUpdate();
-  };
-
   const getHighlightPage = (highlightId: number) => {
     const doc = iframeRef.current?.contentDocument;
     if (!doc) return null;
@@ -753,7 +739,7 @@ export default function MobiBookPage(props: { bookId: number }) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [totalPages]);
 
   useEffect(() => {
     const handleVisibility = () => {
@@ -940,7 +926,7 @@ export default function MobiBookPage(props: { bookId: number }) {
         const linkText = anchor.textContent ?? "";
         const headingMatch = findHeadingByText(linkText, anchor);
         if (headingMatch) {
-          const jump = jumpToElement(headingMatch);
+          jumpToElement(headingMatch);
           return;
         }
         return;
@@ -1094,6 +1080,15 @@ export default function MobiBookPage(props: { bookId: number }) {
     await queryClient.invalidateQueries({ queryKey: ["bookHighlights", id] });
   };
 
+  const handleDeleteHighlight = async (highlightId: number) => {
+    await deleteHighlight(highlightId);
+    if (selectedHighlightId === highlightId) {
+      setSelectedHighlightId(null);
+      setNoteDraft("");
+    }
+    await queryClient.invalidateQueries({ queryKey: ["bookHighlights", id] });
+  };
+
   const scrollToHighlight = (highlightId: number) => {
     let attempts = 0;
     const attempt = () => {
@@ -1197,10 +1192,9 @@ export default function MobiBookPage(props: { bookId: number }) {
       }))
     : generalMessages;
 
-  const contextLabel = selectedHighlight ? "Highlight Context" : "Current Page Context";
   const chatContextHint = selectedHighlight
-    ? "Responses are grounded in the selected highlight."
-    : "Responses use the current page context.";
+    ? "Using selected highlight as context"
+    : "Using current page as context";
   if (htmlQ.isLoading) {
     return <div className="px-4 py-6 text-sm text-muted-foreground">Loading book content...</div>;
   }
@@ -1213,7 +1207,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-3.5rem)] max-w-[1400px] flex-col gap-3 overflow-hidden px-3 py-3">
+    <div className="mx-auto flex h-[calc(100vh-3.5rem)] max-w-[1800px] flex-col gap-3 overflow-hidden px-3 py-3">
       <ReaderTopBar
         title={bookQ.data?.title}
         showAppearance={showAppearance}
@@ -1241,7 +1235,28 @@ export default function MobiBookPage(props: { bookId: number }) {
         onBack={() => window.history.back()}
       />
 
-      <div className="grid flex-1 min-h-0 grid-cols-[minmax(0,1fr)_360px] gap-3">
+      <div className="grid flex-1 min-h-0 grid-cols-[280px_minmax(0,1fr)_400px] gap-3">
+        <HighlightsSidebar
+          highlights={highlightsQ.data}
+          selectedHighlightId={selectedHighlightId}
+          onSelectHighlight={(highlightId) => {
+            setSelectedHighlightId(highlightId);
+            scrollToHighlight(highlightId);
+          }}
+          onDeleteHighlight={handleDeleteHighlight}
+          onClearSelection={() => {
+            setSelectedHighlightId(null);
+            setNoteDraft("");
+          }}
+          highlightLibraryExpanded={highlightLibraryExpanded}
+          onToggleHighlightLibrary={() => setHighlightLibraryExpanded((prev) => !prev)}
+          highlightPageMap={highlightPageMap}
+          selectedHighlight={selectedHighlight}
+          noteDraft={noteDraft}
+          onNoteDraftChange={setNoteDraft}
+          onSaveNote={handleSaveNote}
+        />
+
         <ReaderPane
           columns={columns}
           readerWidth={readerWidth}
@@ -1254,33 +1269,14 @@ export default function MobiBookPage(props: { bookId: number }) {
           onCancelHighlight={() => setPendingHighlight(null)}
         />
 
-        <ReaderSidebar
-          highlights={highlightsQ.data}
-          selectedHighlightId={selectedHighlightId}
-          onSelectHighlight={(highlightId) => {
-            setSelectedHighlightId(highlightId);
-            scrollToHighlight(highlightId);
-          }}
-          onClearSelection={() => {
-            setSelectedHighlightId(null);
-            setNoteDraft("");
-          }}
-          highlightLibraryExpanded={highlightLibraryExpanded}
-          onToggleHighlightLibrary={() => setHighlightLibraryExpanded((prev) => !prev)}
-          highlightPageMap={highlightPageMap}
-          selectedHighlight={selectedHighlight}
-          noteDraft={noteDraft}
-          onNoteDraftChange={setNoteDraft}
-          onSaveNote={handleSaveNote}
-          contextLabel={contextLabel}
-          contextText={contextText}
-          chatContextHint={chatContextHint}
-          chatMessages={chatMessages}
-          chatPrompts={CHAT_PROMPTS}
+        <ChatSidebar
+          contextHint={chatContextHint}
+          messages={chatMessages}
+          prompts={CHAT_PROMPTS}
           chatInput={chatInput}
           onChatInputChange={setChatInput}
-          onChatPrompt={setChatInput}
-          onSendChat={sendChat}
+          onPromptSelect={setChatInput}
+          onSend={sendChat}
           chatSending={chatSending}
           chatInputRef={chatInputRef}
         />

@@ -1,14 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Highlight } from "@/lib/tauri";
-import type { ChatPrompt, LocalChatMessage } from "@/lib/readerTypes";
-import ChatPanel from "@/components/reader/ChatPanel";
 import HighlightNote from "@/components/reader/HighlightNote";
 import HighlightsList from "@/components/reader/HighlightsList";
-import ReaderContextPanel from "@/components/reader/ReaderContextPanel";
-import type { RefObject } from "react";
 
-type ReaderSidebarProps = {
+type HighlightsSidebarProps = {
   highlights: Highlight[] | undefined;
   selectedHighlightId: number | null;
   onSelectHighlight: (id: number) => void;
@@ -21,20 +17,9 @@ type ReaderSidebarProps = {
   noteDraft: string;
   onNoteDraftChange: (value: string) => void;
   onSaveNote: () => void;
-  contextLabel: string;
-  contextText: string;
-  chatContextHint: string;
-  chatMessages: LocalChatMessage[];
-  chatPrompts: ChatPrompt[];
-  chatInput: string;
-  onChatInputChange: (value: string) => void;
-  onChatPrompt: (prompt: string) => void;
-  onSendChat: () => void;
-  chatSending: boolean;
-  chatInputRef: RefObject<HTMLTextAreaElement | null>;
 };
 
-export default function ReaderSidebar({
+export default function HighlightsSidebar({
   highlights,
   selectedHighlightId,
   onSelectHighlight,
@@ -47,26 +32,15 @@ export default function ReaderSidebar({
   noteDraft,
   onNoteDraftChange,
   onSaveNote,
-  contextLabel,
-  contextText,
-  chatContextHint,
-  chatMessages,
-  chatPrompts,
-  chatInput,
-  onChatInputChange,
-  onChatPrompt,
-  onSendChat,
-  chatSending,
-  chatInputRef,
-}: ReaderSidebarProps) {
+}: HighlightsSidebarProps) {
   return (
     <aside className="min-h-0">
       <Card className="flex h-full flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div>
-            <CardTitle>Highlights &amp; Notes</CardTitle>
+            <CardTitle>Highlights & Notes</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {highlights ? `${highlights.length} saved` : "Loading highlights..."}
+              {highlights ? `${highlights.length} saved` : "Loading..."}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={onClearSelection}>
@@ -90,20 +64,6 @@ export default function ReaderSidebar({
               noteDraft={noteDraft}
               onNoteChange={onNoteDraftChange}
               onSaveNote={onSaveNote}
-            />
-
-            <ReaderContextPanel label={contextLabel} text={contextText} />
-
-            <ChatPanel
-              contextHint={chatContextHint}
-              messages={chatMessages}
-              prompts={chatPrompts}
-              chatInput={chatInput}
-              onChatInputChange={onChatInputChange}
-              onPromptSelect={onChatPrompt}
-              onSend={onSendChat}
-              chatSending={chatSending}
-              chatInputRef={chatInputRef}
             />
           </div>
         </CardContent>

@@ -378,6 +378,16 @@ pub fn update_highlight_note(
     .context("failed to update highlight note")
 }
 
+pub fn delete_highlight(
+    app_handle: &AppHandle,
+    highlight_id: i64,
+) -> Result<(), anyhow::Error> {
+    let conn = open(app_handle)?;
+    conn.execute("DELETE FROM highlight_message WHERE highlight_id = ?1", params![highlight_id])?;
+    conn.execute("DELETE FROM highlight WHERE id = ?1", params![highlight_id])?;
+    Ok(())
+}
+
 pub fn list_highlight_messages(
     app_handle: &AppHandle,
     highlight_id: i64,

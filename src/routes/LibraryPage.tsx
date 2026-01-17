@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Search, X, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +11,29 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  CATALOG_BY_KEY,
+  CATALOG_GROUPS,
+  DEFAULT_CATALOG_KEY,
+  type CatalogEntry,
+} from "../lib/gutenberg";
 import {
   hardDeleteBook,
   downloadGutenbergMobi,
@@ -21,54 +41,6 @@ import {
   listBooks,
   type GutendexBook,
 } from "../lib/tauri";
-
-const CATALOGS = [
-  {
-    key: "shakespeare",
-    label: "Shakespeare",
-    description: "Plays and poems attributed to William Shakespeare.",
-  },
-  {
-    key: "greek-tragedy",
-    label: "Greek tragedy",
-    description: "Aeschylus, Sophocles, Euripides, and their contemporaries.",
-  },
-  {
-    key: "greek-epic",
-    label: "Greek epics",
-    description: "Epic poetry and mythic journeys from ancient Greece.",
-  },
-  {
-    key: "roman-drama",
-    label: "Roman drama",
-    description: "Latin comedies, tragedies, and theatrical classics.",
-  },
-  {
-    key: "mythology",
-    label: "Mythology",
-    description: "Collections of myths, legends, and folktales.",
-  },
-  {
-    key: "philosophy",
-    label: "Philosophy",
-    description: "Classic philosophical works and dialogues.",
-  },
-  {
-    key: "gothic",
-    label: "Gothic fiction",
-    description: "Haunted manors, dark romances, and early horror.",
-  },
-  {
-    key: "science-fiction",
-    label: "Science fiction",
-    description: "Speculative classics and visionary futures.",
-  },
-  {
-    key: "poetry",
-    label: "Poetry",
-    description: "Lyric, narrative, and dramatic poetry collections.",
-  },
-] as const;
 
 function bestMobiUrl(book: GutendexBook): string | null {
   for (const [k, v] of Object.entries(book.formats)) {
@@ -92,6 +64,57 @@ function authorsString(book: GutendexBook): string {
   }).join(", ") || "";
 }
 
+type SearchFieldProps = {
+  id: string;
+  label: string;
+  value: string;
+  placeholder: string;
+  helper?: string;
+  onChange: (value: string) => void;
+  onClear: () => void;
+};
+
+function SearchField({
+  id,
+  label,
+  value,
+  placeholder,
+  helper,
+  onChange,
+  onClear,
+}: SearchFieldProps) {
+  const hasValue = value.length > 0;
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          id={id}
+          type="search"
+          placeholder={placeholder}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="pl-9 pr-9"
+        />
+        {hasValue ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full"
+            onClick={onClear}
+            aria-label={`Clear ${label}`}
+          >
+            <X className="size-4" />
+          </Button>
+        ) : null}
+      </div>
+      {helper ? <p className="text-xs text-muted-foreground">{helper}</p> : null}
+    </div>
+  );
+}
+
 type DownloadStatus = "queued" | "downloading" | "done" | "failed";
 type DownloadTask = {
   gutenbergId: number;
@@ -108,9 +131,16 @@ type DownloadTask = {
 export default function LibraryPage() {
   const qc = useQueryClient();
   const booksQ = useQuery({ queryKey: ["books"], queryFn: listBooks });
-  const [catalogKey, setCatalogKey] = useState<string>("shakespeare");
+  const [catalogKey, setCatalogKey] = useState<string>(DEFAULT_CATALOG_KEY);
   const [libraryQuery, setLibraryQuery] = useState("");
   const [catalogQuery, setCatalogQuery] = useState("");
+  const activeCatalog = useMemo<CatalogEntry>(() => {
+    return CATALOG_BY_KEY.get(catalogKey) ?? CATALOG_GROUPS[0].items[0]!;
+  }, [catalogKey]);
+  const catalogSearch = catalogQuery.trim();
+  const catalogTopic = activeCatalog.kind === "category" ? activeCatalog.topic ?? null : null;
+  const canQueryCatalog =
+    activeCatalog.kind === "collection" || catalogSearch.length > 0 || Boolean(catalogTopic);
 
   const [queue, setQueue] = useState<DownloadTask[]>([]);
   const queueRef = useRef(queue);
@@ -134,6 +164,8 @@ export default function LibraryPage() {
     done: boolean;
     error: string | null;
     catalogKey: string | null;
+    searchQuery: string | null;
+    topic: string | null;
   }>({
     running: false,
     scanned: 0,
@@ -142,26 +174,30 @@ export default function LibraryPage() {
     done: false,
     error: null,
     catalogKey: null,
+    searchQuery: null,
+    topic: null,
   });
   const bulkRunnerRef = useRef(false);
 
   const [catalogPageUrl, setCatalogPageUrl] = useState<string | null>(null);
   const catalogQ = useQuery({
-    queryKey: ["gutendex", catalogKey, catalogPageUrl],
-    queryFn: () => gutendexCatalogPage({ catalogKey, pageUrl: catalogPageUrl }),
+    queryKey: ["gutendex", activeCatalog.catalogKey, catalogPageUrl, catalogSearch, catalogTopic],
+    queryFn: () =>
+      gutendexCatalogPage({
+        catalogKey: activeCatalog.catalogKey,
+        pageUrl: catalogPageUrl,
+        searchQuery: catalogSearch.length > 0 ? catalogSearch : null,
+        topic: catalogTopic,
+      }),
+    enabled: canQueryCatalog,
   });
 
   const localGutenbergIds = useMemo(() => {
     return new Set((booksQ.data ?? []).map((b) => b.gutenberg_id));
   }, [booksQ.data]);
 
-  const activeCatalog = useMemo(() => {
-    return CATALOGS.find((catalog) => catalog.key === catalogKey) ?? CATALOGS[0];
-  }, [catalogKey]);
-
   useEffect(() => {
     setCatalogPageUrl(null);
-    setCatalogQuery("");
     setBulkScan({
       running: false,
       scanned: 0,
@@ -170,8 +206,13 @@ export default function LibraryPage() {
       done: false,
       error: null,
       catalogKey: null,
+      searchQuery: null,
+      topic: null,
     });
   }, [catalogKey]);
+  useEffect(() => {
+    setCatalogPageUrl(null);
+  }, [catalogSearch, catalogTopic]);
 
   const progressByBookId = useMemo(() => {
     const map = new Map<number, number>();
@@ -190,17 +231,6 @@ export default function LibraryPage() {
     }
     return map;
   }, [booksQ.data]);
-
-  const deleteM = useMutation({
-    mutationFn: hardDeleteBook,
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["books"] });
-    },
-    onError: (e) => {
-      const msg = e instanceof Error ? e.message : typeof e === "string" ? e : JSON.stringify(e);
-      window.alert(`Delete failed: ${msg}`);
-    },
-  });
 
   function enqueue(task: Omit<DownloadTask, "status" | "attempts" | "error">) {
     setQueue((prev) => {
@@ -270,7 +300,13 @@ export default function LibraryPage() {
     }
   }
 
-  async function runBulkScan(fromUrl: string | null, reset: boolean, key: string) {
+  async function runBulkScan(
+    fromUrl: string | null,
+    reset: boolean,
+    key: string,
+    searchQuery: string | null,
+    topic: string | null,
+  ) {
     if (bulkRunnerRef.current) return;
     if (pausedRef.current) return;
     bulkRunnerRef.current = true;
@@ -284,8 +320,10 @@ export default function LibraryPage() {
             done: false,
             error: null,
             catalogKey: key,
+            searchQuery,
+            topic,
           }
-        : { ...prev, running: true, error: null, catalogKey: key },
+        : { ...prev, running: true, error: null, catalogKey: key, searchQuery, topic },
     );
 
     let pageUrl: string | null = fromUrl;
@@ -302,7 +340,7 @@ export default function LibraryPage() {
       while (true) {
         if (pausedRef.current) break;
 
-        const page = await gutendexCatalogPage({ catalogKey: key, pageUrl });
+        const page = await gutendexCatalogPage({ catalogKey: key, pageUrl, searchQuery, topic });
         for (const b of page.results ?? []) {
           if (pausedRef.current) break;
           scanned += 1;
@@ -326,6 +364,8 @@ export default function LibraryPage() {
             enqueued,
             nextUrl: page.next ?? null,
             catalogKey: key,
+            searchQuery,
+            topic,
           }));
         }
 
@@ -338,6 +378,8 @@ export default function LibraryPage() {
             nextUrl: null,
             done: true,
             catalogKey: key,
+            searchQuery,
+            topic,
           }));
           break;
         }
@@ -350,6 +392,8 @@ export default function LibraryPage() {
         error: String(e),
         nextUrl: pageUrl,
         catalogKey: key,
+        searchQuery,
+        topic,
       }));
     } finally {
       bulkRunnerRef.current = false;
@@ -360,6 +404,8 @@ export default function LibraryPage() {
         enqueued,
         nextUrl: pageUrl,
         catalogKey: key,
+        searchQuery,
+        topic,
       }));
     }
   }
@@ -377,21 +423,56 @@ export default function LibraryPage() {
   }, [paused, counts.queued]);
 
   const active = useMemo(() => queue.find((t) => t.status === "downloading") ?? null, [queue]);
+  const canBulkScan = canQueryCatalog;
+  const showSearchPrompt = !canQueryCatalog;
+  const scanMatches =
+    bulkScan.catalogKey === activeCatalog.catalogKey &&
+    bulkScan.searchQuery === (catalogSearch.length > 0 ? catalogSearch : null) &&
+    bulkScan.topic === catalogTopic;
+  const catalogSearchHelper =
+    activeCatalog.kind === "all"
+      ? "Search the full catalog, or pick a category to browse by topic."
+      : activeCatalog.kind === "category"
+        ? "Search within this category (or leave it empty to browse everything in it)."
+        : "Search within this collection.";
 
   async function startOrResumeBulk() {
     setPaused(false);
-    const reset = bulkScan.done || (bulkScan.scanned === 0 && bulkScan.nextUrl == null);
+    const searchQuery = catalogSearch.length > 0 ? catalogSearch : null;
+    const topic = catalogTopic;
+    if (!canQueryCatalog) {
+      window.alert("Pick a category or enter a search term to scan Gutenberg.");
+      return;
+    }
+    const reset =
+      bulkScan.done ||
+      (bulkScan.scanned === 0 && bulkScan.nextUrl == null) ||
+      bulkScan.catalogKey !== activeCatalog.catalogKey ||
+      bulkScan.searchQuery !== searchQuery ||
+      bulkScan.topic !== topic;
     const from = reset ? null : bulkScan.nextUrl;
-    void runBulkScan(from ?? null, reset, catalogKey);
+    void runBulkScan(from ?? null, reset, activeCatalog.catalogKey, searchQuery, topic);
     void runQueue();
   }
 
   async function resumeAll() {
     setPaused(false);
     void runQueue();
-    if (!bulkScan.done && !bulkScan.running) {
+    if (
+      !bulkScan.done &&
+      !bulkScan.running &&
+      bulkScan.catalogKey === activeCatalog.catalogKey &&
+      bulkScan.searchQuery === (catalogSearch.length > 0 ? catalogSearch : null) &&
+      bulkScan.topic === catalogTopic
+    ) {
       const from = bulkScan.scanned === 0 ? null : bulkScan.nextUrl;
-      void runBulkScan(from ?? null, false, catalogKey);
+      void runBulkScan(
+        from ?? null,
+        false,
+        activeCatalog.catalogKey,
+        bulkScan.searchQuery ?? null,
+        bulkScan.topic ?? null,
+      );
     }
   }
 
@@ -406,38 +487,42 @@ export default function LibraryPage() {
     });
   }, [booksQ.data, normalizedLibraryQuery]);
 
-  const normalizedCatalogQuery = catalogQuery.trim().toLowerCase();
-  const filteredCatalogResults = useMemo(() => {
-    const results = catalogQ.data?.results ?? [];
-    if (!normalizedCatalogQuery) return results;
-    return results.filter((b) => {
-      return (
-        b.title.toLowerCase().includes(normalizedCatalogQuery) ||
-        authorsString(b).toLowerCase().includes(normalizedCatalogQuery)
-      );
-    });
-  }, [catalogQ.data, normalizedCatalogQuery]);
+  const filteredCatalogResults = useMemo(() => catalogQ.data?.results ?? [], [catalogQ.data]);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Library</h2>
-          <p className="text-sm text-muted-foreground">Curated Project Gutenberg collections (DRM-free)</p>
+          <p className="text-sm text-muted-foreground">
+            Curated Project Gutenberg collections + main categories (DRM-free)
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             onClick={startOrResumeBulk}
-            disabled={bulkScan.running}
-            title={`Downloads all ${activeCatalog.label} items that have a .mobi on Gutenberg`}
+            disabled={bulkScan.running || !canBulkScan}
+            title={
+              !canBulkScan
+                ? "Pick a category or enter a search term to scan Gutenberg."
+                : activeCatalog.kind === "all"
+                  ? "Downloads all matching items that have a .mobi on Gutenberg"
+                  : `Downloads all ${activeCatalog.label} items that have a .mobi on Gutenberg`
+            }
           >
             {bulkScan.running
-              ? `Scanning catalog… (${bulkScan.enqueued} queued, ${bulkScan.scanned} scanned)`
-              : bulkScan.done
-                ? `Rescan ${activeCatalog.label} catalog`
-                : bulkScan.scanned > 0
+              ? activeCatalog.kind === "all"
+                ? `Scanning results… (${bulkScan.enqueued} queued, ${bulkScan.scanned} scanned)`
+                : `Scanning catalog… (${bulkScan.enqueued} queued, ${bulkScan.scanned} scanned)`
+              : scanMatches && bulkScan.done
+                ? activeCatalog.kind === "all"
+                  ? "Rescan search results"
+                  : `Rescan ${activeCatalog.label} catalog`
+                : scanMatches && bulkScan.scanned > 0
                   ? "Resume scan"
-                  : `Download all ${activeCatalog.label} (.mobi)`}
+                  : activeCatalog.kind === "all"
+                    ? "Download all matching (.mobi)"
+                    : `Download all ${activeCatalog.label} (.mobi)`}
           </Button>
           <Button variant="outline" onClick={() => setPaused(true)} disabled={paused}>
             Pause
@@ -469,30 +554,35 @@ export default function LibraryPage() {
       <Card>
         <CardContent className="grid gap-4 pt-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="space-y-2">
-            <Label htmlFor="catalog-select">Catalog focus</Label>
+            <Label htmlFor="catalog-select">Browse Gutenberg</Label>
             <Select value={catalogKey} onValueChange={setCatalogKey}>
               <SelectTrigger id="catalog-select" className="w-full">
-                <SelectValue placeholder="Pick a catalog" />
+                <SelectValue placeholder="Pick a collection or category" />
               </SelectTrigger>
               <SelectContent>
-                {CATALOGS.map((catalog) => (
-                  <SelectItem key={catalog.key} value={catalog.key}>
-                    {catalog.label}
-                  </SelectItem>
+                {CATALOG_GROUPS.map((group) => (
+                  <SelectGroup key={group.label}>
+                    <SelectLabel>{group.label}</SelectLabel>
+                    {group.items.map((catalog) => (
+                      <SelectItem key={catalog.key} value={catalog.key}>
+                        {catalog.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">{activeCatalog.description}</p>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="library-search">Search your library</Label>
-            <Input
-              id="library-search"
-              placeholder="Search by title or author"
-              value={libraryQuery}
-              onChange={(event) => setLibraryQuery(event.target.value)}
-            />
-          </div>
+          <SearchField
+            id="library-search"
+            label="Search your library"
+            placeholder="Filter by title or author"
+            value={libraryQuery}
+            onChange={setLibraryQuery}
+            onClear={() => setLibraryQuery("")}
+            helper="Filters your downloaded books as you type."
+          />
         </CardContent>
       </Card>
 
@@ -503,7 +593,9 @@ export default function LibraryPage() {
         <Badge variant="secondary">Done {counts.done}</Badge>
         {paused ? <Badge variant="outline">Paused</Badge> : null}
         {active ? <span className="text-sm">Now: {active.title}</span> : null}
-        {bulkScan.error ? <span className="text-sm text-destructive">Scan error: {bulkScan.error}</span> : null}
+        {scanMatches && bulkScan.error ? (
+          <span className="text-sm text-destructive">Scan error: {bulkScan.error}</span>
+        ) : null}
       </div>
 
       {queue.length > 0 ? (
@@ -626,18 +718,39 @@ export default function LibraryPage() {
                     {progressByBookId.has(b.id) ? "Continue" : "Open"}
                   </Link>
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const ok = window.confirm(`Delete “${b.title}” and its downloaded files?`);
-                    if (!ok) return;
-                    deleteM.mutate(b.id);
-                  }}
-                  disabled={deleteM.isPending}
-                >
-                  Delete
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Trash2 className="mr-1 h-4 w-4" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete "{b.title}"?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete this book and its downloaded files.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={async () => {
+                          try {
+                            await hardDeleteBook(b.id);
+                            await qc.invalidateQueries({ queryKey: ["books"] });
+                          } catch (e) {
+                            const msg = e instanceof Error ? e.message : String(e);
+                            console.error("Delete failed:", msg);
+                          }
+                        }}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </CardContent>
             </Card>
           ))}
@@ -648,22 +761,39 @@ export default function LibraryPage() {
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <CardTitle>Catalog</CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle>Catalog</CardTitle>
+                <Badge variant="outline">
+                  {activeCatalog.kind === "category"
+                    ? "Category"
+                    : activeCatalog.kind === "collection"
+                      ? "Collection"
+                      : "All"}
+                </Badge>
+              </div>
               <p className="text-sm text-muted-foreground">{activeCatalog.label}</p>
             </div>
-            <div className="w-full max-w-sm space-y-2">
-              <Label htmlFor="catalog-search">Search catalog</Label>
-              <Input
+            <div className="w-full max-w-sm">
+              <SearchField
                 id="catalog-search"
-                placeholder="Filter by title or author"
+                label="Search Gutenberg"
+                placeholder="Search titles or authors"
                 value={catalogQuery}
-                onChange={(event) => setCatalogQuery(event.target.value)}
+                onChange={setCatalogQuery}
+                onClear={() => setCatalogQuery("")}
+                helper={catalogSearchHelper}
               />
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {catalogQ.isLoading ? (
+          {showSearchPrompt ? (
+            <Card className="border-dashed">
+              <CardContent className="py-6 text-sm text-muted-foreground">
+                Pick a category or enter a search term to browse Gutenberg.
+              </CardContent>
+            </Card>
+          ) : catalogQ.isLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : catalogQ.isError ? (
             <p className="text-sm text-destructive">Failed to load catalog.</p>
@@ -675,7 +805,7 @@ export default function LibraryPage() {
               {filteredCatalogResults.length === 0 ? (
                 <Card className="border-dashed">
                   <CardContent className="py-6 text-sm text-muted-foreground">
-                    No matching titles in this catalog. Try a different search or catalog.
+                    No matching titles. Try a different search or category.
                   </CardContent>
                 </Card>
               ) : (
