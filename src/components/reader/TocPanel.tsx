@@ -85,8 +85,8 @@ export default function TocPanel({
       </button>
 
       {/* Entries */}
-      <div className={cn("transition-all duration-200", expanded ? "max-h-56" : "max-h-44")}>
-        <ScrollArea className="h-full">
+      <ScrollArea className={cn("transition-all duration-200", expanded ? "h-56" : "h-44")}>
+        <div>
           <div className="p-1.5">
             {visibleEntries.map((entry) => {
               const isActive = entry.id === currentEntryId;
@@ -165,8 +165,8 @@ export default function TocPanel({
               </button>
             )}
           </div>
-        </ScrollArea>
-      </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 }
