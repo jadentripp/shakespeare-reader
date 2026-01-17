@@ -87,7 +87,9 @@ export default function MobiBookPage(props: { bookId: number }) {
     setMargin
   } = useReaderAppearance(id);
 
-  const progressKey = `reader-progress-${id}`;
+  // Use gutenberg_id for progress key to avoid conflicts when database IDs are reused
+  const gutenbergId = bookQ.data?.gutenberg_id;
+  const progressKey = gutenbergId ? `reader-progress-gutenberg-${gutenbergId}` : null;
 
   const pageGap = columns === 2 ? 80 : 0;
   const readerWidth =
@@ -655,9 +657,11 @@ export default function MobiBookPage(props: { bookId: number }) {
 
   const scheduleSaveProgress = (page: number) => {
     if (saveTimeoutRef.current !== null) return;
+    if (!progressKey) return;
+    const key = progressKey;
     saveTimeoutRef.current = window.setTimeout(() => {
       saveTimeoutRef.current = null;
-      localStorage.setItem(progressKey, JSON.stringify({ page }));
+      localStorage.setItem(key, JSON.stringify({ page }));
     }, 400);
   };
 
@@ -839,7 +843,10 @@ export default function MobiBookPage(props: { bookId: number }) {
 
   useEffect(() => {
     restoredRef.current = false;
-    if (!htmlQ.data) return;
+    if (!htmlQ.data || !progressKey) {
+      pendingRestoreRef.current = null;
+      return;
+    }
     const raw = localStorage.getItem(progressKey);
     if (!raw) {
       pendingRestoreRef.current = null;

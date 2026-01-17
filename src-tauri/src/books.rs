@@ -26,28 +26,31 @@ fn decode_mobi_text(rec0: &[u8], text_bytes: &[u8]) -> String {
     match enc {
         Some(1252) => {
             let (utf8, _, had_errors) = encoding_rs::UTF_8.decode(text_bytes);
-            if !had_errors {
-                return utf8.to_string();
+            let utf8_str = utf8.to_string();
+            if !had_errors && !contains_replacement(&utf8_str) {
+                return utf8_str;
             }
             let (cow, _, _) = encoding_rs::WINDOWS_1252.decode(text_bytes);
             cow.to_string()
         }
         Some(65001) => {
             let (utf8, _, had_errors) = encoding_rs::UTF_8.decode(text_bytes);
-            if !had_errors {
-                return utf8.to_string();
+            let utf8_str = utf8.to_string();
+            if !had_errors && !contains_replacement(&utf8_str) {
+                return utf8_str;
             }
             let (cp, _, _) = encoding_rs::WINDOWS_1252.decode(text_bytes);
             cp.to_string()
         }
         _ => {
-            // Heuristic: try UTF-8 first; if it has decode errors, fall back to 1252.
+            // Heuristic: try UTF-8 first; if it has decode errors or replacement chars, fall back to 1252.
             let (utf8, _, had_errors) = encoding_rs::UTF_8.decode(text_bytes);
-            if had_errors {
+            let utf8_str = utf8.to_string();
+            if had_errors || contains_replacement(&utf8_str) {
                 let (cp, _, _) = encoding_rs::WINDOWS_1252.decode(text_bytes);
                 cp.to_string()
             } else {
-                utf8.to_string()
+                utf8_str
             }
         }
     }
