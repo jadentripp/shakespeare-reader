@@ -25,12 +25,38 @@ pub struct GutendexResponse {
     pub results: Vec<GutendexBook>,
 }
 
-pub async fn search_shakespeare(page_url: Option<String>) -> Result<GutendexResponse, anyhow::Error> {
-    let url = page_url.unwrap_or_else(|| {
-        // Gutendex: free Project Gutenberg API.
-        // We filter by author name; Gutenberg catalogs Shakespeare consistently.
-        "https://gutendex.com/books/?search=Shakespeare%2C%20William".to_string()
-    });
+fn catalog_url(catalog_key: &str) -> Option<String> {
+    match catalog_key {
+        "shakespeare" => Some("https://gutendex.com/books/?search=Shakespeare%2C%20William".to_string()),
+        "greek-tragedy" => Some("https://gutendex.com/books/?search=greek%20tragedy".to_string()),
+        "greek-epic" => Some("https://gutendex.com/books/?search=greek%20epic".to_string()),
+        "roman-drama" => Some("https://gutendex.com/books/?search=roman%20drama".to_string()),
+        "mythology" => Some("https://gutendex.com/books/?search=mythology".to_string()),
+        "philosophy" => Some("https://gutendex.com/books/?search=philosophy".to_string()),
+        "gothic" => Some("https://gutendex.com/books/?search=gothic".to_string()),
+        "science-fiction" => Some("https://gutendex.com/books/?search=science%20fiction".to_string()),
+        "poetry" => Some("https://gutendex.com/books/?search=poetry".to_string()),
+        _ => None,
+    }
+}
+
+fn sanitize_page_url(page_url: &str) -> Result<String, anyhow::Error> {
+    if page_url.starts_with("https://gutendex.com/books/") {
+        Ok(page_url.to_string())
+    } else {
+        Err(anyhow::anyhow!("Invalid catalog URL."))
+    }
+}
+
+pub async fn search_catalog(
+    catalog_key: &str,
+    page_url: Option<String>,
+) -> Result<GutendexResponse, anyhow::Error> {
+    let url = if let Some(page_url) = page_url {
+        sanitize_page_url(&page_url)?
+    } else {
+        catalog_url(catalog_key).ok_or_else(|| anyhow::anyhow!("Unknown catalog"))?
+    };
 
     let client = reqwest::Client::new();
     let resp = client.get(url).send().await?.error_for_status()?;

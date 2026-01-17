@@ -92,6 +92,16 @@ export async function gutendexShakespearePage(pageUrl?: string | null): Promise<
   });
 }
 
+export async function gutendexCatalogPage(params: {
+  catalogKey: string;
+  pageUrl?: string | null;
+}): Promise<GutendexResponse> {
+  return await invoke("gutendex_catalog_page", {
+    catalogKey: params.catalogKey,
+    pageUrl: params.pageUrl ?? null,
+  });
+}
+
 export async function downloadGutenbergMobi(params: {
   gutenbergId: number;
   title: string;
