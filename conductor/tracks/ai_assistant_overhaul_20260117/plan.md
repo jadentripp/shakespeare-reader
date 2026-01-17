@@ -1,6 +1,6 @@
 # Implementation Plan - AI Assistant Overhaul
 
-## Phase 1: Database & Backend Persistence
+## Phase 1: Database & Backend Persistence [checkpoint: 3d58feb]
 - [x] **Task: Update Database Schema** be7acb0
     - [x] Add a `book_message` table for general chats or modify `highlight_message` to make `highlight_id` optional.
     - [x] Update `src-tauri/src/db.rs` with new migrations and query functions.
