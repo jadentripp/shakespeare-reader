@@ -8,15 +8,18 @@ import { Button } from "@/components/ui/button";
 import { PanelLeftOpen, PanelRightOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { injectHead, wrapBody, processGutenbergContent } from "@/lib/readerHtml";
-import type { ChatPrompt, LocalChatMessage, PendingHighlight } from "@/lib/readerTypes";
+import type { ChatPrompt, PendingHighlight } from "@/lib/readerTypes";
 import {
   addHighlightMessage,
+  addBookMessage,
   createHighlight,
   deleteHighlight,
+  deleteBookMessages,
   getBook,
   getBookHtml,
   getSetting,
   listHighlightMessages,
+  listBookMessages,
   listHighlights,
   openAiChat,
   openAiListModels,
@@ -37,6 +40,10 @@ export default function MobiBookPage(props: { bookId: number }) {
   const bookQ = useQuery({ queryKey: ["book", id], queryFn: () => getBook(id) });
   const htmlQ = useQuery({ queryKey: ["bookHtml", id], queryFn: () => getBookHtml(id) });
   const highlightsQ = useQuery({ queryKey: ["bookHighlights", id], queryFn: () => listHighlights(id) });
+  const bookMessagesQ = useQuery({
+    queryKey: ["bookMessages", id],
+    queryFn: () => listBookMessages(id),
+  });
   const queryClient = useQueryClient();
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -70,7 +77,6 @@ export default function MobiBookPage(props: { bookId: number }) {
   const [highlightPageMap, setHighlightPageMap] = useState<Record<number, number>>({});
   const [noteDraft, setNoteDraft] = useState("");
   const [contextText, setContextText] = useState("");
-  const [generalMessages, setGeneralMessages] = useState<LocalChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
   const [iframeReady, setIframeReady] = useState(false);
@@ -1171,6 +1177,12 @@ export default function MobiBookPage(props: { bookId: number }) {
     await queryClient.invalidateQueries({ queryKey: ["bookHighlights", id] });
   };
 
+  const handleNewChat = async () => {
+    if (selectedHighlight) return;
+    await deleteBookMessages(id);
+    await queryClient.invalidateQueries({ queryKey: ["bookMessages", id] });
+  };
+
   const handleDeleteHighlight = async (highlightId: number) => {
     await deleteHighlight(highlightId);
     if (selectedHighlightId === highlightId) {
@@ -1201,12 +1213,6 @@ export default function MobiBookPage(props: { bookId: number }) {
     };
     attempt();
   };
-
-  const buildLocalMessage = (role: "user" | "assistant", content: string): LocalChatMessage => ({
-    id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-    role,
-    content,
-  });
 
   const sendChat = async () => {
     if (!chatInput.trim()) return;
@@ -1242,8 +1248,12 @@ export default function MobiBookPage(props: { bookId: number }) {
           queryKey: ["highlightMessages", selectedHighlight.id],
         });
       } else {
-        const nextMessages = [...generalMessages, { role: "user" as const, content: input }];
-        setGeneralMessages((prev) => [...prev, buildLocalMessage("user", input)]);
+        await addBookMessage({
+          bookId: id,
+          role: "user",
+          content: input,
+        });
+        const messages = bookMessagesQ.data ?? [];
         const systemContent = [
           HIGHLIGHT_PROMPT,
           contextText ? `Current page context: "${contextText}"` : "Current page context unavailable.",
@@ -1252,9 +1262,17 @@ export default function MobiBookPage(props: { bookId: number }) {
           .join("\n");
         const response = await openAiChat([
           { role: "system", content: systemContent },
-          ...nextMessages.map((message) => ({ role: message.role, content: message.content })),
+          ...messages.map((message) => ({ role: message.role, content: message.content })),
+          { role: "user", content: input },
         ]);
-        setGeneralMessages((prev) => [...prev, buildLocalMessage("assistant", response)]);
+        await addBookMessage({
+          bookId: id,
+          role: "assistant",
+          content: response,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["bookMessages", id],
+        });
       }
     } catch (error: any) {
       const errorMessage = String(error?.message ?? error);
@@ -1268,7 +1286,14 @@ export default function MobiBookPage(props: { bookId: number }) {
           queryKey: ["highlightMessages", selectedHighlight.id],
         });
       } else {
-        setGeneralMessages((prev) => [...prev, buildLocalMessage("assistant", errorMessage)]);
+        await addBookMessage({
+          bookId: id,
+          role: "assistant",
+          content: errorMessage,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["bookMessages", id],
+        });
       }
     } finally {
       setChatSending(false);
@@ -1292,10 +1317,14 @@ export default function MobiBookPage(props: { bookId: number }) {
   const chatMessages = selectedHighlight
     ? (messagesQ.data ?? []).map((message) => ({
         id: String(message.id),
-        role: message.role,
+        role: message.role as "user" | "assistant",
         content: message.content,
       }))
-    : generalMessages;
+    : (bookMessagesQ.data ?? []).map((message) => ({
+        id: String(message.id),
+        role: message.role as "user" | "assistant",
+        content: message.content,
+      }));
 
   const chatContextHint = selectedHighlight
     ? "Using selected highlight as context"
@@ -1428,6 +1457,7 @@ export default function MobiBookPage(props: { bookId: number }) {
               onChatInputChange={setChatInput}
               onPromptSelect={setChatInput}
               onSend={sendChat}
+              onNewChat={!selectedHighlight ? handleNewChat : undefined}
               chatSending={chatSending}
               chatInputRef={chatInputRef}
               currentModel={currentModel}
