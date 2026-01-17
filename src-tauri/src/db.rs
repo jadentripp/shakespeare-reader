@@ -1,7 +1,7 @@
 use anyhow::Context;
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
-use tauri::{path::BaseDirectory, AppHandle, Manager};
+use tauri::{path::BaseDirectory, Manager};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Book {
@@ -45,7 +45,16 @@ pub struct HighlightMessage {
     pub created_at: String,
 }
 
-fn db_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, anyhow::Error> {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BookMessage {
+    pub id: i64,
+    pub book_id: i64,
+    pub role: String,
+    pub content: String,
+    pub created_at: String,
+}
+
+fn db_path<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<std::path::PathBuf, anyhow::Error> {
     if let Ok(override_path) = std::env::var("SHAKESPEARE_DB_PATH") {
         return Ok(std::path::PathBuf::from(override_path));
     }
@@ -59,7 +68,7 @@ fn db_path(app_handle: &AppHandle) -> Result<std::path::PathBuf, anyhow::Error> 
     Ok(base.join("tmp").join("shakespeare-reader.sqlite"))
 }
 
-fn open(app_handle: &AppHandle) -> Result<Connection, anyhow::Error> {
+fn open<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<Connection, anyhow::Error> {
     let path = db_path(app_handle)?;
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
@@ -69,7 +78,7 @@ fn open(app_handle: &AppHandle) -> Result<Connection, anyhow::Error> {
     Ok(conn)
 }
 
-pub fn init(app_handle: &AppHandle) -> Result<(), anyhow::Error> {
+pub fn init<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
     conn.execute_batch(
         r#"
@@ -122,6 +131,16 @@ CREATE TABLE IF NOT EXISTS highlight_message (
   FOREIGN KEY(highlight_id) REFERENCES highlight(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_highlight_message_highlight ON highlight_message(highlight_id);
+
+CREATE TABLE IF NOT EXISTS book_message (
+  id INTEGER PRIMARY KEY,
+  book_id INTEGER NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_book_message_book ON book_message(book_id);
 "#,
     )
     .context("failed to initialize sqlite schema")?;
@@ -134,8 +153,8 @@ CREATE INDEX IF NOT EXISTS idx_highlight_message_highlight ON highlight_message(
     Ok(())
 }
 
-pub fn upsert_book(
-    app_handle: &AppHandle,
+pub fn upsert_book<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
     gutenberg_id: i64,
     title: String,
     authors: String,
@@ -165,7 +184,7 @@ pub fn upsert_book(
     Ok(id)
 }
 
-pub fn list_books(app_handle: &AppHandle) -> Result<Vec<Book>, anyhow::Error> {
+pub fn list_books<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<Vec<Book>, anyhow::Error> {
     let conn = open(app_handle)?;
     let mut stmt = conn.prepare(
         "SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, created_at FROM book ORDER BY title ASC",
@@ -190,7 +209,7 @@ pub fn list_books(app_handle: &AppHandle) -> Result<Vec<Book>, anyhow::Error> {
     Ok(rows)
 }
 
-pub fn get_book(app_handle: &AppHandle, book_id: i64) -> Result<Book, anyhow::Error> {
+pub fn get_book<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i64) -> Result<Book, anyhow::Error> {
     let conn = open(app_handle)?;
     conn.query_row(
         "SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, created_at FROM book WHERE id = ?1",
@@ -212,7 +231,7 @@ pub fn get_book(app_handle: &AppHandle, book_id: i64) -> Result<Book, anyhow::Er
     .context("failed to get book")
 }
 
-pub fn hard_delete_book(app_handle: &AppHandle, book_id: i64) -> Result<(), anyhow::Error> {
+pub fn hard_delete_book<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i64) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
     conn.execute(
         "DELETE FROM highlight_message WHERE highlight_id IN (SELECT id FROM highlight WHERE book_id = ?1)",
@@ -227,7 +246,7 @@ pub fn hard_delete_book(app_handle: &AppHandle, book_id: i64) -> Result<(), anyh
     Ok(())
 }
 
-pub fn set_book_position(app_handle: &AppHandle, book_id: i64, cfi: String) -> Result<(), anyhow::Error> {
+pub fn set_book_position<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i64, cfi: String) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
     conn.execute(
         "INSERT INTO book_position(book_id, cfi) VALUES (?1, ?2)
@@ -237,7 +256,7 @@ pub fn set_book_position(app_handle: &AppHandle, book_id: i64, cfi: String) -> R
     Ok(())
 }
 
-pub fn get_book_position(app_handle: &AppHandle, book_id: i64) -> Result<Option<BookPosition>, anyhow::Error> {
+pub fn get_book_position<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i64) -> Result<Option<BookPosition>, anyhow::Error> {
     let conn = open(app_handle)?;
     conn.query_row(
         "SELECT cfi, updated_at FROM book_position WHERE book_id = ?1",
@@ -253,7 +272,7 @@ pub fn get_book_position(app_handle: &AppHandle, book_id: i64) -> Result<Option<
     .context("failed to read book position")
 }
 
-pub fn set_setting(app_handle: &AppHandle, key: String, value: String) -> Result<(), anyhow::Error> {
+pub fn set_setting<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, key: String, value: String) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
     conn.execute(
         "INSERT INTO settings(key, value) VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
@@ -263,7 +282,7 @@ pub fn set_setting(app_handle: &AppHandle, key: String, value: String) -> Result
     Ok(())
 }
 
-pub fn get_setting(app_handle: &AppHandle, key: String) -> Result<Option<String>, anyhow::Error> {
+pub fn get_setting<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, key: String) -> Result<Option<String>, anyhow::Error> {
     let conn = open(app_handle)?;
     conn.query_row(
         "SELECT value FROM settings WHERE key = ?1",
@@ -274,7 +293,7 @@ pub fn get_setting(app_handle: &AppHandle, key: String) -> Result<Option<String>
     .context("failed to read setting")
 }
 
-pub fn list_highlights(app_handle: &AppHandle, book_id: i64) -> Result<Vec<Highlight>, anyhow::Error> {
+pub fn list_highlights<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i64) -> Result<Vec<Highlight>, anyhow::Error> {
     let conn = open(app_handle)?;
     let mut stmt = conn.prepare(
         "SELECT id, book_id, start_path, start_offset, end_path, end_offset, text, note, created_at, updated_at
@@ -299,8 +318,8 @@ pub fn list_highlights(app_handle: &AppHandle, book_id: i64) -> Result<Vec<Highl
     Ok(rows)
 }
 
-pub fn create_highlight(
-    app_handle: &AppHandle,
+pub fn create_highlight<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
     book_id: i64,
     start_path: String,
     start_offset: i64,
@@ -346,8 +365,8 @@ pub fn create_highlight(
     .context("failed to create highlight")
 }
 
-pub fn update_highlight_note(
-    app_handle: &AppHandle,
+pub fn update_highlight_note<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
     highlight_id: i64,
     note: Option<String>,
 ) -> Result<Highlight, anyhow::Error> {
@@ -378,8 +397,8 @@ pub fn update_highlight_note(
     .context("failed to update highlight note")
 }
 
-pub fn delete_highlight(
-    app_handle: &AppHandle,
+pub fn delete_highlight<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
     highlight_id: i64,
 ) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
@@ -388,8 +407,8 @@ pub fn delete_highlight(
     Ok(())
 }
 
-pub fn list_highlight_messages(
-    app_handle: &AppHandle,
+pub fn list_highlight_messages<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
     highlight_id: i64,
 ) -> Result<Vec<HighlightMessage>, anyhow::Error> {
     let conn = open(app_handle)?;
@@ -411,8 +430,8 @@ pub fn list_highlight_messages(
     Ok(rows)
 }
 
-pub fn add_highlight_message(
-    app_handle: &AppHandle,
+pub fn add_highlight_message<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
     highlight_id: i64,
     role: String,
     content: String,
@@ -437,4 +456,131 @@ pub fn add_highlight_message(
         },
     )
     .context("failed to add highlight message")
+}
+
+pub fn list_book_messages<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    book_id: i64,
+) -> Result<Vec<BookMessage>, anyhow::Error> {
+    let conn = open(app_handle)?;
+    let mut stmt = conn.prepare(
+        "SELECT id, book_id, role, content, created_at
+         FROM book_message WHERE book_id = ?1 ORDER BY created_at ASC",
+    )?;
+    let rows = stmt
+        .query_map(params![book_id], |row| {
+            Ok(BookMessage {
+                id: row.get(0)?,
+                book_id: row.get(1)?,
+                role: row.get(2)?,
+                content: row.get(3)?,
+                created_at: row.get(4)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
+pub fn add_book_message<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    book_id: i64,
+    role: String,
+    content: String,
+) -> Result<BookMessage, anyhow::Error> {
+    let conn = open(app_handle)?;
+    conn.execute(
+        "INSERT INTO book_message(book_id, role, content) VALUES (?1, ?2, ?3)",
+        params![book_id, role, content],
+    )?;
+    let id = conn.last_insert_rowid();
+    conn.query_row(
+        "SELECT id, book_id, role, content, created_at FROM book_message WHERE id = ?1",
+        params![id],
+        |row| {
+            Ok(BookMessage {
+                id: row.get(0)?,
+                book_id: row.get(1)?,
+                role: row.get(2)?,
+                content: row.get(3)?,
+                created_at: row.get(4)?,
+            })
+        },
+    )
+    .context("failed to add book message")
+}
+
+pub fn delete_book_messages<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    book_id: i64,
+) -> Result<(), anyhow::Error> {
+    let conn = open(app_handle)?;
+    conn.execute("DELETE FROM book_message WHERE book_id = ?1", params![book_id])?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tauri::test::mock_app;
+
+    fn setup() -> (tauri::AppHandle<impl tauri::Runtime>, std::path::PathBuf) {
+        let app = mock_app();
+        let handle = app.handle().clone();
+        let temp_dir = std::env::temp_dir().join("shakespeare_tests");
+        std::fs::create_dir_all(&temp_dir).unwrap();
+        let db_path = temp_dir.join("test_db.sqlite");
+        if db_path.exists() {
+            std::fs::remove_file(&db_path).unwrap();
+        }
+        std::env::set_var("SHAKESPEARE_DB_PATH", &db_path);
+        (handle, db_path)
+    }
+
+    #[test]
+    fn test_book_message_table_exists() {
+        let (handle, db_path) = setup();
+        init(&handle).expect("Failed to init DB");
+        
+        let conn = Connection::open(&db_path).unwrap();
+        let count: i32 = conn.query_row(
+            "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='book_message'",
+            [],
+            |row| row.get(0),
+        ).unwrap();
+        
+        assert_eq!(count, 1, "book_message table should exist");
+        std::fs::remove_file(db_path).ok();
+    }
+
+    #[test]
+    fn test_book_messages() {
+        let (handle, db_path) = setup();
+        init(&handle).expect("Failed to init DB");
+
+        // Insert a dummy book first to satisfy foreign key
+        let book_id = upsert_book(
+            &handle,
+            12345,
+            "Test Book".to_string(),
+            "Author".to_string(),
+            None,
+            None,
+            "mobi".to_string(),
+            "html".to_string(),
+        ).unwrap();
+
+        let msg = add_book_message(&handle, book_id, "user".to_string(), "Hello".to_string()).unwrap();
+        assert_eq!(msg.content, "Hello");
+        assert_eq!(msg.role, "user");
+
+        let messages = list_book_messages(&handle, book_id).unwrap();
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].content, "Hello");
+
+        delete_book_messages(&handle, book_id).unwrap();
+        let messages = list_book_messages(&handle, book_id).unwrap();
+        assert_eq!(messages.len(), 0);
+
+        std::fs::remove_file(db_path).ok();
+    }
 }
