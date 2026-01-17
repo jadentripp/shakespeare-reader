@@ -13,6 +13,13 @@ import {
   PromptInputActions,
   PromptInputAction,
 } from "@/components/ui/prompt-input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader } from "@/components/ui/loader";
 import { cn } from "@/lib/utils";
 import type { ChatPrompt, LocalChatMessage } from "@/lib/readerTypes";
@@ -29,7 +36,20 @@ type ChatSidebarProps = {
   onSend: () => void;
   chatSending: boolean;
   chatInputRef: RefObject<HTMLTextAreaElement | null>;
+  currentModel: string;
+  availableModels: string[];
+  onModelChange: (model: string) => void;
+  modelsLoading?: boolean;
 };
+
+function formatModelName(modelId: string): string {
+  return modelId
+    .replace(/^gpt-/, "GPT-")
+    .replace(/-(\d{4})-(\d{2})-(\d{2})$/, " ($1)")
+    .replace(/-preview$/, " Preview")
+    .replace(/-mini$/, " Mini")
+    .replace(/-turbo$/, " Turbo");
+}
 
 export default function ChatSidebar({
   contextHint,
@@ -41,22 +61,73 @@ export default function ChatSidebar({
   onSend,
   chatSending,
   chatInputRef,
+  currentModel,
+  availableModels,
+  onModelChange,
+  modelsLoading,
 }: ChatSidebarProps) {
   return (
     <aside className="min-h-0">
       <Card className="flex h-full flex-col overflow-hidden">
-        <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
-          <div>
-            <CardTitle>AI Assistant</CardTitle>
-            <p className="text-sm text-muted-foreground">{contextHint}</p>
+        <CardHeader className="flex flex-col gap-3 pb-3">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle>AI Assistant</CardTitle>
+              <p className="text-sm text-muted-foreground">{contextHint}</p>
+            </div>
+            <Badge
+              variant={chatSending ? "secondary" : "outline"}
+              className={cn(chatSending && "bg-primary/10 text-primary")}
+            >
+              {chatSending ? "Thinking..." : "Ready"}
+            </Badge>
           </div>
-          <Badge
-            variant={chatSending ? "secondary" : "outline"}
-            className={cn(chatSending && "bg-primary/10 text-primary")}
-          >
-            {chatSending ? "Thinking..." : "Ready"}
-          </Badge>
+
+          {/* Model Picker */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <svg
+                className="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
+                <path d="M6 10v2a6 6 0 0 0 12 0v-2" />
+                <path d="M12 18v4M8 22h8" />
+              </svg>
+              <span className="font-medium">Model</span>
+            </div>
+            <Select
+              value={currentModel}
+              onValueChange={onModelChange}
+              disabled={modelsLoading || chatSending}
+            >
+              <SelectTrigger className="h-8 flex-1 text-xs">
+                <SelectValue placeholder={modelsLoading ? "Loading..." : "Select model"} />
+              </SelectTrigger>
+              <SelectContent>
+                {availableModels.map((model) => (
+                  <SelectItem key={model} value={model} className="text-xs">
+                    <div className="flex items-center gap-2">
+                      <span>{formatModelName(model)}</span>
+                      {model === currentModel && (
+                        <span className="text-[10px] text-muted-foreground">current</span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+                {availableModels.length === 0 && !modelsLoading && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    No models available
+                  </div>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
+
         <CardContent className="flex flex-1 min-h-0 flex-col gap-3 pb-4">
           {prompts.length > 0 && (
             <div className="flex flex-wrap gap-2">

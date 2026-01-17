@@ -12,9 +12,12 @@ import {
   deleteHighlight,
   getBook,
   getBookHtml,
+  getSetting,
   listHighlightMessages,
   listHighlights,
   openAiChat,
+  openAiListModels,
+  setSetting,
   updateHighlightNote
 } from "../lib/tauri";
 import { useReaderAppearance } from "../lib/appearance";
@@ -68,6 +71,12 @@ export default function MobiBookPage(props: { bookId: number }) {
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
   const [iframeReady, setIframeReady] = useState(false);
+  const [currentModel, setCurrentModel] = useState("gpt-4.1-mini");
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(true);
+  const [tocEntries, setTocEntries] = useState<Array<{ id: string; level: number; text: string; element: HTMLElement }>>([]);
+  const [currentTocEntryId, setCurrentTocEntryId] = useState<string | null>(null);
+  const [tocExpanded, setTocExpanded] = useState(false);
 
   const {
     fontFamily,
@@ -761,6 +770,29 @@ export default function MobiBookPage(props: { bookId: number }) {
   }, []);
 
   useEffect(() => {
+    const loadModels = async () => {
+      setModelsLoading(true);
+      try {
+        const [models, savedModel] = await Promise.all([
+          openAiListModels().catch(() => [] as string[]),
+          getSetting("openai_model").catch(() => null),
+        ]);
+        setAvailableModels(models);
+        if (savedModel) {
+          setCurrentModel(savedModel);
+        } else if (models.length > 0 && !models.includes(currentModel)) {
+          setCurrentModel(models[0]);
+        }
+      } catch (error) {
+        console.error("Failed to load models:", error);
+      } finally {
+        setModelsLoading(false);
+      }
+    };
+    loadModels();
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (rafRef.current !== null) {
         window.cancelAnimationFrame(rafRef.current);
@@ -831,6 +863,19 @@ export default function MobiBookPage(props: { bookId: number }) {
     docRef.current = doc;
     rootRef.current = root;
     syncPageMetrics();
+
+    // Build TOC from headings
+    const headings = Array.from(doc.querySelectorAll("h1, h2, h3, h4, h5, h6")) as HTMLElement[];
+    const entries = headings
+      .filter((el) => el.textContent?.trim())
+      .map((el, idx) => ({
+        id: `toc-${idx}`,
+        level: parseInt(el.tagName.charAt(1), 10),
+        text: el.textContent?.trim() ?? "",
+        element: el,
+      }));
+    setTocEntries(entries);
+
     const handleScroll = () => {
       schedulePaginationUpdate();
       scheduleLock();
@@ -1184,6 +1229,20 @@ export default function MobiBookPage(props: { bookId: number }) {
     }
   };
 
+  const handleModelChange = async (model: string) => {
+    setCurrentModel(model);
+    try {
+      await setSetting({ key: "openai_model", value: model });
+    } catch (error) {
+      console.error("Failed to save model setting:", error);
+    }
+  };
+
+  const handleTocNavigate = (entry: { id: string; element: HTMLElement }) => {
+    setCurrentTocEntryId(entry.id);
+    jumpToElement(entry.element);
+  };
+
   const chatMessages = selectedHighlight
     ? (messagesQ.data ?? []).map((message) => ({
         id: String(message.id),
@@ -1255,6 +1314,11 @@ export default function MobiBookPage(props: { bookId: number }) {
           noteDraft={noteDraft}
           onNoteDraftChange={setNoteDraft}
           onSaveNote={handleSaveNote}
+          tocEntries={tocEntries}
+          currentTocEntryId={currentTocEntryId}
+          onTocNavigate={handleTocNavigate}
+          tocExpanded={tocExpanded}
+          onToggleTocExpanded={() => setTocExpanded((prev) => !prev)}
         />
 
         <ReaderPane
@@ -1279,6 +1343,10 @@ export default function MobiBookPage(props: { bookId: number }) {
           onSend={sendChat}
           chatSending={chatSending}
           chatInputRef={chatInputRef}
+          currentModel={currentModel}
+          availableModels={availableModels}
+          onModelChange={handleModelChange}
+          modelsLoading={modelsLoading}
         />
       </div>
     </div>
