@@ -520,8 +520,8 @@ export default function LibraryPage() {
             {bulkScan.running
               ? `Scanning… (${bulkScan.enqueued} queued)`
               : scanMatches && bulkScan.scanned > 0
-                ? "Resume download"
-                : `Download ${activeCatalog.kind === "all" ? "results" : activeCatalog.label}`}
+                ? "Resume"
+                : "Install all"}
           </Button>
 
           {/* Queue controls - only show when there's activity */}
