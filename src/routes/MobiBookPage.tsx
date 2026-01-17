@@ -19,7 +19,7 @@ import { useReaderAppearance } from "../lib/appearance";
 
 const DESIRED_PAGE_WIDTH = 750;
 const HIGHLIGHT_PROMPT =
-  "You are an assistant embedded in a Shakespeare reader. Respond with concise, thoughtful guidance using the selected highlight as context.";
+  "You are an assistant embedded in an AI reader. Respond with concise, thoughtful guidance using the selected highlight as context.";
 const CHAT_PROMPTS: ChatPrompt[] = [
   { label: "Summarize", prompt: "Summarize this passage in modern English." },
   { label: "Explain imagery", prompt: "Explain the imagery and symbolism in this passage." },

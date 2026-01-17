@@ -4,14 +4,71 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   hardDeleteBook,
   downloadGutenbergMobi,
-  gutendexShakespearePage,
+  gutendexCatalogPage,
   listBooks,
   type GutendexBook,
 } from "../lib/tauri";
+
+const CATALOGS = [
+  {
+    key: "shakespeare",
+    label: "Shakespeare",
+    description: "Plays and poems attributed to William Shakespeare.",
+  },
+  {
+    key: "greek-tragedy",
+    label: "Greek tragedy",
+    description: "Aeschylus, Sophocles, Euripides, and their contemporaries.",
+  },
+  {
+    key: "greek-epic",
+    label: "Greek epics",
+    description: "Epic poetry and mythic journeys from ancient Greece.",
+  },
+  {
+    key: "roman-drama",
+    label: "Roman drama",
+    description: "Latin comedies, tragedies, and theatrical classics.",
+  },
+  {
+    key: "mythology",
+    label: "Mythology",
+    description: "Collections of myths, legends, and folktales.",
+  },
+  {
+    key: "philosophy",
+    label: "Philosophy",
+    description: "Classic philosophical works and dialogues.",
+  },
+  {
+    key: "gothic",
+    label: "Gothic fiction",
+    description: "Haunted manors, dark romances, and early horror.",
+  },
+  {
+    key: "science-fiction",
+    label: "Science fiction",
+    description: "Speculative classics and visionary futures.",
+  },
+  {
+    key: "poetry",
+    label: "Poetry",
+    description: "Lyric, narrative, and dramatic poetry collections.",
+  },
+] as const;
 
 function bestMobiUrl(book: GutendexBook): string | null {
   for (const [k, v] of Object.entries(book.formats)) {
@@ -51,6 +108,9 @@ type DownloadTask = {
 export default function LibraryPage() {
   const qc = useQueryClient();
   const booksQ = useQuery({ queryKey: ["books"], queryFn: listBooks });
+  const [catalogKey, setCatalogKey] = useState<string>("shakespeare");
+  const [libraryQuery, setLibraryQuery] = useState("");
+  const [catalogQuery, setCatalogQuery] = useState("");
 
   const [queue, setQueue] = useState<DownloadTask[]>([]);
   const queueRef = useRef(queue);
@@ -73,17 +133,62 @@ export default function LibraryPage() {
     nextUrl: string | null;
     done: boolean;
     error: string | null;
-  }>({ running: false, scanned: 0, enqueued: 0, nextUrl: null, done: false, error: null });
+    catalogKey: string | null;
+  }>({
+    running: false,
+    scanned: 0,
+    enqueued: 0,
+    nextUrl: null,
+    done: false,
+    error: null,
+    catalogKey: null,
+  });
   const bulkRunnerRef = useRef(false);
 
   const [catalogPageUrl, setCatalogPageUrl] = useState<string | null>(null);
   const catalogQ = useQuery({
-    queryKey: ["gutendex", catalogPageUrl],
-    queryFn: () => gutendexShakespearePage(catalogPageUrl),
+    queryKey: ["gutendex", catalogKey, catalogPageUrl],
+    queryFn: () => gutendexCatalogPage({ catalogKey, pageUrl: catalogPageUrl }),
   });
 
   const localGutenbergIds = useMemo(() => {
     return new Set((booksQ.data ?? []).map((b) => b.gutenberg_id));
+  }, [booksQ.data]);
+
+  const activeCatalog = useMemo(() => {
+    return CATALOGS.find((catalog) => catalog.key === catalogKey) ?? CATALOGS[0];
+  }, [catalogKey]);
+
+  useEffect(() => {
+    setCatalogPageUrl(null);
+    setCatalogQuery("");
+    setBulkScan({
+      running: false,
+      scanned: 0,
+      enqueued: 0,
+      nextUrl: null,
+      done: false,
+      error: null,
+      catalogKey: null,
+    });
+  }, [catalogKey]);
+
+  const progressByBookId = useMemo(() => {
+    const map = new Map<number, number>();
+    if (typeof window === "undefined") return map;
+    for (const book of booksQ.data ?? []) {
+      const raw = window.localStorage.getItem(`reader-progress-${book.id}`);
+      if (!raw) continue;
+      try {
+        const parsed = JSON.parse(raw) as { page?: number };
+        if (typeof parsed.page === "number" && parsed.page > 0) {
+          map.set(book.id, parsed.page);
+        }
+      } catch {
+        // ignore malformed entries
+      }
+    }
+    return map;
   }, [booksQ.data]);
 
   const deleteM = useMutation({
@@ -165,14 +270,22 @@ export default function LibraryPage() {
     }
   }
 
-  async function runBulkScan(fromUrl: string | null, reset: boolean) {
+  async function runBulkScan(fromUrl: string | null, reset: boolean, key: string) {
     if (bulkRunnerRef.current) return;
     if (pausedRef.current) return;
     bulkRunnerRef.current = true;
     setBulkScan((prev) =>
       reset
-        ? { running: true, scanned: 0, enqueued: 0, nextUrl: null, done: false, error: null }
-        : { ...prev, running: true, error: null },
+        ? {
+            running: true,
+            scanned: 0,
+            enqueued: 0,
+            nextUrl: null,
+            done: false,
+            error: null,
+            catalogKey: key,
+          }
+        : { ...prev, running: true, error: null, catalogKey: key },
     );
 
     let pageUrl: string | null = fromUrl;
@@ -189,7 +302,7 @@ export default function LibraryPage() {
       while (true) {
         if (pausedRef.current) break;
 
-        const page = await gutendexShakespearePage(pageUrl);
+        const page = await gutendexCatalogPage({ catalogKey: key, pageUrl });
         for (const b of page.results ?? []) {
           if (pausedRef.current) break;
           scanned += 1;
@@ -212,6 +325,7 @@ export default function LibraryPage() {
             scanned,
             enqueued,
             nextUrl: page.next ?? null,
+            catalogKey: key,
           }));
         }
 
@@ -223,16 +337,30 @@ export default function LibraryPage() {
             enqueued,
             nextUrl: null,
             done: true,
+            catalogKey: key,
           }));
           break;
         }
         pageUrl = page.next;
       }
     } catch (e) {
-      setBulkScan((prev) => ({ ...prev, running: false, error: String(e), nextUrl: pageUrl }));
+      setBulkScan((prev) => ({
+        ...prev,
+        running: false,
+        error: String(e),
+        nextUrl: pageUrl,
+        catalogKey: key,
+      }));
     } finally {
       bulkRunnerRef.current = false;
-      setBulkScan((prev) => ({ ...prev, running: false, scanned, enqueued, nextUrl: pageUrl }));
+      setBulkScan((prev) => ({
+        ...prev,
+        running: false,
+        scanned,
+        enqueued,
+        nextUrl: pageUrl,
+        catalogKey: key,
+      }));
     }
   }
 
@@ -254,7 +382,7 @@ export default function LibraryPage() {
     setPaused(false);
     const reset = bulkScan.done || (bulkScan.scanned === 0 && bulkScan.nextUrl == null);
     const from = reset ? null : bulkScan.nextUrl;
-    void runBulkScan(from ?? null, reset);
+    void runBulkScan(from ?? null, reset, catalogKey);
     void runQueue();
   }
 
@@ -263,30 +391,53 @@ export default function LibraryPage() {
     void runQueue();
     if (!bulkScan.done && !bulkScan.running) {
       const from = bulkScan.scanned === 0 ? null : bulkScan.nextUrl;
-      void runBulkScan(from ?? null, false);
+      void runBulkScan(from ?? null, false, catalogKey);
     }
   }
+
+  const normalizedLibraryQuery = libraryQuery.trim().toLowerCase();
+  const filteredBooks = useMemo(() => {
+    if (!normalizedLibraryQuery) return booksQ.data ?? [];
+    return (booksQ.data ?? []).filter((b) => {
+      return (
+        b.title.toLowerCase().includes(normalizedLibraryQuery) ||
+        b.authors.toLowerCase().includes(normalizedLibraryQuery)
+      );
+    });
+  }, [booksQ.data, normalizedLibraryQuery]);
+
+  const normalizedCatalogQuery = catalogQuery.trim().toLowerCase();
+  const filteredCatalogResults = useMemo(() => {
+    const results = catalogQ.data?.results ?? [];
+    if (!normalizedCatalogQuery) return results;
+    return results.filter((b) => {
+      return (
+        b.title.toLowerCase().includes(normalizedCatalogQuery) ||
+        authorsString(b).toLowerCase().includes(normalizedCatalogQuery)
+      );
+    });
+  }, [catalogQ.data, normalizedCatalogQuery]);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Library</h2>
-          <p className="text-sm text-muted-foreground">Project Gutenberg (DRM-free)</p>
+          <p className="text-sm text-muted-foreground">Curated Project Gutenberg collections (DRM-free)</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             onClick={startOrResumeBulk}
             disabled={bulkScan.running}
-            title="Downloads all Shakespeare items that have a .mobi on Gutenberg"
+            title={`Downloads all ${activeCatalog.label} items that have a .mobi on Gutenberg`}
           >
             {bulkScan.running
               ? `Scanning catalog… (${bulkScan.enqueued} queued, ${bulkScan.scanned} scanned)`
               : bulkScan.done
-                ? "Rescan Shakespeare catalog"
+                ? `Rescan ${activeCatalog.label} catalog`
                 : bulkScan.scanned > 0
                   ? "Resume scan"
-                  : "Download all Shakespeare (.mobi)"}
+                  : `Download all ${activeCatalog.label} (.mobi)`}
           </Button>
           <Button variant="outline" onClick={() => setPaused(true)} disabled={paused}>
             Pause
@@ -314,6 +465,36 @@ export default function LibraryPage() {
           </Button>
         </div>
       </div>
+
+      <Card>
+        <CardContent className="grid gap-4 pt-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="space-y-2">
+            <Label htmlFor="catalog-select">Catalog focus</Label>
+            <Select value={catalogKey} onValueChange={setCatalogKey}>
+              <SelectTrigger id="catalog-select" className="w-full">
+                <SelectValue placeholder="Pick a catalog" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATALOGS.map((catalog) => (
+                  <SelectItem key={catalog.key} value={catalog.key}>
+                    {catalog.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">{activeCatalog.description}</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="library-search">Search your library</Label>
+            <Input
+              id="library-search"
+              placeholder="Search by title or author"
+              value={libraryQuery}
+              onChange={(event) => setLibraryQuery(event.target.value)}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
         <Badge variant="secondary">Downloading {counts.downloading}</Badge>
@@ -385,8 +566,13 @@ export default function LibraryPage() {
         </Card>
       ) : null}
 
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold">Downloaded</h3>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 className="text-xl font-semibold">Downloaded</h3>
+          <p className="text-sm text-muted-foreground">
+            {filteredBooks.length} of {(booksQ.data ?? []).length} titles
+          </p>
+        </div>
       </div>
       {booksQ.isLoading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
@@ -395,13 +581,22 @@ export default function LibraryPage() {
           <CardContent className="py-10 text-center">
             <div className="text-lg font-semibold">Your library is empty</div>
             <p className="mt-2 text-sm text-muted-foreground">
-              Download some Shakespearean classics from the catalog below to get started.
+              Download a few classics from the catalog below to get started.
+            </p>
+          </CardContent>
+        </Card>
+      ) : filteredBooks.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center">
+            <div className="text-lg font-semibold">No matching downloads</div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Try a different title, author, or clear the search to see everything.
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(booksQ.data ?? []).map((b) => (
+          {filteredBooks.map((b) => (
             <Card key={b.id} className="overflow-hidden">
               <div className="aspect-[3/4] w-full bg-muted">
                 {b.cover_url ? (
@@ -418,9 +613,19 @@ export default function LibraryPage() {
                     <div className="text-xs text-muted-foreground">Published: {b.publication_year}</div>
                   )}
                   <div className="text-xs text-muted-foreground">#{b.gutenberg_id}</div>
+                  {progressByBookId.has(b.id) ? (
+                    <div className="text-xs text-muted-foreground">
+                      Saved page {progressByBookId.get(b.id)}
+                    </div>
+                  ) : null}
                 </Link>
               </CardContent>
-              <CardContent className="pt-0">
+              <CardContent className="flex flex-wrap gap-2 pt-0">
+                <Button asChild size="sm">
+                  <Link to="/book/$bookId" params={{ bookId: String(b.id) }}>
+                    {progressByBookId.has(b.id) ? "Continue" : "Open"}
+                  </Link>
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -441,7 +646,21 @@ export default function LibraryPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Shakespeare catalog</CardTitle>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>Catalog</CardTitle>
+              <p className="text-sm text-muted-foreground">{activeCatalog.label}</p>
+            </div>
+            <div className="w-full max-w-sm space-y-2">
+              <Label htmlFor="catalog-search">Search catalog</Label>
+              <Input
+                id="catalog-search"
+                placeholder="Filter by title or author"
+                value={catalogQuery}
+                onChange={(event) => setCatalogQuery(event.target.value)}
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {catalogQ.isLoading ? (
@@ -451,45 +670,57 @@ export default function LibraryPage() {
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                Showing {(catalogQ.data?.results ?? []).length} of {catalogQ.data?.count ?? 0}
+                Showing {filteredCatalogResults.length} of {catalogQ.data?.count ?? 0}
               </p>
-              <div className="space-y-3">
-                {(catalogQ.data?.results ?? []).map((b) => {
-                  const mobiUrl = bestMobiUrl(b);
-                  const already = localGutenbergIds.has(b.id);
-                  const queued = queue.some((t) => t.gutenbergId === b.id);
-                  return (
-                    <div key={b.id} className="flex flex-wrap items-start justify-between gap-3 rounded-lg border bg-card p-3">
-                      <div className="min-w-0 space-y-1">
-                        <div className="font-medium leading-tight">{b.title}</div>
-                        <div className="text-xs text-muted-foreground">{authorsString(b)}</div>
-                        <div className="text-xs text-muted-foreground">Gutenberg #{b.id}</div>
+              {filteredCatalogResults.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="py-6 text-sm text-muted-foreground">
+                    No matching titles in this catalog. Try a different search or catalog.
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {filteredCatalogResults.map((b) => {
+                    const mobiUrl = bestMobiUrl(b);
+                    const already = localGutenbergIds.has(b.id);
+                    const queued = queue.some((t) => t.gutenbergId === b.id);
+                    return (
+                      <div key={b.id} className="flex flex-wrap items-start justify-between gap-3 rounded-lg border bg-card p-3">
+                        <div className="min-w-0 space-y-1">
+                          <div className="font-medium leading-tight">{b.title}</div>
+                          <div className="text-xs text-muted-foreground">{authorsString(b)}</div>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span>Gutenberg #{b.id}</span>
+                            {already ? <Badge variant="secondary">Installed</Badge> : null}
+                            {queued ? <Badge variant="outline">Queued</Badge> : null}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            disabled={already || queued || !mobiUrl}
+                            onClick={() => {
+                              if (!mobiUrl) return;
+                              enqueue({
+                                gutenbergId: b.id,
+                                title: b.title,
+                                authors: authorsString(b),
+                                publicationYear: null,
+                                coverUrl: coverUrl(b),
+                                mobiUrl,
+                              });
+                              setPaused(false);
+                              void runQueue();
+                            }}
+                          >
+                            {already ? "Downloaded" : queued ? "Queued" : mobiUrl ? "Queue MOBI" : "No MOBI"}
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          disabled={already || queued || !mobiUrl}
-                          onClick={() => {
-                            if (!mobiUrl) return;
-                            enqueue({
-                              gutenbergId: b.id,
-                              title: b.title,
-                              authors: authorsString(b),
-                              publicationYear: null,
-                              coverUrl: coverUrl(b),
-                              mobiUrl,
-                            });
-                            setPaused(false);
-                            void runQueue();
-                          }}
-                        >
-                          {already ? "Downloaded" : queued ? "Queued" : mobiUrl ? "Queue MOBI" : "No MOBI"}
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <Button
                   variant="outline"

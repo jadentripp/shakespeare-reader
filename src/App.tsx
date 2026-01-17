@@ -17,7 +17,7 @@ export default function AppLayout() {
       <header className="sticky top-0 z-30 border-b border-border/80 bg-background">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <div className="text-lg font-semibold tracking-tight">Shakespeare Reader</div>
+            <div className="text-lg font-semibold tracking-tight">AI Reader</div>
             <Separator orientation="vertical" className="h-6" />
             <nav className="flex items-center gap-2">
               <Link
