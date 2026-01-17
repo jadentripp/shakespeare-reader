@@ -18,7 +18,19 @@ async fn gutendex_shakespeare_page(
     page_url: Option<String>,
 ) -> Result<gutendex::GutendexResponse, String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
-    gutendex::search_shakespeare(page_url)
+    gutendex::search_catalog("shakespeare", page_url)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn gutendex_catalog_page(
+    app_handle: AppHandle,
+    catalog_key: String,
+    page_url: Option<String>,
+) -> Result<gutendex::GutendexResponse, String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    gutendex::search_catalog(&catalog_key, page_url)
         .await
         .map_err(|e| e.to_string())
 }
@@ -233,6 +245,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             db_init,
             gutendex_shakespeare_page,
+            gutendex_catalog_page,
             download_gutenberg_mobi,
             list_books,
             get_book,
