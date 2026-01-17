@@ -251,6 +251,7 @@ export default function ChatSidebar({
                         )}
                       />
                       <MessageContent
+                        markdown={!isUser}
                         className={cn(
                           "max-w-[85%] text-sm py-2 px-3",
                           isUser ? "bg-primary text-primary-foreground" : "bg-muted/60"

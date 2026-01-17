@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { ChatPrompt, LocalChatMessage } from "@/lib/readerTypes";
 import type { RefObject } from "react";
+import { Markdown } from "@/components/ui/markdown";
 
 type ChatPanelProps = {
   contextHint: string;
@@ -85,7 +86,11 @@ export default function ChatPanel({
                     >
                       {roleLabel}
                     </div>
-                    <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
+                    {isUser ? (
+                      <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
+                    ) : (
+                      <Markdown className="leading-relaxed">{message.content}</Markdown>
+                    )}
                   </div>
                 </div>
               );
