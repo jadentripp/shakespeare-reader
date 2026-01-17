@@ -30,6 +30,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ai-reader"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "encoding_rs",
+ "once_cell",
+ "reqwest",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tokio",
+]
+
+[[package]]
 name = "alloc-no-stdlib"
 version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3442,23 +3459,6 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest",
-]
-
-[[package]]
-name = "shakespeare-reader"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "encoding_rs",
- "once_cell",
- "reqwest",
- "rusqlite",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "tokio",
 ]
 
 [[package]]

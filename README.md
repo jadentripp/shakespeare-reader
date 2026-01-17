@@ -1,4 +1,4 @@
-# Shakespeare Reader
+# AI Reader
 
 A modern, AI-powered desktop reader for books and literary works. Built with Tauri, React, and TypeScript.
 
@@ -43,8 +43,8 @@ A modern, AI-powered desktop reader for books and literary works. Built with Tau
 
 ```bash
 # Clone the repository
-git clone https://github.com/jadentripp/shakespeare-reader.git
-cd shakespeare-reader
+git clone https://github.com/jadentripp/ai-reader.git
+cd ai-reader
 
 # Install dependencies
 bun install
@@ -73,7 +73,7 @@ bun run tauri build
 ## Project Structure
 
 ```
-shakespeare-reader/
+ai-reader/
 ├── src/                    # React application
 │   ├── components/         # UI components
 │   │   ├── reader/         # Reader-specific components
