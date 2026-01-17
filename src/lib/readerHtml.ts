@@ -10,8 +10,9 @@ export interface Act {
 }
 
 export function injectHead(html: string, css: string): string {
+  const charsetTag = `<meta charset="UTF-8">`;
   const styleTag = `<style>${css}</style>`;
-  const headInsert = `${styleTag}`.trim();
+  const headInsert = `${charsetTag}\n${styleTag}`.trim();
   if (/<head[\s>]/i.test(html)) {
     return html.replace(/<head(\s[^>]*)?>/i, (match) => `${match}\n${headInsert}`);
   }

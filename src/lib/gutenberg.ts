@@ -200,4 +200,4 @@ export const CATALOG_BY_KEY = new Map(
   CATALOG_GROUPS.flatMap((group) => group.items).map((item) => [item.key, item]),
 );
 
-export const DEFAULT_CATALOG_KEY = "collection-shakespeare";
+export const DEFAULT_CATALOG_KEY = "collection-all";
