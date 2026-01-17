@@ -4,6 +4,8 @@ import HighlightNote from "@/components/reader/HighlightNote";
 import HighlightsList from "@/components/reader/HighlightsList";
 import TocPanel, { type TocEntry } from "@/components/reader/TocPanel";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { List, Highlighter, FileText } from "lucide-react";
+import { useState } from "react";
 
 type HighlightsSidebarProps = {
   highlights: Highlight[] | undefined;
@@ -25,6 +27,8 @@ type HighlightsSidebarProps = {
   onToggleTocExpanded: () => void;
 };
 
+type Tab = "contents" | "highlights" | "notes";
+
 export default function HighlightsSidebar({
   highlights,
   selectedHighlightId,
@@ -44,83 +48,97 @@ export default function HighlightsSidebar({
   tocExpanded,
   onToggleTocExpanded,
 }: HighlightsSidebarProps) {
+  const [activeTab, setActiveTab] = useState<Tab>("contents");
+  const highlightCount = highlights?.length ?? 0;
+
+  const tabs: { id: Tab; label: string; icon: typeof List; count?: number }[] = [
+    { id: "contents", label: "Contents", icon: List, count: tocEntries.length },
+    { id: "highlights", label: "Highlights", icon: Highlighter, count: highlightCount },
+    { id: "notes", label: "Notes", icon: FileText },
+  ];
+
   return (
     <aside className="min-h-0 flex flex-col">
-      <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/60 bg-gradient-to-b from-card via-card to-card/95 shadow-sm">
-        {/* Header */}
-        <div className="shrink-0 border-b border-border/40 bg-muted/20 px-4 py-3.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                <svg
-                  className="h-4 w-4 text-primary"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold tracking-tight">Reader</h2>
-                <p className="text-[11px] text-muted-foreground">
-                  Navigate & annotate
-                </p>
-              </div>
-            </div>
-            {selectedHighlightId && (
+      <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/50 bg-card shadow-sm">
+        {/* Tab Navigation */}
+        <div className="shrink-0 flex border-b border-border/40">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
               <button
+                key={tab.id}
                 type="button"
-                onClick={onClearSelection}
+                onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-                  "text-muted-foreground hover:text-foreground",
-                  "hover:bg-muted/60"
+                  "flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors relative",
+                  isActive
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground/80"
                 )}
               >
-                Clear
+                <Icon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                {tab.count !== undefined && tab.count > 0 && (
+                  <span className={cn(
+                    "ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium",
+                    isActive ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    {tab.count}
+                  </span>
+                )}
+                {isActive && (
+                  <div className="absolute bottom-0 left-2 right-2 h-0.5 rounded-t-full bg-primary" />
+                )}
               </button>
-            )}
-          </div>
+            );
+          })}
         </div>
 
-        {/* Scrollable Content */}
+        {/* Content */}
         <ScrollArea className="flex-1 min-h-0">
-          <div className="flex flex-col gap-1 p-3">
-            {/* Table of Contents */}
-            <TocPanel
-              entries={tocEntries}
-              currentEntryId={currentTocEntryId}
-              onNavigate={onTocNavigate}
-              expanded={tocExpanded}
-              onToggleExpanded={onToggleTocExpanded}
-            />
+          <div className="p-3">
+            {activeTab === "contents" && (
+              <TocPanel
+                entries={tocEntries}
+                currentEntryId={currentTocEntryId}
+                onNavigate={onTocNavigate}
+                expanded={tocExpanded}
+                onToggleExpanded={onToggleTocExpanded}
+              />
+            )}
 
-            {/* Divider */}
-            <div className="my-2 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+            {activeTab === "highlights" && (
+              <div className="space-y-3">
+                {selectedHighlightId && (
+                  <button
+                    type="button"
+                    onClick={onClearSelection}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground text-right"
+                  >
+                    Clear selection
+                  </button>
+                )}
+                <HighlightsList
+                  highlights={highlights}
+                  selectedHighlightId={selectedHighlightId}
+                  onSelectHighlight={onSelectHighlight}
+                  onDeleteHighlight={onDeleteHighlight}
+                  highlightPageMap={highlightPageMap}
+                  expanded={highlightLibraryExpanded}
+                  onToggleExpanded={onToggleHighlightLibrary}
+                />
+              </div>
+            )}
 
-            {/* Highlights Section */}
-            <HighlightsList
-              highlights={highlights}
-              selectedHighlightId={selectedHighlightId}
-              onSelectHighlight={onSelectHighlight}
-              onDeleteHighlight={onDeleteHighlight}
-              highlightPageMap={highlightPageMap}
-              expanded={highlightLibraryExpanded}
-              onToggleExpanded={onToggleHighlightLibrary}
-            />
-
-            {/* Divider */}
-            <div className="my-2 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
-
-            {/* Notes Section */}
-            <HighlightNote
-              selectedHighlight={selectedHighlight}
-              noteDraft={noteDraft}
-              onNoteChange={onNoteDraftChange}
-              onSaveNote={onSaveNote}
-            />
+            {activeTab === "notes" && (
+              <HighlightNote
+                selectedHighlight={selectedHighlight}
+                noteDraft={noteDraft}
+                onNoteChange={onNoteDraftChange}
+                onSaveNote={onSaveNote}
+              />
+            )}
           </div>
         </ScrollArea>
       </div>

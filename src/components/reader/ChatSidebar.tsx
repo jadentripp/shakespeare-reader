@@ -1,6 +1,5 @@
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChatContainerRoot,
   ChatContainerContent,
@@ -14,17 +13,15 @@ import {
   PromptInputAction,
 } from "@/components/ui/prompt-input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Loader } from "@/components/ui/loader";
 import { cn } from "@/lib/utils";
 import type { ChatPrompt, LocalChatMessage } from "@/lib/readerTypes";
 import type { RefObject } from "react";
-import { Send } from "lucide-react";
+import { Send, Sparkles, ChevronDown, Check, Settings2 } from "lucide-react";
 
 type ChatSidebarProps = {
   contextHint: string;
@@ -51,6 +48,109 @@ function formatModelName(modelId: string): string {
     .replace(/-turbo$/, " Turbo");
 }
 
+const RECOMMENDED_MODEL = "gpt-5.2";
+
+type ModelSelectorProps = {
+  currentModel: string;
+  availableModels: string[];
+  onModelChange: (model: string) => void;
+  modelsLoading?: boolean;
+  disabled?: boolean;
+};
+
+function ModelSelector({
+  currentModel,
+  availableModels,
+  onModelChange,
+  modelsLoading,
+  disabled,
+}: ModelSelectorProps) {
+  const [open, setOpen] = useState(false);
+  const [showMore, setShowMore] = useState(false);
+
+  const filteredModels = availableModels.filter((m) => !m.includes("search"));
+  const hasRecommended = filteredModels.includes(RECOMMENDED_MODEL);
+  const otherModels = filteredModels.filter((m) => m !== RECOMMENDED_MODEL);
+
+  const handleSelect = (model: string) => {
+    onModelChange(model);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={modelsLoading || disabled}
+          className="h-7 gap-1 border-0 bg-muted/50 px-2 text-[11px] hover:bg-muted"
+        >
+          {modelsLoading ? "..." : formatModelName(currentModel)}
+          <ChevronDown className="h-3 w-3 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-52 p-2">
+        {availableModels.length === 0 && !modelsLoading ? (
+          <div className="px-2 py-1.5 text-xs text-muted-foreground">
+            No models available
+          </div>
+        ) : (
+          <>
+            {hasRecommended && (
+              <>
+                <div className="mb-1 px-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Recommended
+                </div>
+                <button
+                  onClick={() => handleSelect(RECOMMENDED_MODEL)}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs hover:bg-muted",
+                    currentModel === RECOMMENDED_MODEL && "bg-muted"
+                  )}
+                >
+                  <span>{formatModelName(RECOMMENDED_MODEL)}</span>
+                  {currentModel === RECOMMENDED_MODEL && <Check className="h-3 w-3" />}
+                </button>
+              </>
+            )}
+
+            {otherModels.length > 0 && (
+              <>
+                <button
+                  onClick={() => setShowMore((v) => !v)}
+                  className="mt-2 flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <Settings2 className="h-3 w-3" />
+                  {showMore ? "Hide" : `Show all models (${otherModels.length})`}
+                </button>
+
+                {showMore && (
+                  <div className="mt-2 max-h-48 overflow-y-auto">
+                    {otherModels.map((model) => (
+                      <button
+                        key={model}
+                        onClick={() => handleSelect(model)}
+                        className={cn(
+                          "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs hover:bg-muted",
+                          currentModel === model && "bg-muted"
+                        )}
+                      >
+                        <span>{formatModelName(model)}</span>
+                        {currentModel === model && <Check className="h-3 w-3" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function ChatSidebar({
   contextHint,
   messages,
@@ -67,177 +167,151 @@ export default function ChatSidebar({
   modelsLoading,
 }: ChatSidebarProps) {
   return (
-    <aside className="min-h-0">
-      <Card className="flex h-full flex-col overflow-hidden">
-        <CardHeader className="flex flex-col gap-3 pb-3">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <CardTitle>AI Assistant</CardTitle>
-              <p className="text-sm text-muted-foreground">{contextHint}</p>
-            </div>
-            <Badge
-              variant={chatSending ? "secondary" : "outline"}
-              className={cn(chatSending && "bg-primary/10 text-primary")}
-            >
-              {chatSending ? "Thinking..." : "Ready"}
-            </Badge>
-          </div>
-
-          {/* Model Picker */}
+    <aside className="min-h-0 flex flex-col">
+      <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/50 bg-card shadow-sm">
+        {/* Header */}
+        <div className="shrink-0 flex items-center justify-between gap-3 border-b border-border/40 px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <svg
-                className="h-3.5 w-3.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              >
-                <path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
-                <path d="M6 10v2a6 6 0 0 0 12 0v-2" />
-                <path d="M12 18v4M8 22h8" />
-              </svg>
-              <span className="font-medium">Model</span>
+            <div className={cn(
+              "flex h-7 w-7 items-center justify-center rounded-lg transition-colors",
+              chatSending ? "bg-primary/20" : "bg-muted"
+            )}>
+              <Sparkles className={cn(
+                "h-4 w-4 transition-colors",
+                chatSending ? "text-primary animate-pulse" : "text-muted-foreground"
+              )} />
             </div>
-            <Select
-              value={currentModel}
-              onValueChange={onModelChange}
-              disabled={modelsLoading || chatSending}
-            >
-              <SelectTrigger className="h-8 flex-1 text-xs">
-                <SelectValue placeholder={modelsLoading ? "Loading..." : "Select model"} />
-              </SelectTrigger>
-              <SelectContent>
-                {availableModels.map((model) => (
-                  <SelectItem key={model} value={model} className="text-xs">
-                    <div className="flex items-center gap-2">
-                      <span>{formatModelName(model)}</span>
-                      {model === currentModel && (
-                        <span className="text-[10px] text-muted-foreground">current</span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-                {availableModels.length === 0 && !modelsLoading && (
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                    No models available
-                  </div>
-                )}
-              </SelectContent>
-            </Select>
+            <div>
+              <h2 className="text-sm font-semibold">AI Assistant</h2>
+              <p className="text-[11px] text-muted-foreground">{contextHint}</p>
+            </div>
           </div>
-        </CardHeader>
 
-        <CardContent className="flex flex-1 min-h-0 flex-col gap-3 pb-4">
-          {prompts.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {prompts.map((prompt) => (
-                <Button
-                  key={prompt.label}
-                  variant="secondary"
-                  size="sm"
-                  className="h-7 rounded-full px-3 text-xs"
-                  onClick={() => {
-                    onPromptSelect(prompt.prompt);
-                    chatInputRef.current?.focus();
-                  }}
-                  disabled={chatSending}
-                  type="button"
-                >
-                  {prompt.label}
-                </Button>
-              ))}
-            </div>
-          )}
+          <ModelSelector
+            currentModel={currentModel}
+            availableModels={availableModels}
+            onModelChange={onModelChange}
+            modelsLoading={modelsLoading}
+            disabled={chatSending}
+          />
+        </div>
 
-          <ChatContainerRoot className="flex-1 min-h-0">
-            <ChatContainerContent className="gap-4 p-1">
-              {messages.length ? (
-                <>
-                  {messages.map((message) => {
-                    const isUser = message.role === "user";
-                    return (
-                      <Message
-                        key={message.id}
-                        className={cn(isUser && "flex-row-reverse")}
-                      >
-                        <MessageAvatar
-                          src={isUser ? "" : ""}
-                          alt={isUser ? "You" : "Assistant"}
-                          fallback={isUser ? "U" : "AI"}
-                          className={cn(
-                            "h-7 w-7 text-xs",
-                            isUser ? "bg-primary text-primary-foreground" : "bg-muted"
-                          )}
-                        />
-                        <MessageContent
-                          className={cn(
-                            "max-w-[85%] text-sm",
-                            isUser && "bg-primary text-primary-foreground"
-                          )}
-                        >
-                          {message.content}
-                        </MessageContent>
-                      </Message>
-                    );
-                  })}
-                  {chatSending && (
-                    <Message>
+        {/* Quick prompts */}
+        {prompts.length > 0 && (
+          <div className="shrink-0 flex flex-wrap gap-1.5 border-b border-border/30 px-3 py-2">
+            {prompts.map((prompt) => (
+              <Button
+                key={prompt.label}
+                variant="outline"
+                size="sm"
+                className="h-6 rounded-full border-dashed px-2.5 text-[11px] hover:border-primary/50 hover:bg-primary/5"
+                onClick={() => {
+                  onPromptSelect(prompt.prompt);
+                  chatInputRef.current?.focus();
+                }}
+                disabled={chatSending}
+                type="button"
+              >
+                {prompt.label}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Messages */}
+        <ChatContainerRoot className="flex-1 min-h-0">
+          <ChatContainerContent className="gap-3 p-3">
+            {messages.length ? (
+              <>
+                {messages.map((message) => {
+                  const isUser = message.role === "user";
+                  return (
+                    <Message
+                      key={message.id}
+                      className={cn(isUser && "flex-row-reverse")}
+                    >
                       <MessageAvatar
                         src=""
-                        alt="Assistant"
-                        fallback="AI"
-                        className="h-7 w-7 text-xs bg-muted"
+                        alt={isUser ? "You" : "Assistant"}
+                        fallback={isUser ? "U" : "AI"}
+                        className={cn(
+                          "h-6 w-6 text-[10px]",
+                          isUser ? "bg-primary text-primary-foreground" : "bg-muted"
+                        )}
                       />
-                      <div className="rounded-lg p-2 text-foreground bg-secondary max-w-[85%] text-sm">
-                        <Loader variant="loading-dots" size="sm" text="Thinking" />
-                      </div>
+                      <MessageContent
+                        className={cn(
+                          "max-w-[85%] text-sm py-2 px-3",
+                          isUser ? "bg-primary text-primary-foreground" : "bg-muted/60"
+                        )}
+                      >
+                        {message.content}
+                      </MessageContent>
                     </Message>
-                  )}
-                </>
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground max-w-[260px]">
-                    Ask questions about the text, request summaries, or explore interpretations.
+                  );
+                })}
+                {chatSending && (
+                  <Message>
+                    <MessageAvatar
+                      src=""
+                      alt="Assistant"
+                      fallback="AI"
+                      className="h-6 w-6 text-[10px] bg-muted"
+                    />
+                    <div className="rounded-lg py-2 px-3 text-foreground bg-muted/60 text-sm">
+                      <Loader variant="loading-dots" size="sm" text="Thinking" />
+                    </div>
+                  </Message>
+                )}
+              </>
+            ) : (
+              <div className="flex h-full items-center justify-center py-8">
+                <div className="text-center max-w-[220px]">
+                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted/50">
+                    <Sparkles className="h-5 w-5 text-muted-foreground/50" />
                   </div>
+                  <p className="text-sm text-muted-foreground">
+                    Ask questions about the text, request summaries, or explore interpretations.
+                  </p>
                 </div>
-              )}
-              <ChatContainerScrollAnchor />
-            </ChatContainerContent>
-          </ChatContainerRoot>
+              </div>
+            )}
+            <ChatContainerScrollAnchor />
+          </ChatContainerContent>
+        </ChatContainerRoot>
 
-          <div className="pt-2 border-t">
-            <PromptInput
-              value={chatInput}
-              onValueChange={onChatInputChange}
-              onSubmit={onSend}
-              isLoading={chatSending}
-              className="rounded-xl"
-            >
-              <PromptInputTextarea
-                ref={chatInputRef}
-                placeholder="Ask about the text..."
-                className="min-h-[60px]"
-              />
-              <PromptInputActions className="justify-end pt-2">
-                <PromptInputAction tooltip="Send message">
-                  <Button
-                    size="sm"
-                    onClick={onSend}
-                    disabled={chatSending || !chatInput.trim()}
-                  >
-                    <Send className="h-4 w-4 mr-1.5" />
-                    Send
-                  </Button>
-                </PromptInputAction>
-              </PromptInputActions>
-            </PromptInput>
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              Press Enter to send
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Input */}
+        <div className="shrink-0 border-t border-border/40 p-3">
+          <PromptInput
+            value={chatInput}
+            onValueChange={onChatInputChange}
+            onSubmit={onSend}
+            isLoading={chatSending}
+            className="rounded-lg border-border/50"
+          >
+            <PromptInputTextarea
+              ref={chatInputRef}
+              placeholder="Ask about the text..."
+              className="min-h-[52px] text-sm"
+            />
+            <PromptInputActions className="justify-between pt-2">
+              <span className="text-[10px] text-muted-foreground">
+                ⌘ + Enter to send
+              </span>
+              <PromptInputAction tooltip="Send message">
+                <Button
+                  size="sm"
+                  onClick={onSend}
+                  disabled={chatSending || !chatInput.trim()}
+                  className="h-7 px-3"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                </Button>
+              </PromptInputAction>
+            </PromptInputActions>
+          </PromptInput>
+        </div>
+      </div>
     </aside>
   );
 }

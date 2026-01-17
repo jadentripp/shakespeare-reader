@@ -31,7 +31,7 @@ fn catalog_base_url(catalog_key: &str) -> Option<String> {
         "all" => Some("https://gutendex.com/books/".to_string()),
         "shakespeare" => Some("https://gutendex.com/books/?search=Shakespeare%2C%20William".to_string()),
         "greek-tragedy" => Some("https://gutendex.com/books/?search=greek%20tragedy".to_string()),
-        "greek-epic" => Some("https://gutendex.com/books/?search=greek%20epic".to_string()),
+        "greek-epic" => Some("https://gutendex.com/books/?search=homer".to_string()),
         "roman-drama" => Some("https://gutendex.com/books/?search=roman%20drama".to_string()),
         "mythology" => Some("https://gutendex.com/books/?search=mythology".to_string()),
         "philosophy" => Some("https://gutendex.com/books/?search=philosophy".to_string()),

@@ -4,7 +4,10 @@ import ReaderPane from "@/components/reader/ReaderPane";
 import HighlightsSidebar from "@/components/reader/HighlightsSidebar";
 import ChatSidebar from "@/components/reader/ChatSidebar";
 import ReaderTopBar from "@/components/reader/ReaderTopBar";
-import { injectHead, wrapBody } from "@/lib/readerHtml";
+import { Button } from "@/components/ui/button";
+import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { injectHead, wrapBody, processGutenbergContent } from "@/lib/readerHtml";
 import type { ChatPrompt, LocalChatMessage, PendingHighlight } from "@/lib/readerTypes";
 import {
   addHighlightMessage,
@@ -77,6 +80,8 @@ export default function MobiBookPage(props: { bookId: number }) {
   const [tocEntries, setTocEntries] = useState<Array<{ id: string; level: number; text: string; element: HTMLElement }>>([]);
   const [currentTocEntryId, setCurrentTocEntryId] = useState<string | null>(null);
   const [tocExpanded, setTocExpanded] = useState(false);
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
 
   const {
     fontFamily,
@@ -99,6 +104,7 @@ export default function MobiBookPage(props: { bookId: number }) {
 
   const srcDoc = useMemo(() => {
     if (!htmlQ.data) return "";
+    const { html: processedHtml } = processGutenbergContent(htmlQ.data);
     const gap = pageGap;
     let css = `
       :root {
@@ -284,7 +290,7 @@ export default function MobiBookPage(props: { bookId: number }) {
         }
       }
     `;
-    return injectHead(wrapBody(htmlQ.data), css);
+    return injectHead(wrapBody(processedHtml), css);
   }, [htmlQ.data, fontFamily, lineHeight, margin, columns, pageGap]);
 
   const getScrollRoot = () => {
@@ -777,15 +783,38 @@ export default function MobiBookPage(props: { bookId: number }) {
     const loadModels = async () => {
       setModelsLoading(true);
       try {
-        const [models, savedModel] = await Promise.all([
+        const [allModels, savedModel] = await Promise.all([
           openAiListModels().catch(() => [] as string[]),
           getSetting("openai_model").catch(() => null),
         ]);
-        setAvailableModels(models);
-        if (savedModel) {
+        const chatModels = allModels.filter((model) => {
+          const m = model.toLowerCase();
+          if (m.includes("audio") || m.includes("transcribe") || m.includes("realtime") || m.includes("tts") || m.includes("whisper") || m.includes("embedding") || m.includes("moderation") || m.includes("dall-e") || m.includes("image")) {
+            return false;
+          }
+          if (m.includes("gpt-") || m.includes("o1") || m.includes("o3") || m.includes("o4")) {
+            return true;
+          }
+          return false;
+        });
+        const sortedModels = chatModels.sort((a, b) => {
+          const aLower = a.toLowerCase();
+          const bLower = b.toLowerCase();
+          const aIsLatest = aLower.includes("latest");
+          const bIsLatest = bLower.includes("latest");
+          if (aIsLatest && !bIsLatest) return -1;
+          if (!aIsLatest && bIsLatest) return 1;
+          const extractVersion = (s: string) => {
+            const match = s.match(/(\d+)\.(\d+)/);
+            return match ? parseFloat(`${match[1]}.${match[2]}`) : 0;
+          };
+          return extractVersion(bLower) - extractVersion(aLower);
+        });
+        setAvailableModels(sortedModels);
+        if (savedModel && sortedModels.includes(savedModel)) {
           setCurrentModel(savedModel);
-        } else if (models.length > 0 && !models.includes(currentModel)) {
-          setCurrentModel(models[0]);
+        } else if (sortedModels.length > 0 && !sortedModels.includes(currentModel)) {
+          setCurrentModel(sortedModels[0]);
         }
       } catch (error) {
         console.error("Failed to load models:", error);
@@ -862,6 +891,14 @@ export default function MobiBookPage(props: { bookId: number }) {
     }
   }, [htmlQ.data, progressKey]);
 
+  const stripGutenbergBoilerplate = (doc: Document) => {
+    const header = doc.getElementById("pg-header");
+    if (header) header.remove();
+    
+    const footer = doc.getElementById("pg-footer");
+    if (footer) footer.remove();
+  };
+
   const handleIframeLoad = () => {
     const doc = iframeRef.current?.contentDocument;
     const root = getScrollRoot();
@@ -869,6 +906,8 @@ export default function MobiBookPage(props: { bookId: number }) {
 
     docRef.current = doc;
     rootRef.current = root;
+    
+    stripGutenbergBoilerplate(doc);
     syncPageMetrics();
 
     // Build TOC from headings
@@ -1301,32 +1340,67 @@ export default function MobiBookPage(props: { bookId: number }) {
         onBack={() => window.history.back()}
       />
 
-      <div className="grid flex-1 min-h-0 grid-cols-[280px_minmax(0,1fr)_400px] gap-3">
-        <HighlightsSidebar
-          highlights={highlightsQ.data}
-          selectedHighlightId={selectedHighlightId}
-          onSelectHighlight={(highlightId) => {
-            setSelectedHighlightId(highlightId);
-            scrollToHighlight(highlightId);
-          }}
-          onDeleteHighlight={handleDeleteHighlight}
-          onClearSelection={() => {
-            setSelectedHighlightId(null);
-            setNoteDraft("");
-          }}
-          highlightLibraryExpanded={highlightLibraryExpanded}
-          onToggleHighlightLibrary={() => setHighlightLibraryExpanded((prev) => !prev)}
-          highlightPageMap={highlightPageMap}
-          selectedHighlight={selectedHighlight}
-          noteDraft={noteDraft}
-          onNoteDraftChange={setNoteDraft}
-          onSaveNote={handleSaveNote}
-          tocEntries={tocEntries}
-          currentTocEntryId={currentTocEntryId}
-          onTocNavigate={handleTocNavigate}
-          tocExpanded={tocExpanded}
-          onToggleTocExpanded={() => setTocExpanded((prev) => !prev)}
-        />
+      <div
+        className={cn(
+          "grid flex-1 min-h-0 gap-3",
+          leftPanelCollapsed && rightPanelCollapsed && "grid-cols-[40px_minmax(0,1fr)_40px]",
+          leftPanelCollapsed && !rightPanelCollapsed && "grid-cols-[40px_minmax(0,1fr)_400px]",
+          !leftPanelCollapsed && rightPanelCollapsed && "grid-cols-[280px_minmax(0,1fr)_40px]",
+          !leftPanelCollapsed && !rightPanelCollapsed && "grid-cols-[280px_minmax(0,1fr)_400px]"
+        )}
+      >
+        <div className="relative flex min-h-0">
+          {leftPanelCollapsed ? (
+            <div className="flex h-full items-start pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setLeftPanelCollapsed(false)}
+                title="Expand left panel"
+              >
+                <PanelLeftOpen className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <>
+              <HighlightsSidebar
+                highlights={highlightsQ.data}
+                selectedHighlightId={selectedHighlightId}
+                onSelectHighlight={(highlightId) => {
+                  setSelectedHighlightId(highlightId);
+                  scrollToHighlight(highlightId);
+                }}
+                onDeleteHighlight={handleDeleteHighlight}
+                onClearSelection={() => {
+                  setSelectedHighlightId(null);
+                  setNoteDraft("");
+                }}
+                highlightLibraryExpanded={highlightLibraryExpanded}
+                onToggleHighlightLibrary={() => setHighlightLibraryExpanded((prev) => !prev)}
+                highlightPageMap={highlightPageMap}
+                selectedHighlight={selectedHighlight}
+                noteDraft={noteDraft}
+                onNoteDraftChange={setNoteDraft}
+                onSaveNote={handleSaveNote}
+                tocEntries={tocEntries}
+                currentTocEntryId={currentTocEntryId}
+                onTocNavigate={handleTocNavigate}
+                tocExpanded={tocExpanded}
+                onToggleTocExpanded={() => setTocExpanded((prev) => !prev)}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-2 h-8 w-8 p-0"
+                onClick={() => setLeftPanelCollapsed(true)}
+                title="Collapse left panel"
+              >
+                <PanelLeftClose className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
 
         <ReaderPane
           columns={columns}
@@ -1340,21 +1414,48 @@ export default function MobiBookPage(props: { bookId: number }) {
           onCancelHighlight={() => setPendingHighlight(null)}
         />
 
-        <ChatSidebar
-          contextHint={chatContextHint}
-          messages={chatMessages}
-          prompts={CHAT_PROMPTS}
-          chatInput={chatInput}
-          onChatInputChange={setChatInput}
-          onPromptSelect={setChatInput}
-          onSend={sendChat}
-          chatSending={chatSending}
-          chatInputRef={chatInputRef}
-          currentModel={currentModel}
-          availableModels={availableModels}
-          onModelChange={handleModelChange}
-          modelsLoading={modelsLoading}
-        />
+        <div className="relative flex min-h-0">
+          {rightPanelCollapsed ? (
+            <div className="flex h-full items-start pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setRightPanelCollapsed(false)}
+                title="Expand right panel"
+              >
+                <PanelRightOpen className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-0 top-2 h-8 w-8 p-0 z-10"
+                onClick={() => setRightPanelCollapsed(true)}
+                title="Collapse right panel"
+              >
+                <PanelRightClose className="h-4 w-4" />
+              </Button>
+              <ChatSidebar
+                contextHint={chatContextHint}
+                messages={chatMessages}
+                prompts={CHAT_PROMPTS}
+                chatInput={chatInput}
+                onChatInputChange={setChatInput}
+                onPromptSelect={setChatInput}
+                onSend={sendChat}
+                chatSending={chatSending}
+                chatInputRef={chatInputRef}
+                currentModel={currentModel}
+                availableModels={availableModels}
+                onModelChange={handleModelChange}
+                modelsLoading={modelsLoading}
+              />
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -3,6 +3,8 @@ use std::env;
 
 use tauri::{path::BaseDirectory, AppHandle, Manager};
 
+const REPLACEMENT_THRESHOLD: usize = 16;
+
 fn find_mobi_header_offset(rec0: &[u8]) -> Option<usize> {
     // After the 16-byte PalmDOC header, MOBI header commonly starts at offset 16,
     // but we search defensively.
@@ -22,38 +24,29 @@ fn mobi_extra_data_flags(rec0: &[u8]) -> u16 {
 }
 
 fn decode_mobi_text(rec0: &[u8], text_bytes: &[u8]) -> String {
-    let enc = mobi_text_encoding(rec0);
-    match enc {
-        Some(1252) => {
-            let (utf8, _, had_errors) = encoding_rs::UTF_8.decode(text_bytes);
-            let utf8_str = utf8.to_string();
-            if !had_errors && !contains_replacement(&utf8_str) {
-                return utf8_str;
-            }
-            let (cow, _, _) = encoding_rs::WINDOWS_1252.decode(text_bytes);
-            cow.to_string()
-        }
-        Some(65001) => {
-            let (utf8, _, had_errors) = encoding_rs::UTF_8.decode(text_bytes);
-            let utf8_str = utf8.to_string();
-            if !had_errors && !contains_replacement(&utf8_str) {
-                return utf8_str;
-            }
-            let (cp, _, _) = encoding_rs::WINDOWS_1252.decode(text_bytes);
-            cp.to_string()
-        }
-        _ => {
-            // Heuristic: try UTF-8 first; if it has decode errors or replacement chars, fall back to 1252.
-            let (utf8, _, had_errors) = encoding_rs::UTF_8.decode(text_bytes);
-            let utf8_str = utf8.to_string();
-            if had_errors || contains_replacement(&utf8_str) {
-                let (cp, _, _) = encoding_rs::WINDOWS_1252.decode(text_bytes);
-                cp.to_string()
-            } else {
-                utf8_str
-            }
-        }
+    // Check BOM first
+    if let Some(enc) = encoding_from_bom(text_bytes) {
+        let (decoded, _, _) = enc.decode(text_bytes);
+        return decoded.to_string();
     }
+    
+    // Use MOBI header encoding: 65001 = UTF-8, 1252 = Windows-1252
+    let encoding = match mobi_text_encoding(rec0) {
+        Some(65001) => encoding_rs::UTF_8,
+        Some(1252) => encoding_rs::WINDOWS_1252,
+        _ => {
+            // Try UTF-8 first; if it produces replacement chars, fall back to Windows-1252
+            let utf8_result = String::from_utf8_lossy(text_bytes);
+            if contains_replacement(&utf8_result) {
+                let (decoded, _, _) = encoding_rs::WINDOWS_1252.decode(text_bytes);
+                return decoded.to_string();
+            }
+            return utf8_result.to_string();
+        }
+    };
+    
+    let (decoded, _, _) = encoding.decode(text_bytes);
+    decoded.to_string()
 }
 
 fn encoding_from_bom(bytes: &[u8]) -> Option<&'static encoding_rs::Encoding> {
@@ -127,6 +120,14 @@ pub fn looks_like_mojibake(s: &str) -> bool {
 
 pub fn contains_replacement(s: &str) -> bool {
     s.chars().any(|c| c == '\u{FFFD}')
+}
+
+pub fn replacement_count(s: &str) -> usize {
+    s.chars().filter(|c| *c == '\u{FFFD}').count()
+}
+
+pub fn has_many_replacements(s: &str) -> bool {
+    replacement_count(s) > REPLACEMENT_THRESHOLD
 }
 
 pub fn has_invalid_controls(bytes: &[u8]) -> bool {
@@ -309,33 +310,39 @@ fn trim_trailing_record_data(rec: &[u8], extra_flags: u16) -> usize {
     if rec.is_empty() || extra_flags == 0 {
         return rec.len();
     }
-    let last = *rec.last().unwrap();
-    if last & 0x80 == 0 {
-        return rec.len();
+
+    let mut size = rec.len();
+
+    // Process bits 15 down to 1: each set bit indicates a variable-length extra data entry
+    for bit in (1..=15).rev() {
+        if extra_flags & (1 << bit) == 0 {
+            continue;
+        }
+        // Read backwards variable-length integer (size of this extra data block)
+        let mut val: usize = 0;
+        let mut shift = 0usize;
+        while size > 0 {
+            size -= 1;
+            let b = rec[size];
+            val |= ((b & 0x7f) as usize) << shift;
+            shift += 7;
+            if b & 0x80 != 0 {
+                break;
+            }
+            if shift > 28 {
+                break;
+            }
+        }
+        // Subtract the extra data block size
+        size = size.saturating_sub(val);
     }
 
-    let mut size: usize = 0;
-    let mut shift = 0usize;
-    let mut bytes_used = 0usize;
-    let mut pos = rec.len();
-    while pos > 0 {
-        let b = rec[pos - 1];
-        size |= ((b & 0x7f) as usize) << shift;
-        bytes_used += 1;
-        pos -= 1;
-        if b & 0x80 != 0 {
-            break;
-        }
-        shift += 7;
-        if shift > 28 {
-            break;
-        }
+    // Bit 0: multibyte overlap indicator (1 byte)
+    if extra_flags & 1 != 0 && size > 0 {
+        size -= 1;
     }
-    let total = size + bytes_used;
-    if total > rec.len() {
-        return rec.len();
-    }
-    rec.len() - total
+
+    size
 }
 
 fn strip_invalid_controls(s: &str) -> String {
@@ -504,17 +511,29 @@ pub fn delete_mobi_file(mobi_path: String) -> Result<(), anyhow::Error> {
 }
 
 pub fn read_html_string(html_path: String) -> Result<String, anyhow::Error> {
-    let bytes = fs::read(html_path)?;
+    let bytes = fs::read(&html_path)?;
     let encoding = detect_html_encoding(&bytes).unwrap_or(encoding_rs::UTF_8);
     let (cow, _, had_errors) = encoding.decode(&bytes);
     let mut text = strip_invalid_controls(&cow.to_string());
-    if had_errors || contains_replacement(&text) {
+    let mut replacement_total = replacement_count(&text);
+    if had_errors || replacement_total > 0 {
         let (cp, _, _) = encoding_rs::WINDOWS_1252.decode(&bytes);
         let fallback = strip_invalid_controls(&cp.to_string());
-        if !contains_replacement(&fallback) {
+        let fallback_replacements = replacement_count(&fallback);
+        // Only switch to Windows-1252 when UTF-8 decoding is clearly worse.
+        if replacement_total > REPLACEMENT_THRESHOLD && fallback_replacements < replacement_total {
             text = fallback;
+            replacement_total = fallback_replacements;
         }
     }
+    
+    // If text still contains replacement chars, the cached HTML is corrupt - delete it
+    // so it gets regenerated on next load
+    if replacement_total > REPLACEMENT_THRESHOLD {
+        let _ = fs::remove_file(&html_path);
+        anyhow::bail!("Cached HTML contains encoding errors, please reload the book");
+    }
+    
     Ok(fix_mojibake(&text).unwrap_or(text))
 }
 

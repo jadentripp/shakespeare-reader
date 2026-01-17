@@ -33,6 +33,36 @@ export function wrapBody(html: string): string {
   return `<!doctype html><html><head></head><body><div id="reader-root">${normalized}</div></body></html>`;
 }
 
+export interface GutenbergMetadata {
+  title?: string;
+  author?: string;
+  translator?: string;
+  annotator?: string;
+}
+
+export interface ProcessedGutenberg {
+  html: string;
+  metadata: GutenbergMetadata;
+}
+
+export function processGutenbergContent(html: string): ProcessedGutenberg {
+  const metadata: GutenbergMetadata = {};
+  
+  const titleMatch = html.match(/Title:\s*([^\n<]+)/i);
+  const authorMatch = html.match(/Author:\s*([^\n<]+)/i);
+  const translatorMatch = html.match(/Translator:\s*([^\n<]+)/i);
+  const annotatorMatch = html.match(/Annotator:\s*([^\n<]+)/i);
+  
+  if (titleMatch) metadata.title = titleMatch[1].trim();
+  if (authorMatch) metadata.author = authorMatch[1].trim();
+  if (translatorMatch) metadata.translator = translatorMatch[1].trim();
+  if (annotatorMatch) metadata.annotator = annotatorMatch[1].trim();
+
+  return { html, metadata };
+}
+
+
+
 export function parseSceneLinksHierarchical(html: string): Act[] {
   try {
     const normalized = normalizeHtmlFragment(html);

@@ -98,7 +98,7 @@ fn get_book_html(app_handle: AppHandle, book_id: i64) -> Result<String, String> 
 
     if (html.is_empty()
         || books::looks_like_mojibake(&html)
-        || books::contains_replacement(&html)
+        || books::has_many_replacements(&html)
         || has_invalid_controls)
         && mobi_path.is_some()
     {
