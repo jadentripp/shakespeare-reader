@@ -76,7 +76,7 @@ fn db_path<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<std::p
             base = parent.to_path_buf();
         }
     }
-    Ok(base.join("tmp").join("shakespeare-reader.sqlite"))
+    Ok(base.join("tmp").join("ai-reader.sqlite"))
 }
 
 fn open<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<Connection, anyhow::Error> {
@@ -157,12 +157,15 @@ CREATE INDEX IF NOT EXISTS idx_book_chat_thread_book ON book_chat_thread(book_id
 CREATE TABLE IF NOT EXISTS book_message (
   id INTEGER PRIMARY KEY,
   book_id INTEGER NOT NULL,
+  thread_id INTEGER,
   role TEXT NOT NULL,
   content TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-  FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE
+  FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE,
+  FOREIGN KEY(thread_id) REFERENCES book_chat_thread(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_book_message_book ON book_message(book_id);
+CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id);
 "#,
     )
     .context("failed to initialize sqlite schema")?;
@@ -542,6 +545,7 @@ pub fn delete_book_chat_thread<R: tauri::Runtime>(
     thread_id: i64,
 ) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
+    conn.execute("DELETE FROM book_message WHERE thread_id = ?1", params![thread_id])?;
     conn.execute("DELETE FROM book_chat_thread WHERE id = ?1", params![thread_id])?;
     Ok(())
 }
@@ -684,6 +688,38 @@ mod tests {
         delete_book_messages(&handle, book_id).unwrap();
         let messages = list_book_messages(&handle, book_id, None).unwrap();
         assert_eq!(messages.len(), 0);
+
+        std::fs::remove_file(db_path).ok();
+    }
+
+    #[test]
+    fn test_thread_cascade_deletion() {
+        let (handle, db_path) = setup("cascade");
+        init(&handle).expect("Failed to init DB");
+
+        let book_id = upsert_book(
+            &handle,
+            1,
+            "Title".to_string(),
+            "Author".to_string(),
+            None,
+            None,
+            "mobi".to_string(),
+            "html".to_string(),
+            None,
+        ).unwrap();
+
+        let thread = create_book_chat_thread(&handle, book_id, "Thread".to_string()).unwrap();
+        add_book_message(&handle, book_id, Some(thread.id), "user".to_string(), "Msg 1".to_string()).unwrap();
+        add_book_message(&handle, book_id, Some(thread.id), "assistant".to_string(), "Msg 2".to_string()).unwrap();
+
+        let messages = list_book_messages(&handle, book_id, Some(thread.id)).unwrap();
+        assert_eq!(messages.len(), 2);
+
+        delete_book_chat_thread(&handle, thread.id).unwrap();
+
+        let messages_after = list_book_messages(&handle, book_id, Some(thread.id)).unwrap();
+        assert_eq!(messages_after.len(), 0, "Messages should be deleted when thread is deleted");
 
         std::fs::remove_file(db_path).ok();
     }
