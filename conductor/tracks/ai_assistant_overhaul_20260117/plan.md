@@ -9,7 +9,7 @@
     - [x] Update `src-tauri/src/lib.rs` and `src/lib/tauri.ts`.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 1: Persistence' (Protocol in workflow.md)**
 
-## Phase 2: Frontend Integration & Markdown
+## Phase 2: Frontend Integration & Markdown [checkpoint: 103ebe8]
 - [x] **Task: Implement Markdown Rendering** b5c96de
 - [x] **Task: Connect General Chat to Database** b5c96de
 - [x] **Task: Add "New Chat" Functionality** b5c96de
