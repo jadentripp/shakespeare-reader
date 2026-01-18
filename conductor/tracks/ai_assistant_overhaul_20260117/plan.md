@@ -16,9 +16,9 @@
 - [ ] **Task: Conductor - User Manual Verification 'Phase 2: UI & Integration' (Protocol in workflow.md)**
 
 ## Phase 3: UX Polish
-- [ ] **Task: Improve Context Indicators**
-    - [ ] Add visual cues when switching between page chat and highlight chat.
-    - [ ] Ensure "Ask about the meaning..." placeholder is dynamic based on context.
+- [x] **Task: Improve Context Indicators** dbe4903
+    - [x] Add visual cues when switching between page chat and highlight chat.
+    - [x] Ensure "Ask about the meaning..." placeholder is dynamic based on context.
 - [ ] **Task: Final Verification**
     - [ ] Verify that chats survive app restarts.
     - [ ] Verify that Markdown (tables, bold, etc.) renders correctly.
