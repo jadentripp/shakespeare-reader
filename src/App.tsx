@@ -1,7 +1,7 @@
 import { Link, Outlet } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, Box } from "lucide-react";
 import { dbInit } from "./lib/tauri";
 
 export default function AppLayout() {
@@ -13,14 +13,23 @@ export default function AppLayout() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/40">
         <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4">
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="h-7 w-7 rounded-lg bg-foreground flex items-center justify-center">
-              <span className="text-background text-xs font-bold">AI</span>
-            </div>
-            <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors">
-              Reader
-            </span>
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link to="/" className="flex items-center gap-2 group">
+              <div className="h-7 w-7 rounded-lg bg-foreground flex items-center justify-center">
+                <span className="text-background text-xs font-bold">AI</span>
+              </div>
+              <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors">
+                Reader
+              </span>
+            </Link>
+            <Link
+              to="/3d-library"
+              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+            >
+              <Box className="h-3.5 w-3.5" />
+              3D Library
+            </Link>
+          </div>
           <Link to="/settings">
             <Button
               variant="ghost"
