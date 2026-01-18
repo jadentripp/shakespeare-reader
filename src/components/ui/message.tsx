@@ -48,7 +48,7 @@ export type MessageContentProps = {
   children: React.ReactNode
   markdown?: boolean
   className?: string
-  onCitationClick?: (id: number) => void
+  onCitationClick?: (index: number, snippet?: string) => void
 } & React.ComponentProps<typeof Markdown> &
   React.HTMLProps<HTMLDivElement>
 

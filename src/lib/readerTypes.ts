@@ -11,7 +11,7 @@ export type LocalChatMessage = {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
-  onCitationClick?: (citationId: number) => void;
+  onCitationClick?: (index: number, snippet?: string) => void;
 };
 
 export type ChatPrompt = {

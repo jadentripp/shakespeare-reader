@@ -11,11 +11,18 @@ export type MarkdownProps = {
   id?: string
   className?: string
   components?: Partial<Components>
-  onCitationClick?: (id: number) => void
+  onCitationClick?: (index: number, snippet?: string) => void
 }
 
 function parseMarkdownIntoBlocks(markdown: string): string[] {
-  const tokens = marked.lexer(markdown)
+  // Pre-process <cite> tags into a unique format that won't be mangled by Markdown
+  // We use a syntax like CITE_START[index|snippet]textCITE_END
+  const processed = markdown.replace(
+    /<cite\s+snippet="([^"]*)"\s+index="([^"]*)">([\s\S]*?)<\/cite>/g,
+    (_, snippet, index, text) => `__CITE_START__[${index}|${snippet}]${text}__CITE_END__`
+  );
+
+  const tokens = marked.lexer(processed)
   return tokens.map((token) => token.raw)
 }
 
@@ -65,38 +72,63 @@ const MemoizedMarkdownBlock = memo(
   }: {
     content: string
     components?: Partial<Components>
-    onCitationClick?: (id: number) => void
+    onCitationClick?: (index: number, snippet?: string) => void
   }) {
     const processedComponents: Partial<Components> = {
       ...components,
-      // Handle the 'p', 'li' etc. specifically if needed, 
-      // but 'text' is the cleanest if we could get it to work.
-      // Since 'text' doesn't work in v10, let's wrap the children of common containers.
+      // Handle our custom cite markers
       p: function ParagraphComponent({ children, ...props }) {
         const processNode = (node: any): any => {
           if (typeof node === 'string') {
-            const parts = node.split(/(\[\d+\])/g);
-            return parts.map((part, i) => {
-              const match = part.match(/^\[(\d+)\]$/);
-              if (match) {
-                const id = parseInt(match[1], 10);
+            // First handle our new __CITE__ format
+            const citeParts = node.split(/(__CITE_START__\[[^\]]*\][\s\S]*?__CITE_END__)/g);
+            const processedCiteParts = citeParts.flatMap((part, i) => {
+              const citeMatch = part.match(/__CITE_START__\[([^|]*)\|([^\]]*)\]([\s\S]*?)__CITE_END__/);
+              if (citeMatch) {
+                const index = parseInt(citeMatch[1], 10);
+                const snippet = citeMatch[2];
+                const text = citeMatch[3];
                 return (
-                  <sup
-                    key={i}
+                  <span
+                    key={`cite-${i}`}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      onCitationClick?.(id);
+                      onCitationClick?.(index, snippet);
                     }}
-                    className="cursor-pointer text-primary hover:text-primary/70 font-bold px-1 select-none inline-block align-baseline hover:scale-110 transition-transform underline decoration-dotted underline-offset-2"
-                    style={{ fontSize: '0.75em', verticalAlign: 'super', lineHeight: 0 }}
+                    className="cursor-pointer bg-primary/10 text-primary border-b border-primary/40 hover:bg-primary/20 transition-colors px-0.5 rounded-sm italic"
+                    title={`Click to see: "${snippet}"`}
                   >
-                    [{id}]
-                  </sup>
+                    {text}
+                  </span>
                 );
               }
-              return part;
+              
+              // Then handle legacy [1] format within the remaining string parts
+              const parts = part.split(/(\[\d+\])/g);
+              return parts.map((subPart, j) => {
+                const match = subPart.match(/^\[(\d+)\]$/);
+                if (match) {
+                  const id = parseInt(match[1], 10);
+                  return (
+                    <sup
+                      key={`legacy-${i}-${j}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onCitationClick?.(id);
+                      }}
+                      className="cursor-pointer text-primary hover:text-primary/70 font-bold px-1 select-none inline-block align-baseline hover:scale-110 transition-transform underline decoration-dotted underline-offset-2"
+                      style={{ fontSize: '0.75em', verticalAlign: 'super', lineHeight: 0 }}
+                    >
+                      [{id}]
+                    </sup>
+                  );
+                }
+                return subPart;
+              });
             });
+            return processedCiteParts;
           }
           if (Array.isArray(node)) {
             return node.map((child, i) => <span key={i}>{processNode(child)}</span>);
@@ -118,28 +150,53 @@ const MemoizedMarkdownBlock = memo(
       li: function LiComponent({ children, ...props }) {
         const processNode = (node: any): any => {
           if (typeof node === 'string') {
-            const parts = node.split(/(\[\d+\])/g);
-            return parts.map((part, i) => {
-              const match = part.match(/^\[(\d+)\]$/);
-              if (match) {
-                const id = parseInt(match[1], 10);
+            const citeParts = node.split(/(__CITE_START__\[[^\]]*\][\s\S]*?__CITE_END__)/g);
+            const processedCiteParts = citeParts.flatMap((part, i) => {
+              const citeMatch = part.match(/__CITE_START__\[([^|]*)\|([^\]]*)\]([\s\S]*?)__CITE_END__/);
+              if (citeMatch) {
+                const index = parseInt(citeMatch[1], 10);
+                const snippet = citeMatch[2];
+                const text = citeMatch[3];
                 return (
-                  <sup
-                    key={i}
+                  <span
+                    key={`cite-${i}`}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      onCitationClick?.(id);
+                      onCitationClick?.(index, snippet);
                     }}
-                    className="cursor-pointer text-primary hover:text-primary/70 font-bold px-1 select-none inline-block align-baseline hover:scale-110 transition-transform underline decoration-dotted underline-offset-2"
-                    style={{ fontSize: '0.75em', verticalAlign: 'super', lineHeight: 0 }}
+                    className="cursor-pointer bg-primary/10 text-primary border-b border-primary/40 hover:bg-primary/20 transition-colors px-0.5 rounded-sm italic"
+                    title={`Click to see: "${snippet}"`}
                   >
-                    [{id}]
-                  </sup>
+                    {text}
+                  </span>
                 );
               }
-              return part;
+
+              const parts = part.split(/(\[\d+\])/g);
+              return parts.map((subPart, j) => {
+                const match = subPart.match(/^\[(\d+)\]$/);
+                if (match) {
+                  const id = parseInt(match[1], 10);
+                  return (
+                    <sup
+                      key={`legacy-${i}-${j}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onCitationClick?.(id);
+                      }}
+                      className="cursor-pointer text-primary hover:text-primary/70 font-bold px-1 select-none inline-block align-baseline hover:scale-110 transition-transform underline decoration-dotted underline-offset-2"
+                      style={{ fontSize: '0.75em', verticalAlign: 'super', lineHeight: 0 }}
+                    >
+                      [{id}]
+                    </sup>
+                  );
+                }
+                return subPart;
+              });
             });
+            return processedCiteParts;
           }
           if (Array.isArray(node)) {
             return node.map((child, i) => <span key={i}>{processNode(child)}</span>);

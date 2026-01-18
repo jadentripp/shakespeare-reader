@@ -47,7 +47,7 @@ type ChatSidebarProps = {
   isHighlightContext?: boolean;
   attachedContext?: Highlight[];
   onRemoveContext?: (id: number) => void;
-  onCitationClick?: (id: number) => void;
+  onCitationClick?: (index: number, snippet?: string) => void;
 };
 
 function formatModelName(modelId: string): string {

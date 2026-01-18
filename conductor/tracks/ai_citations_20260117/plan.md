@@ -12,10 +12,10 @@ Define how the AI receives context and how it should format citations.
 ## Phase 2: Frontend Parsing & Interaction
 Enable the chat UI to recognize and handle the citation tags.
 
-- [ ] Task: Implement a custom Markdown component to parse `<cite>` tags in `ChatPanel.tsx`.
-- [ ] Task: Create `CitationLink` component with distinctive styling and hover effects.
-- [ ] Task: Implement the `onCitationClick` handler to broadcast the citation event (snippet and index).
-- [ ] Task: Conductor - User Manual Verification 'Frontend Parsing & Interaction' (Protocol in workflow.md)
+- [x] Task: Implement a custom Markdown component to parse `<cite>` tags in `ChatPanel.tsx`.
+- [x] Task: Create `CitationLink` component with distinctive styling and hover effects.
+- [x] Task: Implement the `onCitationClick` handler to broadcast the citation event (snippet and index).
+- [x] Task: Conductor - User Manual Verification 'Frontend Parsing & Interaction' (Protocol in workflow.md)
 
 ## Phase 3: Reader Synchronization & Highlighting
 Connect the citation events to the reader's view and highlighting logic.

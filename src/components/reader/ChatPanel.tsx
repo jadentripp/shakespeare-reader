@@ -89,7 +89,12 @@ export default function ChatPanel({
                     {isUser ? (
                       <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
                     ) : (
-                      <Markdown className="leading-relaxed">{message.content}</Markdown>
+                      <Markdown 
+                        className="leading-relaxed" 
+                        onCitationClick={message.onCitationClick}
+                      >
+                        {message.content}
+                      </Markdown>
                     )}
                   </div>
                 </div>

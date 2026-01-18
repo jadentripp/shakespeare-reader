@@ -1220,7 +1220,14 @@ export default function MobiBookPage(props: { bookId: number }) {
     }
   };
 
-  const handleCitationClick = (citationId: number) => {
+  const handleCitationClick = (citationId: number, snippet?: string) => {
+    if (snippet) {
+      scrollToQuote(snippet);
+      setActiveAiQuote(snippet);
+      setSelectedHighlightId(null);
+      return;
+    }
+
     const value = contextMap[citationId];
     if (typeof value === "number" && value !== -1) {
       scrollToHighlight(value);
@@ -1431,8 +1438,15 @@ export default function MobiBookPage(props: { bookId: number }) {
       id: String(message.id),
       role: message.role as "user" | "assistant",
       content: content,
-      onCitationClick: (citationId: number) => {
-        const value = mapping[citationId];
+      onCitationClick: (index: number, snippet?: string) => {
+        if (snippet) {
+          scrollToQuote(snippet);
+          setActiveAiQuote(snippet);
+          setSelectedHighlightId(null);
+          return;
+        }
+
+        const value = mapping[index];
         if (typeof value === "number" && value !== -1) {
           scrollToHighlight(value);
           setSelectedHighlightId(value);
@@ -1447,7 +1461,7 @@ export default function MobiBookPage(props: { bookId: number }) {
           }
         } else {
           // Fallback to global map for current session's newly sent messages
-          handleCitationClick(citationId);
+          handleCitationClick(index, snippet);
         }
       },
     };
