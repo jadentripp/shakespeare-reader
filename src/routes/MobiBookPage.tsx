@@ -14,12 +14,13 @@ import {
   addBookMessage,
   createHighlight,
   deleteHighlight,
-  deleteBookMessages,
   getBook,
   getBookHtml,
   getSetting,
   listHighlightMessages,
   listBookMessages,
+  listBookChatThreads,
+  createBookChatThread,
   listHighlights,
   openAiChat,
   openAiListModels,
@@ -29,20 +30,31 @@ import {
 import { useReaderAppearance } from "../lib/appearance";
 
 const DESIRED_PAGE_WIDTH = 750;
-const HIGHLIGHT_PROMPT =
-  "You are an assistant embedded in an AI reader. Respond with concise, thoughtful guidance using the selected highlight as context.";
 const CHAT_PROMPTS: ChatPrompt[] = [
   { label: "Summarize", prompt: "Summarize this passage in modern English." },
 ];
 
 export default function MobiBookPage(props: { bookId: number }) {
   const id = props.bookId;
+  const [columns, setColumns] = useState<1 | 2>(1);
+  const [showAppearance, setShowAppearance] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [jumpPage, setJumpPage] = useState("");
+  const [pendingHighlight, setPendingHighlight] = useState<PendingHighlight | null>(null);
+  const [selectedHighlightId, setSelectedHighlightId] = useState<number | null>(null);
+  const [currentThreadId, setCurrentThreadId] = useState<number | null>(null);
+
   const bookQ = useQuery({ queryKey: ["book", id], queryFn: () => getBook(id) });
   const htmlQ = useQuery({ queryKey: ["bookHtml", id], queryFn: () => getBookHtml(id) });
   const highlightsQ = useQuery({ queryKey: ["bookHighlights", id], queryFn: () => listHighlights(id) });
+  const bookChatThreadsQ = useQuery({
+    queryKey: ["bookChatThreads", id],
+    queryFn: () => listBookChatThreads(id),
+  });
   const bookMessagesQ = useQuery({
-    queryKey: ["bookMessages", id],
-    queryFn: () => listBookMessages(id),
+    queryKey: ["bookMessages", id, currentThreadId],
+    queryFn: () => listBookMessages(id, currentThreadId),
   });
   const queryClient = useQueryClient();
 
@@ -66,13 +78,6 @@ export default function MobiBookPage(props: { bookId: number }) {
   const pageLockRef = useRef(1);
   const restoredRef = useRef(false);
   const pendingRestoreRef = useRef<{ page?: number } | null>(null);
-  const [columns, setColumns] = useState<1 | 2>(1);
-  const [showAppearance, setShowAppearance] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [jumpPage, setJumpPage] = useState("");
-  const [pendingHighlight, setPendingHighlight] = useState<PendingHighlight | null>(null);
-  const [selectedHighlightId, setSelectedHighlightId] = useState<number | null>(null);
   const [highlightLibraryExpanded, setHighlightLibraryExpanded] = useState(false);
   const [highlightPageMap, setHighlightPageMap] = useState<Record<number, number>>({});
   const [noteDraft, setNoteDraft] = useState("");
@@ -414,7 +419,7 @@ export default function MobiBookPage(props: { bookId: number }) {
       const activeEls = doc.querySelectorAll(
         `span.readerHighlight[data-highlight-id="${activeId}"]`
       );
-      activeEls.forEach((el) => el.classList.add("readerHighlightActive"));
+      activeEls.forEach((el) => (el as HTMLElement).classList.add("readerHighlightActive"));
     }
   };
 
@@ -436,7 +441,7 @@ export default function MobiBookPage(props: { bookId: number }) {
       const range = doc.createRange();
       range.selectNodeContents(node);
       const rects = Array.from(range.getClientRects());
-      const intersects = rects.some((rect) => {
+      const intersects = rects.some((rect: DOMRect) => {
         const left = rect.left - rootRect.left + root.scrollLeft;
         const right = rect.right - rootRect.left + root.scrollLeft;
         return right >= pageLeft && left <= pageRight;
@@ -554,21 +559,21 @@ export default function MobiBookPage(props: { bookId: number }) {
     const target = normalizeLinkText(text);
     if (!target) return null;
     const entries = getHeadingIndex();
-    const exact = entries.filter((entry) => entry.norm === target);
+    const exact = entries.filter((entry: { norm: string; el: HTMLElement }) => entry.norm === target);
     const fuzzy = entries.filter(
-      (entry) => entry.norm.includes(target) || target.includes(entry.norm)
+      (entry: { norm: string; el: HTMLElement }) => entry.norm.includes(target) || target.includes(entry.norm)
     );
     const candidates = exact.length ? exact : fuzzy;
     if (!candidates.length) return null;
     const refRect = referenceEl ? getElementRect(referenceEl) : null;
     const refOffset = refRect ? getOffsetLeftForRect(refRect) : null;
     const scored = candidates
-      .map((entry) => {
+      .map((entry: { norm: string; el: HTMLElement }) => {
         const rect = getElementRect(entry.el);
         const offsetLeft = rect ? getOffsetLeftForRect(rect) : null;
         return { el: entry.el, offsetLeft };
       })
-      .filter((entry) => entry.offsetLeft !== null) as Array<{
+      .filter((entry: { el: HTMLElement; offsetLeft: number | null }) => entry.offsetLeft !== null) as Array<{
       el: HTMLElement;
       offsetLeft: number;
     }>;
@@ -1179,8 +1184,10 @@ export default function MobiBookPage(props: { bookId: number }) {
 
   const handleNewChat = async () => {
     if (selectedHighlight) return;
-    await deleteBookMessages(id);
-    await queryClient.invalidateQueries({ queryKey: ["bookMessages", id] });
+    const title = `Chat ${new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+    const thread = await createBookChatThread({ bookId: id, title });
+    setCurrentThreadId(thread.id);
+    await queryClient.invalidateQueries({ queryKey: ["bookChatThreads", id] });
   };
 
   const handleDeleteHighlight = async (highlightId: number) => {
@@ -1228,9 +1235,10 @@ export default function MobiBookPage(props: { bookId: number }) {
         });
         const messages = messagesQ.data ?? [];
         const systemContent = [
-          HIGHLIGHT_PROMPT,
-          `Highlight: "${selectedHighlight.text}"`,
-          selectedHighlight.note ? `Note: ${selectedHighlight.note}` : null,
+          "You are an assistant embedded in an AI reader.",
+          "IMPORTANT: You have full access to the user's currently selected highlight. Respond thoughtfully using this specific context.",
+          `Current Highlight Text: "${selectedHighlight.text}"`,
+          selectedHighlight.note ? `User's Note on Highlight: "${selectedHighlight.note}"` : null,
         ]
           .filter(Boolean)
           .join("\n");
@@ -1248,14 +1256,21 @@ export default function MobiBookPage(props: { bookId: number }) {
           queryKey: ["highlightMessages", selectedHighlight.id],
         });
       } else {
+        let threadId = currentThreadId;
+        
+        // If this is the first message in a default (null) thread, or we want a fresh thread, 
+        // we can create one. For now, let's just use the current threadId.
+        
         await addBookMessage({
           bookId: id,
+          threadId: threadId,
           role: "user",
           content: input,
         });
         const messages = bookMessagesQ.data ?? [];
         const systemContent = [
-          HIGHLIGHT_PROMPT,
+          "You are an assistant embedded in an AI reader.",
+          "IMPORTANT: You have full access to the reader's current context. Respond thoughtfully using the context provided below.",
           contextText ? `Current page context: "${contextText}"` : "Current page context unavailable.",
         ]
           .filter(Boolean)
@@ -1267,11 +1282,12 @@ export default function MobiBookPage(props: { bookId: number }) {
         ]);
         await addBookMessage({
           bookId: id,
+          threadId: threadId,
           role: "assistant",
           content: response,
         });
         await queryClient.invalidateQueries({
-          queryKey: ["bookMessages", id],
+          queryKey: ["bookMessages", id, threadId],
         });
       }
     } catch (error: any) {
@@ -1465,6 +1481,9 @@ export default function MobiBookPage(props: { bookId: number }) {
               onModelChange={handleModelChange}
               modelsLoading={modelsLoading}
               onCollapse={() => setRightPanelCollapsed(true)}
+              threads={bookChatThreadsQ.data}
+              currentThreadId={currentThreadId}
+              onSelectThread={setCurrentThreadId}
             />
           )}
         </div>

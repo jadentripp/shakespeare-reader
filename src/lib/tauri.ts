@@ -68,9 +68,18 @@ export type HighlightMessage = {
 export type BookMessage = {
   id: number;
   book_id: number;
+  thread_id: number | null;
   role: "system" | "user" | "assistant";
   content: string;
   created_at: string;
+};
+
+export type BookChatThread = {
+  id: number;
+  book_id: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type OpenAiKeyStatus = {
@@ -206,20 +215,40 @@ export async function addHighlightMessage(params: {
   });
 }
 
-export async function listBookMessages(bookId: number): Promise<BookMessage[]> {
-  return await invoke("list_book_messages", { bookId });
+export async function listBookMessages(bookId: number, threadId: number | null = null): Promise<BookMessage[]> {
+  return await invoke("list_book_messages", { bookId, threadId });
 }
 
 export async function addBookMessage(params: {
   bookId: number;
+  threadId?: number | null;
   role: "system" | "user" | "assistant";
   content: string;
 }): Promise<BookMessage> {
   return await invoke("add_book_message", {
     bookId: params.bookId,
+    threadId: params.threadId ?? null,
     role: params.role,
     content: params.content,
   });
+}
+
+export async function listBookChatThreads(bookId: number): Promise<BookChatThread[]> {
+  return await invoke("list_book_chat_threads", { bookId });
+}
+
+export async function createBookChatThread(params: {
+  bookId: number;
+  title: string;
+}): Promise<BookChatThread> {
+  return await invoke("create_book_chat_thread", {
+    bookId: params.bookId,
+    title: params.title,
+  });
+}
+
+export async function deleteBookChatThread(threadId: number): Promise<void> {
+  await invoke("delete_book_chat_thread", { threadId });
 }
 
 export async function deleteBookMessages(bookId: number): Promise<void> {

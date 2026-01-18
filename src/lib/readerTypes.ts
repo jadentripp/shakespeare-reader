@@ -17,3 +17,11 @@ export type ChatPrompt = {
   label: string;
   prompt: string;
 };
+
+export type BookChatThread = {
+  id: number;
+  book_id: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
+};

@@ -3,7 +3,7 @@ mod db;
 mod gutendex;
 mod openai;
 
-use db::{Book, BookMessage, BookPosition, Highlight, HighlightMessage};
+use db::{Book, BookChatThread, BookMessage, BookPosition, Highlight, HighlightMessage};
 use tauri::AppHandle;
 use std::fs;
 
@@ -228,20 +228,50 @@ fn add_highlight_message(
 fn list_book_messages(
     app_handle: AppHandle,
     book_id: i64,
+    thread_id: Option<i64>,
 ) -> Result<Vec<BookMessage>, String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::list_book_messages(&app_handle, book_id).map_err(|e| e.to_string())
+    db::list_book_messages(&app_handle, book_id, thread_id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn add_book_message(
     app_handle: AppHandle,
     book_id: i64,
+    thread_id: Option<i64>,
     role: String,
     content: String,
 ) -> Result<BookMessage, String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::add_book_message(&app_handle, book_id, role, content).map_err(|e| e.to_string())
+    db::add_book_message(&app_handle, book_id, thread_id, role, content).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn list_book_chat_threads(
+    app_handle: AppHandle,
+    book_id: i64,
+) -> Result<Vec<BookChatThread>, String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::list_book_chat_threads(&app_handle, book_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn create_book_chat_thread(
+    app_handle: AppHandle,
+    book_id: i64,
+    title: String,
+) -> Result<BookChatThread, String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::create_book_chat_thread(&app_handle, book_id, title).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_book_chat_thread(
+    app_handle: AppHandle,
+    thread_id: i64,
+) -> Result<(), String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::delete_book_chat_thread(&app_handle, thread_id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -303,6 +333,9 @@ pub fn run() {
             add_highlight_message,
             list_book_messages,
             add_book_message,
+            list_book_chat_threads,
+            create_book_chat_thread,
+            delete_book_chat_thread,
             delete_book_messages,
             openai_key_status,
             openai_chat,

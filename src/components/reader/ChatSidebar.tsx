@@ -19,9 +19,9 @@ import {
 } from "@/components/ui/popover";
 import { Loader } from "@/components/ui/loader";
 import { cn } from "@/lib/utils";
-import type { ChatPrompt, LocalChatMessage } from "@/lib/readerTypes";
+import type { BookChatThread, ChatPrompt, LocalChatMessage } from "@/lib/readerTypes";
 import type { RefObject } from "react";
-import { Send, Sparkles, ChevronDown, Check, Settings2, PanelRightClose, Trash2 } from "lucide-react";
+import { Send, Sparkles, ChevronDown, Check, Settings2, PanelRightClose, PlusSquare, History } from "lucide-react";
 
 type ChatSidebarProps = {
   contextHint: string;
@@ -39,6 +39,9 @@ type ChatSidebarProps = {
   onModelChange: (model: string) => void;
   modelsLoading?: boolean;
   onCollapse: () => void;
+  threads?: BookChatThread[];
+  currentThreadId?: number | null;
+  onSelectThread?: (id: number | null) => void;
 };
 
 function formatModelName(modelId: string): string {
@@ -169,6 +172,9 @@ export default function ChatSidebar({
   onModelChange,
   modelsLoading,
   onCollapse,
+  threads = [],
+  currentThreadId,
+  onSelectThread,
 }: ChatSidebarProps) {
   return (
     <aside className="min-h-0 flex flex-col">
@@ -189,13 +195,57 @@ export default function ChatSidebar({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
                 onClick={onNewChat}
                 disabled={chatSending}
-                title="Clear chat history"
+                title="Start new chat thread"
               >
-                <Trash2 className="h-4 w-4" />
+                <PlusSquare className="h-4 w-4" />
               </Button>
+            )}
+            {onSelectThread && threads.length > 0 && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                    title="Chat history"
+                  >
+                    <History className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-64 p-2">
+                  <div className="mb-2 px-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Chat History
+                  </div>
+                  <div className="max-h-64 overflow-y-auto space-y-1">
+                    <button
+                      onClick={() => onSelectThread(null)}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-md px-2 py-2 text-xs hover:bg-muted",
+                        currentThreadId === null && "bg-muted font-medium"
+                      )}
+                    >
+                      <span>Default Chat</span>
+                      {currentThreadId === null && <Check className="h-3 w-3" />}
+                    </button>
+                    {threads.map((thread) => (
+                      <button
+                        key={thread.id}
+                        onClick={() => onSelectThread(thread.id)}
+                        className={cn(
+                          "flex w-full items-center justify-between rounded-md px-2 py-2 text-xs hover:bg-muted",
+                          currentThreadId === thread.id && "bg-muted font-medium"
+                        )}
+                      >
+                        <span className="truncate pr-2">{thread.title}</span>
+                        {currentThreadId === thread.id && <Check className="h-3 w-3" />}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             )}
           </div>
           <div className="flex items-center gap-2">

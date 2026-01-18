@@ -49,9 +49,19 @@ pub struct HighlightMessage {
 pub struct BookMessage {
     pub id: i64,
     pub book_id: i64,
+    pub thread_id: Option<i64>,
     pub role: String,
     pub content: String,
     pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BookChatThread {
+    pub id: i64,
+    pub book_id: i64,
+    pub title: String,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 fn db_path<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<std::path::PathBuf, anyhow::Error> {
@@ -132,15 +142,28 @@ CREATE TABLE IF NOT EXISTS highlight_message (
 );
 CREATE INDEX IF NOT EXISTS idx_highlight_message_highlight ON highlight_message(highlight_id);
 
+CREATE TABLE IF NOT EXISTS book_chat_thread (
+  id INTEGER PRIMARY KEY,
+  book_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_book_chat_thread_book ON book_chat_thread(book_id);
+
 CREATE TABLE IF NOT EXISTS book_message (
   id INTEGER PRIMARY KEY,
   book_id INTEGER NOT NULL,
+  thread_id INTEGER,
   role TEXT NOT NULL,
   content TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-  FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE
+  FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE,
+  FOREIGN KEY(thread_id) REFERENCES book_chat_thread(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_book_message_book ON book_message(book_id);
+CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id);
 "#,
     )
     .context("failed to initialize sqlite schema")?;
@@ -149,6 +172,7 @@ CREATE INDEX IF NOT EXISTS idx_book_message_book ON book_message(book_id);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN publication_year INTEGER", []);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN mobi_path TEXT", []);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN html_path TEXT", []);
+    let _ = conn.execute("ALTER TABLE book_message ADD COLUMN thread_id INTEGER", []);
 
     Ok(())
 }
@@ -458,23 +482,95 @@ pub fn add_highlight_message<R: tauri::Runtime>(
     .context("failed to add highlight message")
 }
 
-pub fn list_book_messages<R: tauri::Runtime>(
+pub fn list_book_chat_threads<R: tauri::Runtime>(
     app_handle: &tauri::AppHandle<R>,
     book_id: i64,
-) -> Result<Vec<BookMessage>, anyhow::Error> {
+) -> Result<Vec<BookChatThread>, anyhow::Error> {
     let conn = open(app_handle)?;
     let mut stmt = conn.prepare(
-        "SELECT id, book_id, role, content, created_at
-         FROM book_message WHERE book_id = ?1 ORDER BY created_at ASC",
+        "SELECT id, book_id, title, created_at, updated_at
+         FROM book_chat_thread WHERE book_id = ?1 ORDER BY updated_at DESC",
     )?;
     let rows = stmt
         .query_map(params![book_id], |row| {
+            Ok(BookChatThread {
+                id: row.get(0)?,
+                book_id: row.get(1)?,
+                title: row.get(2)?,
+                created_at: row.get(3)?,
+                updated_at: row.get(4)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
+pub fn create_book_chat_thread<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    book_id: i64,
+    title: String,
+) -> Result<BookChatThread, anyhow::Error> {
+    let conn = open(app_handle)?;
+    conn.execute(
+        "INSERT INTO book_chat_thread(book_id, title) VALUES (?1, ?2)",
+        params![book_id, title],
+    )?;
+    let id = conn.last_insert_rowid();
+    conn.query_row(
+        "SELECT id, book_id, title, created_at, updated_at FROM book_chat_thread WHERE id = ?1",
+        params![id],
+        |row| {
+            Ok(BookChatThread {
+                id: row.get(0)?,
+                book_id: row.get(1)?,
+                title: row.get(2)?,
+                created_at: row.get(3)?,
+                updated_at: row.get(4)?,
+            })
+        },
+    )
+    .context("failed to create book chat thread")
+}
+
+pub fn delete_book_chat_thread<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    thread_id: i64,
+) -> Result<(), anyhow::Error> {
+    let conn = open(app_handle)?;
+    conn.execute("DELETE FROM book_chat_thread WHERE id = ?1", params![thread_id])?;
+    Ok(())
+}
+
+pub fn list_book_messages<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    book_id: i64,
+    thread_id: Option<i64>,
+) -> Result<Vec<BookMessage>, anyhow::Error> {
+    let conn = open(app_handle)?;
+    
+    let (query, params_vec) = match thread_id {
+        Some(tid) => (
+            "SELECT id, book_id, thread_id, role, content, created_at
+             FROM book_message WHERE book_id = ?1 AND thread_id = ?2 ORDER BY created_at ASC",
+            params![book_id, tid],
+        ),
+        None => (
+            "SELECT id, book_id, thread_id, role, content, created_at
+             FROM book_message WHERE book_id = ?1 AND thread_id IS NULL ORDER BY created_at ASC",
+            params![book_id],
+        ),
+    };
+
+    let mut stmt = conn.prepare(query)?;
+    let rows = stmt
+        .query_map(params_vec, |row| {
             Ok(BookMessage {
                 id: row.get(0)?,
                 book_id: row.get(1)?,
-                role: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
+                thread_id: row.get(2)?,
+                role: row.get(3)?,
+                content: row.get(4)?,
+                created_at: row.get(5)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -484,25 +580,36 @@ pub fn list_book_messages<R: tauri::Runtime>(
 pub fn add_book_message<R: tauri::Runtime>(
     app_handle: &tauri::AppHandle<R>,
     book_id: i64,
+    thread_id: Option<i64>,
     role: String,
     content: String,
 ) -> Result<BookMessage, anyhow::Error> {
     let conn = open(app_handle)?;
+    
     conn.execute(
-        "INSERT INTO book_message(book_id, role, content) VALUES (?1, ?2, ?3)",
-        params![book_id, role, content],
+        "INSERT INTO book_message(book_id, thread_id, role, content) VALUES (?1, ?2, ?3, ?4)",
+        params![book_id, thread_id, role, content],
     )?;
+
+    if let Some(tid) = thread_id {
+        let _ = conn.execute(
+            "UPDATE book_chat_thread SET updated_at=(strftime('%Y-%m-%dT%H:%M:%fZ','now')) WHERE id = ?1",
+            params![tid],
+        );
+    }
+
     let id = conn.last_insert_rowid();
     conn.query_row(
-        "SELECT id, book_id, role, content, created_at FROM book_message WHERE id = ?1",
+        "SELECT id, book_id, thread_id, role, content, created_at FROM book_message WHERE id = ?1",
         params![id],
         |row| {
             Ok(BookMessage {
                 id: row.get(0)?,
                 book_id: row.get(1)?,
-                role: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
+                thread_id: row.get(2)?,
+                role: row.get(3)?,
+                content: row.get(4)?,
+                created_at: row.get(5)?,
             })
         },
     )
