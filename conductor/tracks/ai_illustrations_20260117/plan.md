@@ -42,10 +42,10 @@ Adding the "Click-to-Zoom" and "Save Image" functionality to enhance the user ex
 ## Phase 4: Performance & Final Polish
 Ensuring the implementation is robust and doesn't degrade the reading experience.
 
-- [x] Task: Optimize Lazy Loading and Memory (Phase 4) (c57a2b1)
+- [x] Task: Optimize Lazy Loading and Memory (Phase 4) (17174ca)
     - [x] Verify that images are only loaded when in view (Handled by WebView and handleIframeLoad)
     - [x] Check for memory leaks when switching between heavily illustrated books
-- [x] Task: Final UI/UX Pass (Phase 4) (c57a2b1)
+- [x] Task: Final UI/UX Pass (Phase 4) (17174ca)
     - [x] Ensure accessibility (alt-text) is correctly applied to all images
     - [x] Clean up orphaned asset directories on book deletion
-- [x] Task: Conductor - User Manual Verification 'Performance & Final Polish' (Protocol in workflow.md) (c57a2b1)
+- [x] Task: Conductor - User Manual Verification 'Performance & Final Polish' (Protocol in workflow.md) (17174ca)
