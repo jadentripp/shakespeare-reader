@@ -19,7 +19,7 @@ Implement the frontend changes to handle the new API and provide immediate user 
 - [x] Task: Integrate the new `reasoning_summary` into the message processing loop
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: UI Responsiveness' (Protocol in workflow.md)
 
-## Phase 3: Robust Citations & Reasoning UI
+## Phase 3: Robust Citations & Reasoning UI [checkpoint: c4b8391]
 Enhance the citations with position data and add the expandable reasoning section.
 
 - [x] Task: Update citation extraction logic to store `cfi` and `page_number` in the database `context_map` 158f948
@@ -32,7 +32,7 @@ Enhance the citations with position data and add the expandable reasoning sectio
 ## Phase 4: Thread Navigation & Polish
 Finalize the thread navigation and ensure metadata separation is clean.
 
-- [ ] Task: Implement "Auto-Jump" logic: selecting a thread scrolls the reader to its `last_cfi`
-- [ ] Task: Update thread list UI to show both `title` and `created_at` timestamp separately
-- [ ] Task: Final verification of citation persistence across page reflows
+- [x] Task: Implement "Auto-Jump" logic: selecting a thread scrolls the reader to its `last_cfi` c4b8391
+- [x] Task: Update thread list UI to show both `title` and `created_at` timestamp separately c4b8391
+- [x] Task: Final verification of citation persistence across page reflows c4b8391
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Navigation & History' (Protocol in workflow.md)

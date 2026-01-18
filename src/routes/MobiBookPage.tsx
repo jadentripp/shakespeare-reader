@@ -25,6 +25,7 @@ import {
   listBookChatThreads,
   createBookChatThread,
   renameBookChatThread,
+  setThreadLastCfi,
   deleteBookChatThread,
   deleteBookThreadMessages,
   deleteBookMessage,
@@ -206,6 +207,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   const layoutRafRef = useRef<number | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const saveTimeoutRef = useRef<number | null>(null);
+  const threadSaveTimeoutRef = useRef<number | null>(null);
   const lockTimeoutRef = useRef<number | null>(null);
   const selectionTimeoutRef = useRef<number | null>(null);
   const scrollHandlerRef = useRef<((event: Event) => void) | null>(null);
@@ -903,6 +905,44 @@ export default function MobiBookPage(props: { bookId: number }) {
     }, 400);
   };
 
+  const scheduleSaveThreadProgress = () => {
+    if (threadSaveTimeoutRef.current !== null) return;
+    if (currentThreadId === null) return;
+    
+    threadSaveTimeoutRef.current = window.setTimeout(async () => {
+      threadSaveTimeoutRef.current = null;
+      const root = getScrollRoot();
+      if (!root) return;
+      
+      const metrics = getPageMetrics();
+      const stride = metrics.pageWidth + metrics.gap;
+      const currentScroll = root.scrollLeft;
+      
+      // Find the first visible block
+      const blocks = Array.from(root.querySelectorAll("[data-block-index]")) as HTMLElement[];
+      const firstVisible = blocks.find(block => {
+        const rect = block.getBoundingClientRect();
+        const rootRect = root.getBoundingClientRect();
+        const offsetLeft = rect.left - rootRect.left + currentScroll;
+        // If the block starts at or after the current scroll position
+        return offsetLeft >= currentScroll - 10;
+      });
+
+      if (firstVisible) {
+        const blockIndex = parseInt(firstVisible.getAttribute("data-block-index") || "0", 10);
+        const cfi = `epubcfi(/6/2!/4/${blockIndex * 2})`;
+        console.log("[Thread] Saving last_cfi:", cfi);
+        try {
+          await setThreadLastCfi({ threadId: currentThreadId, cfi });
+          // Invalidate to update UI if needed (though usually it's silent)
+          queryClient.invalidateQueries({ queryKey: ["bookChatThreads", id] });
+        } catch (e) {
+          console.error("[Thread] Failed to save last_cfi:", e);
+        }
+      }
+    }, 1000);
+  };
+
   const lockToPage = (page = pageLockRef.current) => {
     const root = getScrollRoot();
     if (!root) return;
@@ -955,6 +995,7 @@ export default function MobiBookPage(props: { bookId: number }) {
       pageLockRef.current = lockedPage;
     }
     scheduleSaveProgress(lockedPage);
+    scheduleSaveThreadProgress();
   };
 
   const schedulePaginationUpdate = () => {
@@ -1889,6 +1930,20 @@ export default function MobiBookPage(props: { bookId: number }) {
     jumpToElement(entry.element);
   };
 
+  const handleSelectThread = (threadId: number | null) => {
+    setCurrentThreadId(threadId);
+    if (threadId !== null && bookChatThreadsQ.data) {
+      const thread = bookChatThreadsQ.data.find(t => t.id === threadId);
+      if (thread?.last_cfi) {
+        console.log("[Thread] Auto-jumping to last_cfi:", thread.last_cfi);
+        // Small delay to allow the thread messages to start loading/UI to settle
+        setTimeout(() => {
+          scrollToCfi(thread.last_cfi!);
+        }, 100);
+      }
+    }
+  };
+
   const chatMessages = (bookMessagesQ.data ?? []).map((message: any) => {
     let content = message.content;
     let mapping: Record<number, any> = {};
@@ -2127,7 +2182,7 @@ export default function MobiBookPage(props: { bookId: number }) {
               onCollapse={() => setRightPanelCollapsed(true)}
               threads={bookChatThreadsQ.data}
               currentThreadId={currentThreadId}
-              onSelectThread={setCurrentThreadId}
+              onSelectThread={handleSelectThread}
               placeholder={chatPlaceholder}
               isHighlightContext={!!selectedHighlight}
               attachedContext={attachedHighlights}

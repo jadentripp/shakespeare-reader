@@ -22,7 +22,7 @@ import { Loader } from "@/components/ui/loader";
 import { cn } from "@/lib/utils";
 import type { BookChatThread, ChatPrompt, LocalChatMessage } from "@/lib/readerTypes";
 import type { Highlight } from "@/lib/tauri";
-import { Send, Sparkles, ChevronDown, Check, Settings2, PanelRightClose, PlusSquare, History, MessageSquare, X, Trash2, Edit2, Eraser, Brain, ChevronRight } from "lucide-react";
+import { Send, Sparkles, ChevronDown, Check, Settings2, PanelRightClose, PlusSquare, History, MessageSquare, X, Trash2, Edit2, Eraser, Brain, ChevronRight, MapPin } from "lucide-react";
 
 type ChatSidebarProps = {
   contextHint: string;
@@ -361,48 +361,58 @@ export default function ChatSidebar({
                       <div
                         key={thread.id}
                         className={cn(
-                          "group flex items-center gap-1 rounded-md px-2 py-2 text-xs hover:bg-muted",
-                          currentThreadId === thread.id && "bg-muted font-medium"
+                          "group flex flex-col gap-0.5 rounded-md px-2 py-2 text-xs hover:bg-muted",
+                          currentThreadId === thread.id && "bg-muted"
                         )}
                       >
-                        {onRenameThread ? (
-                          <EditableThreadTitle
-                            title={thread.title}
-                            onRename={(newTitle) => onRenameThread(thread.id, newTitle)}
-                          />
-                        ) : (
-                          <button
-                            onClick={() => onSelectThread(thread.id)}
-                            className="flex-1 text-left truncate"
-                          >
-                            {thread.title}
-                          </button>
-                        )}
-                        {onClearThreadChat && currentThreadId === thread.id && messages.length > 0 && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onClearThreadChat(thread.id);
-                            }}
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive transition-all"
-                            title="Clear thread messages"
-                          >
-                            <Eraser className="h-3 w-3" />
-                          </button>
-                        )}
-                        {onDeleteThread && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteThread(thread.id);
-                            }}
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive transition-all"
-                            title="Delete thread"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        )}
-                        {currentThreadId === thread.id && <Check className="h-3 w-3 shrink-0" />}
+                        <div className="flex items-center gap-1">
+                          {onRenameThread ? (
+                            <EditableThreadTitle
+                              title={thread.title}
+                              onRename={(newTitle) => onRenameThread(thread.id, newTitle)}
+                            />
+                          ) : (
+                            <button
+                              onClick={() => onSelectThread(thread.id)}
+                              className="flex-1 text-left truncate font-medium"
+                            >
+                              {thread.title}
+                            </button>
+                          )}
+                          {thread.last_cfi && (
+                            <MapPin className="h-2.5 w-2.5 text-primary/60" title="Saved position" />
+                          )}
+                          {onClearThreadChat && currentThreadId === thread.id && messages.length > 0 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onClearThreadChat(thread.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive transition-all"
+                              title="Clear thread messages"
+                            >
+                              <Eraser className="h-3 w-3" />
+                            </button>
+                          )}
+                          {onDeleteThread && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteThread(thread.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive transition-all"
+                              title="Delete thread"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          )}
+                          {currentThreadId === thread.id && <Check className="h-3 w-3 shrink-0" />}
+                        </div>
+                        <div className="flex items-center justify-between px-0.5">
+                          <span className="text-[9px] text-muted-foreground">
+                            {new Date(thread.created_at).toLocaleDateString()} {new Date(thread.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
