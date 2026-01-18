@@ -20,11 +20,11 @@ Enable the chat UI to recognize and handle the citation tags.
 ## Phase 3: Reader Synchronization & Highlighting
 Connect the citation events to the reader's view and highlighting logic.
 
-- [ ] Task: Implement a citation event listener in `ReaderPane.tsx` (or relevant reader component).
-- [ ] Task: Implement robust snippet matching logic using verbatim text and block index.
-- [ ] Task: Implement auto-scroll/navigation to bring cited snippets into view.
-- [ ] Task: Implement the "Active Citation" persistent highlight style in the reader.
-- [ ] Task: Conductor - User Manual Verification 'Reader Synchronization & Highlighting' (Protocol in workflow.md)
+- [x] Task: Implement a citation event listener in `ReaderPane.tsx` (or relevant reader component).
+- [x] Task: Implement robust snippet matching logic using verbatim text and block index.
+- [x] Task: Implement auto-scroll/navigation to bring cited snippets into view.
+- [x] Task: Implement the "Active Citation" persistent highlight style in the reader.
+- [x] Task: Conductor - User Manual Verification 'Reader Synchronization & Highlighting' (Protocol in workflow.md)
 
 ## Phase 4: Integration & Edge Case Handling
 Refine the experience and handle complex scenarios.

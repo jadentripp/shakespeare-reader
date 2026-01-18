@@ -1208,6 +1208,8 @@ export default function MobiBookPage(props: { bookId: number }) {
   const scrollToQuote = (text: string) => {
     const root = getScrollRoot();
     if (!root) return;
+    
+    // First, try to find it on the current page/view
     const range = findTextRange(root, text);
     if (range) {
       const rect = range.getBoundingClientRect();
@@ -1217,6 +1219,12 @@ export default function MobiBookPage(props: { bookId: number }) {
       const stride = metrics.pageWidth + metrics.gap;
       const page = stride ? Math.max(1, Math.floor(offsetLeft / stride) + 1) : 1;
       scrollToPage(page);
+    } else {
+      // If not found in the current view, we might need a more global search.
+      // Since it's a reflowable layout, finding it "globally" means searching the entire root content.
+      // findTextRange already searches the entire 'root' (reader-root), which contains the whole book HTML.
+      // If it returned null, it means the text literally isn't in the DOM.
+      console.warn("Snippet not found in reader-root:", text);
     }
   };
 
