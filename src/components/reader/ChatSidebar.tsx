@@ -21,7 +21,7 @@ import { Loader } from "@/components/ui/loader";
 import { cn } from "@/lib/utils";
 import type { BookChatThread, ChatPrompt, LocalChatMessage } from "@/lib/readerTypes";
 import type { RefObject } from "react";
-import { Send, Sparkles, ChevronDown, Check, Settings2, PanelRightClose, PlusSquare, History } from "lucide-react";
+import { Send, Sparkles, ChevronDown, Check, Settings2, PanelRightClose, PlusSquare, History, MessageSquare } from "lucide-react";
 
 type ChatSidebarProps = {
   contextHint: string;
@@ -42,6 +42,8 @@ type ChatSidebarProps = {
   threads?: BookChatThread[];
   currentThreadId?: number | null;
   onSelectThread?: (id: number | null) => void;
+  placeholder?: string;
+  isHighlightContext?: boolean;
 };
 
 function formatModelName(modelId: string): string {
@@ -175,6 +177,8 @@ export default function ChatSidebar({
   threads = [],
   currentThreadId,
   onSelectThread,
+  placeholder = "Ask about the text...",
+  isHighlightContext = false,
 }: ChatSidebarProps) {
   return (
     <aside className="min-h-0 flex flex-col">
@@ -251,12 +255,19 @@ export default function ChatSidebar({
           <div className="flex items-center gap-2">
             <div className={cn(
               "flex h-7 w-7 items-center justify-center rounded-lg transition-colors",
-              chatSending ? "bg-primary/20" : "bg-muted"
+              chatSending ? "bg-primary/20" : (isHighlightContext ? "bg-primary/10" : "bg-muted")
             )}>
-              <Sparkles className={cn(
-                "h-4 w-4 transition-colors",
-                chatSending ? "text-primary animate-pulse" : "text-muted-foreground"
-              )} />
+              {isHighlightContext ? (
+                <MessageSquare className={cn(
+                  "h-4 w-4 transition-colors",
+                  chatSending ? "text-primary animate-pulse" : "text-primary/70"
+                )} />
+              ) : (
+                <Sparkles className={cn(
+                  "h-4 w-4 transition-colors",
+                  chatSending ? "text-primary animate-pulse" : "text-muted-foreground"
+                )} />
+              )}
             </div>
             <div>
               <h2 className="text-sm font-semibold">AI Assistant</h2>
@@ -369,7 +380,7 @@ export default function ChatSidebar({
           >
             <PromptInputTextarea
               ref={chatInputRef}
-              placeholder="Ask about the text..."
+              placeholder={placeholder}
               className="min-h-[52px] text-sm"
             />
             <PromptInputActions className="justify-between pt-2">

@@ -1345,6 +1345,10 @@ export default function MobiBookPage(props: { bookId: number }) {
   const chatContextHint = selectedHighlight
     ? "Using selected highlight as context"
     : "Using current page as context";
+
+  const chatPlaceholder = selectedHighlight
+    ? "Ask about this highlight..."
+    : "Ask about the current page...";
   if (htmlQ.isLoading) {
     return <div className="px-4 py-6 text-sm text-muted-foreground">Loading book content...</div>;
   }
@@ -1484,6 +1488,8 @@ export default function MobiBookPage(props: { bookId: number }) {
               threads={bookChatThreadsQ.data}
               currentThreadId={currentThreadId}
               onSelectThread={setCurrentThreadId}
+              placeholder={chatPlaceholder}
+              isHighlightContext={!!selectedHighlight}
             />
           )}
         </div>
