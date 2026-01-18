@@ -13,6 +13,7 @@ pub struct Book {
     pub cover_url: Option<String>,
     pub mobi_path: Option<String>,
     pub html_path: Option<String>,
+    pub first_image_index: Option<i32>,
     pub created_at: String,
 }
 
@@ -106,6 +107,7 @@ CREATE TABLE IF NOT EXISTS book (
   cover_url TEXT,
   mobi_path TEXT,
   html_path TEXT,
+  first_image_index INTEGER,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 CREATE INDEX IF NOT EXISTS idx_book_title ON book(title);
@@ -169,6 +171,7 @@ CREATE INDEX IF NOT EXISTS idx_book_message_book ON book_message(book_id);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN publication_year INTEGER", []);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN mobi_path TEXT", []);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN html_path TEXT", []);
+    let _ = conn.execute("ALTER TABLE book ADD COLUMN first_image_index INTEGER", []);
     let _ = conn.execute("ALTER TABLE book_message ADD COLUMN thread_id INTEGER", []);
     let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id)", []);
 
@@ -184,18 +187,20 @@ pub fn upsert_book<R: tauri::Runtime>(
     cover_url: Option<String>,
     mobi_path: String,
     html_path: String,
+    first_image_index: Option<i32>,
 ) -> Result<i64, anyhow::Error> {
     let conn = open(app_handle)?;
     conn.execute(
-        "INSERT INTO book(gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+        "INSERT INTO book(gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, first_image_index) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
          ON CONFLICT(gutenberg_id) DO UPDATE SET
            title=excluded.title,
            authors=excluded.authors,
            publication_year=excluded.publication_year,
            cover_url=excluded.cover_url,
            mobi_path=excluded.mobi_path,
-           html_path=excluded.html_path",
-        params![gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path],
+           html_path=excluded.html_path,
+           first_image_index=excluded.first_image_index",
+        params![gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, first_image_index],
     )?;
 
     let id: i64 = conn.query_row(
@@ -209,7 +214,7 @@ pub fn upsert_book<R: tauri::Runtime>(
 pub fn list_books<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<Vec<Book>, anyhow::Error> {
     let conn = open(app_handle)?;
     let mut stmt = conn.prepare(
-        "SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, created_at FROM book ORDER BY title ASC",
+        "SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, first_image_index, created_at FROM book ORDER BY title ASC",
     )?;
 
     let rows = stmt
@@ -223,7 +228,8 @@ pub fn list_books<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result
                 cover_url: row.get(5)?,
                 mobi_path: row.get(6)?,
                 html_path: row.get(7)?,
-                created_at: row.get(8)?,
+                first_image_index: row.get(8)?,
+                created_at: row.get(9)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -234,7 +240,7 @@ pub fn list_books<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result
 pub fn get_book<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i64) -> Result<Book, anyhow::Error> {
     let conn = open(app_handle)?;
     conn.query_row(
-        "SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, created_at FROM book WHERE id = ?1",
+        "SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, first_image_index, created_at FROM book WHERE id = ?1",
         params![book_id],
         |row| {
             Ok(Book {
@@ -246,7 +252,8 @@ pub fn get_book<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i6
                 cover_url: row.get(5)?,
                 mobi_path: row.get(6)?,
                 html_path: row.get(7)?,
-                created_at: row.get(8)?,
+                first_image_index: row.get(8)?,
+                created_at: row.get(9)?,
             })
         },
     )
@@ -619,14 +626,14 @@ mod tests {
     use super::*;
     use tauri::test::mock_app;
 
-    fn setup() -> (tauri::AppHandle<impl tauri::Runtime>, std::path::PathBuf) {
+    fn setup(name: &str) -> (tauri::AppHandle<impl tauri::Runtime>, std::path::PathBuf) {
         let app = mock_app();
         let handle = app.handle().clone();
         let temp_dir = std::env::temp_dir().join("shakespeare_tests");
         std::fs::create_dir_all(&temp_dir).unwrap();
-        let db_path = temp_dir.join("test_db.sqlite");
+        let db_path = temp_dir.join(format!("{}.sqlite", name));
         if db_path.exists() {
-            std::fs::remove_file(&db_path).unwrap();
+            let _ = std::fs::remove_file(&db_path);
         }
         std::env::set_var("SHAKESPEARE_DB_PATH", &db_path);
         (handle, db_path)
@@ -634,7 +641,7 @@ mod tests {
 
     #[test]
     fn test_book_message_table_exists() {
-        let (handle, db_path) = setup();
+        let (handle, db_path) = setup("table_exists");
         init(&handle).expect("Failed to init DB");
         
         let conn = Connection::open(&db_path).unwrap();
@@ -650,7 +657,7 @@ mod tests {
 
     #[test]
     fn test_book_messages() {
-        let (handle, db_path) = setup();
+        let (handle, db_path) = setup("messages");
         init(&handle).expect("Failed to init DB");
 
         // Insert a dummy book first to satisfy foreign key
@@ -663,6 +670,7 @@ mod tests {
             None,
             "mobi".to_string(),
             "html".to_string(),
+            None,
         ).unwrap();
 
         let msg = add_book_message(&handle, book_id, None, "user".to_string(), "Hello".to_string()).unwrap();

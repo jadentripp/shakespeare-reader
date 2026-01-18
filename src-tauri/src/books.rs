@@ -408,13 +408,91 @@ fn extract_body_fragments(html: &str) -> Option<String> {
     }
 }
 
-pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path: String) -> Result<String, anyhow::Error> {
+pub fn extract_mobi_images(bytes: &[u8]) -> Result<(std::collections::HashMap<usize, Vec<u8>>, Option<i32>), anyhow::Error> {
+    if bytes.len() < 80 {
+        anyhow::bail!("MOBI file too small");
+    }
+
+    let num_records = be_u16(&bytes, 76).ok_or_else(|| anyhow::anyhow!("Invalid PDB header"))? as usize;
+    let record_list_start = 78;
+    let record_list_len = num_records * 8;
+    if bytes.len() < record_list_start + record_list_len {
+        anyhow::bail!("Invalid record list");
+    }
+
+    let mut offsets: Vec<usize> = Vec::with_capacity(num_records);
+    for i in 0..num_records {
+        let off = record_list_start + i * 8;
+        let o = be_u32(&bytes, off).ok_or_else(|| anyhow::anyhow!("Invalid record offset"))? as usize;
+        offsets.push(o);
+    }
+    offsets.push(bytes.len());
+
+    let rec0_start = offsets[0];
+    let rec0_end = offsets[1];
+    if rec0_end <= rec0_start || rec0_end > bytes.len() {
+        anyhow::bail!("Invalid record 0 bounds");
+    }
+    let rec0 = &bytes[rec0_start..rec0_end];
+    let record_count = be_u16(rec0, 8).unwrap_or(0) as usize;
+
+    let mobi_off = find_mobi_header_offset(rec0).unwrap_or(0);
+    let first_image_index = be_u32(rec0, mobi_off + 0x6c).map(|v| v as i32);
+
+    let mut images = std::collections::HashMap::new();
+    
+    // Heuristic: images start after text records.
+    // We search all records from record_count + 1 to num_records for image signatures.
+    for i in (record_count + 1)..num_records {
+        let start = offsets[i];
+        let end = offsets[i + 1];
+        if end <= start || end > bytes.len() {
+            continue;
+        }
+        let data = &bytes[start..end];
+        if data.len() < 4 {
+            continue;
+        }
+
+        // JPEG, PNG, GIF
+        if data.starts_with(&[0xff, 0xd8, 0xff])
+            || data.starts_with(&[0x89, 0x50, 0x4e, 0x47])
+            || data.starts_with(&[0x47, 0x49, 0x46, 0x38])
+        {
+            images.insert(i, data.to_vec());
+        }
+    }
+
+    Ok((images, first_image_index))
+}
+
+pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path: String) -> Result<(String, Option<i32>), anyhow::Error> {
     let dir = books_dir(app_handle)?;
     let out_path = dir.join(format!("{}.mobi.html", gutenberg_id));
 
     let bytes = fs::read(mobi_path)?;
     if bytes.len() < 80 {
         anyhow::bail!("MOBI file too small");
+    }
+
+    // Extract images first
+    let (images, first_image_index) = extract_mobi_images(&bytes).unwrap_or_default();
+    if !images.is_empty() {
+        let images_dir = dir.join(format!("{}_assets", gutenberg_id));
+        let _ = fs::create_dir_all(&images_dir);
+        for (idx, img_data) in images {
+            let ext = if img_data.starts_with(&[0xff, 0xd8, 0xff]) {
+                "jpg"
+            } else if img_data.starts_with(&[0x89, 0x50, 0x4e, 0x47]) {
+                "png"
+            } else if img_data.starts_with(&[0x47, 0x49, 0x46, 0x38]) {
+                "gif"
+            } else {
+                "bin"
+            };
+            let img_path = images_dir.join(format!("{}.{}", idx, ext));
+            let _ = fs::write(img_path, img_data);
+        }
     }
 
     let num_records = be_u16(&bytes, 76).ok_or_else(|| anyhow::anyhow!("Invalid PDB header"))? as usize;
@@ -502,12 +580,27 @@ pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path
     };
 
     fs::write(&out_path, html.as_bytes())?;
-    Ok(out_path.to_string_lossy().to_string())
+    Ok((out_path.to_string_lossy().to_string(), first_image_index))
 }
 
 pub fn delete_mobi_file(mobi_path: String) -> Result<(), anyhow::Error> {
     let _ = fs::remove_file(mobi_path);
     Ok(())
+}
+
+pub fn get_book_asset_path(app_handle: &AppHandle, gutenberg_id: i64, asset_id: usize) -> Result<PathBuf, anyhow::Error> {
+    let dir = books_dir(app_handle)?;
+    let assets_dir = dir.join(format!("{}_assets", gutenberg_id));
+    
+    // Check for common extensions
+    for ext in ["jpg", "png", "gif", "bin"] {
+        let path = assets_dir.join(format!("{}.{}", asset_id, ext));
+        if path.exists() {
+            return Ok(path);
+        }
+    }
+    
+    anyhow::bail!("Asset {} not found for book {}", asset_id, gutenberg_id)
 }
 
 pub fn read_html_string(html_path: String) -> Result<String, anyhow::Error> {
@@ -543,3 +636,25 @@ pub fn delete_html_file(html_path: String) -> Result<(), anyhow::Error> {
 }
 
 // EPUB/HTML downloads are intentionally unsupported (MOBI-only).
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_mobi_images() {
+        let mobi_path = std::path::PathBuf::from("tmp/books/6130.mobi");
+        if !mobi_path.exists() {
+            return; // Skip if file not found
+        }
+        let bytes = fs::read(mobi_path).unwrap();
+        let (images, first_image_index) = extract_mobi_images(&bytes).unwrap();
+        
+        assert!(first_image_index.is_some());
+        assert!(!images.is_empty());
+        
+        // Record 449 was the first JPEG in my previous dump
+        assert_eq!(first_image_index.unwrap(), 449);
+        assert!(images.contains_key(&449));
+    }
+}

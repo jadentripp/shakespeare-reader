@@ -63,7 +63,7 @@ async fn download_gutenberg_mobi(
     let mobi_path = books::download_mobi_to_app_data(&app_handle, gutenberg_id, mobi_url)
         .await
         .map_err(|e| e.to_string())?;
-    let html_path = books::extract_mobi_to_html(&app_handle, gutenberg_id, mobi_path.clone())
+    let (html_path, first_image_index) = books::extract_mobi_to_html(&app_handle, gutenberg_id, mobi_path.clone())
         .map_err(|e| e.to_string())?;
 
     db::upsert_book(
@@ -75,6 +75,7 @@ async fn download_gutenberg_mobi(
         cover_url,
         mobi_path,
         html_path,
+        first_image_index.map(|v| v as i32),
     )
     .map_err(|e| e.to_string())
 }
@@ -103,8 +104,22 @@ fn get_book_html(app_handle: AppHandle, book_id: i64) -> Result<String, String> 
         && mobi_path.is_some()
     {
         let mobi_path = mobi_path.unwrap();
-        let new_path = books::extract_mobi_to_html(&app_handle, book.gutenberg_id, mobi_path)
+        let (new_path, first_image_index) = books::extract_mobi_to_html(&app_handle, book.gutenberg_id, mobi_path)
             .map_err(|e| e.to_string())?;
+        
+        // Update DB with first_image_index if it was regenerated
+        let _ = db::upsert_book(
+            &app_handle,
+            book.gutenberg_id,
+            book.title.clone(),
+            book.authors.clone(),
+            book.publication_year,
+            book.cover_url.clone(),
+            book.mobi_path.clone().unwrap_or_default(),
+            new_path.clone(),
+            first_image_index.map(|v| v as i32),
+        );
+
         html = books::read_html_string(new_path).map_err(|e| e.to_string())?;
     }
 
@@ -113,6 +128,20 @@ fn get_book_html(app_handle: AppHandle, book_id: i64) -> Result<String, String> 
     }
 
     Ok(html)
+}
+
+#[tauri::command]
+fn get_book_image_path(app_handle: AppHandle, book_id: i64, relative_index: i32) -> Result<String, String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    let book = db::get_book(&app_handle, book_id).map_err(|e| e.to_string())?;
+    let first_image_index = book.first_image_index.ok_or("Book has no image index".to_string())?;
+    
+    let absolute_index = (first_image_index + relative_index - 1) as usize;
+    
+    let path = books::get_book_asset_path(&app_handle, book.gutenberg_id, absolute_index)
+        .map_err(|e| e.to_string())?;
+        
+    Ok(path.to_string_lossy().to_string())
 }
 
 #[tauri::command]
@@ -320,6 +349,7 @@ pub fn run() {
             list_books,
             get_book,
             get_book_html,
+            get_book_image_path,
             get_book_position,
             set_book_position,
             hard_delete_book,
