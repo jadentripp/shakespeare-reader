@@ -150,6 +150,112 @@ export function cleanFootnoteContent(html: string): string {
   return div.innerHTML.trim();
 }
 
+interface PageContentResult {
+  text: string;
+  blocks: Array<{ text: string; blockIndex: number; pageNumber: number }>;
+}
+
+interface PageMetrics {
+  pageWidth: number;
+  gap: number;
+  stride: number;
+  scrollLeft: number;
+  rootRect: DOMRect;
+}
+
+/**
+ * Extracts the text content for a specific page number.
+ * Handles paragraphs that span page boundaries by splitting at the exact character.
+ * Works for ANY page, not just the currently visible one.
+ * 
+ * @param doc - The iframe's document
+ * @param pageNumber - The target page (1-indexed)
+ * @param metrics - Page layout metrics (pageWidth, gap, stride, scrollLeft, rootRect)
+ * @returns The text content and block information for the specified page
+ */
+function getPageContent(
+  doc: Document,
+  pageNumber: number,
+  metrics: PageMetrics
+): PageContentResult {
+  const { pageWidth, gap, stride, scrollLeft, rootRect } = metrics;
+  const blocks = Array.from(doc.querySelectorAll("[data-block-index]")) as HTMLElement[];
+  const result: PageContentResult = { text: "", blocks: [] };
+  const textParts: string[] = [];
+  
+  // Calculate the absolute x-coordinate range for the target page
+  // Page 1: 0 to stride, Page 2: stride to 2*stride, etc.
+  // (stride = pageWidth + gap)
+  const pageStartX = (pageNumber - 1) * stride;
+  const pageEndX = pageStartX + pageWidth; // Don't include the gap
+  
+  blocks.forEach((block) => {
+    const indexAttr = block.getAttribute("data-block-index");
+    if (!indexAttr) return;
+    const blockIndex = parseInt(indexAttr, 10);
+    
+    // Quick check: does this block have any rects that could be on the target page?
+    const blockRects = Array.from(block.getClientRects());
+    const blockMightBeOnPage = blockRects.some(rect => {
+      // Convert viewport-relative coords to absolute document coords
+      const absLeft = rect.left - rootRect.left + scrollLeft;
+      const absRight = rect.right - rootRect.left + scrollLeft;
+      return absRight > pageStartX && absLeft < pageEndX;
+    });
+    
+    if (!blockMightBeOnPage) return;
+    
+    // Walk through text nodes and extract only characters on this page
+    const visibleTextParts: string[] = [];
+    const walker = doc.createTreeWalker(block, NodeFilter.SHOW_TEXT, null);
+    let node: Node | null;
+    
+    while ((node = walker.nextNode())) {
+      const textContent = node.textContent || "";
+      if (!textContent.trim()) continue;
+      
+      // Check each character to find the portion on this page
+      let visibleStart = -1;
+      let visibleEnd = -1;
+      
+      for (let i = 0; i < textContent.length; i++) {
+        const range = doc.createRange();
+        range.setStart(node, i);
+        range.setEnd(node, Math.min(i + 1, textContent.length));
+        const rect = range.getBoundingClientRect();
+        
+        // Convert viewport-relative to absolute document coordinates
+        const absCharLeft = rect.left - rootRect.left + scrollLeft;
+        const absCharRight = rect.right - rootRect.left + scrollLeft;
+        
+        // Character is on this page if it falls within the page's x-range
+        const isOnPage = absCharRight > pageStartX && absCharLeft < pageEndX;
+        
+        if (isOnPage) {
+          if (visibleStart === -1) visibleStart = i;
+          visibleEnd = i + 1;
+        } else if (visibleStart !== -1 && absCharLeft >= pageEndX) {
+          // We've passed this page, stop
+          break;
+        }
+      }
+      
+      if (visibleStart !== -1 && visibleEnd !== -1) {
+        visibleTextParts.push(textContent.slice(visibleStart, visibleEnd));
+      }
+    }
+    
+    const blockText = visibleTextParts.join(" ").replace(/\s+/g, " ").trim();
+    if (blockText) {
+      result.blocks.push({ text: blockText, blockIndex, pageNumber });
+      textParts.push(blockText);
+    }
+  });
+  
+  result.text = textParts.join("\n\n");
+  return result;
+}
+
 export default function MobiBookPage(props: { bookId: number }) {
   const id = props.bookId;
   const [columns, setColumns] = useState<1 | 2>(1);
@@ -1856,6 +1962,12 @@ export default function MobiBookPage(props: { bookId: number }) {
       // Build block index lookup for finding citations in the book
       const blockIndexLookup: Array<{ text: string; blockIndex: number; pageNumber: number }> = [];
       
+      console.log("[Citation Debug] sendChat called with:\n" + JSON.stringify({
+        currentPage,
+        pageLockRef: pageLockRef.current,
+        totalPages,
+      }, null, 2));
+      
       if (selectedHighlight) {
         contextBlocks.push(`Currently Focused Highlight: "${selectedHighlight.text}"`);
         if (selectedHighlight.note) {
@@ -1873,40 +1985,59 @@ export default function MobiBookPage(props: { bookId: number }) {
         contextBlocks.push("");
       }
 
-      // Always add visible page content to the context
+      // Get page content using the robust utility function
       const doc = iframeRef.current?.contentDocument;
       const root = getScrollRoot();
       if (doc && root) {
+        const { pageWidth, gap } = getPageMetrics();
+        const stride = pageWidth + gap;
         const rootRect = root.getBoundingClientRect();
-        const blocks = Array.from(doc.querySelectorAll("[data-block-index]")) as HTMLElement[];
-        contextBlocks.push("Current View Content:");
+        const scrollLeft = root.scrollLeft;
         
-        const visibleWidth = rootRect.width;
-
-        blocks.forEach((block) => {
-          const rects = Array.from(block.getClientRects());
-          const indexAttr = block.getAttribute("data-block-index");
-          if (!indexAttr) return;
-          const blockIndex = parseInt(indexAttr, 10);
-
-          // A block is visible if any of its column fragments are within the visible viewport bounds
-          const isVisible = rects.some(rect => {
-            const visualLeft = rect.left - rootRect.left;
-            const visualRight = rect.right - rootRect.left;
-            return (visualRight > 2 && visualLeft < visibleWidth - 2);
-          });
-          
-          if (isVisible) {
-            const text = block.textContent?.trim();
-            if (text) {
-              blockIndexLookup.push({ text, blockIndex, pageNumber: currentPage });
-              contextBlocks.push(text);
-              contextBlocks.push(""); // blank line between paragraphs for readability
-            }
-          }
+        const metrics: PageMetrics = {
+          pageWidth,
+          gap,
+          stride,
+          scrollLeft,
+          rootRect,
+        };
+        
+        console.log("[Citation Debug] Getting content for page:\n" + JSON.stringify({
+          currentPage,
+          pageLockRef: pageLockRef.current,
+          pageWidth,
+          gap,
+          stride,
+          scrollLeft,
+        }, null, 2));
+        
+        // Use the robust getPageContent function
+        const pageContent = getPageContent(doc, currentPage, metrics);
+        
+        contextBlocks.push("Current View Content:");
+        pageContent.blocks.forEach(block => {
+          blockIndexLookup.push(block);
+          contextBlocks.push(block.text);
+          contextBlocks.push(""); // blank line between paragraphs
         });
         contextBlocks.push("```");
+        
+        console.log("[Citation Debug] Block lookup built:\n" + JSON.stringify({
+          totalBlocks: blockIndexLookup.length,
+          pageNumbers: [...new Set(blockIndexLookup.map(b => b.pageNumber))],
+          blocks: blockIndexLookup.map(b => ({
+            page: b.pageNumber,
+            blockIndex: b.blockIndex,
+            text: b.text.slice(0, 60) + "..."
+          }))
+        }, null, 2));
       }
+      
+      console.log("[Citation Debug] Full context being sent to model:\n" + JSON.stringify({
+        currentPage,
+        pageLockRef: pageLockRef.current,
+        contextContent: contextBlocks.join("\n")
+      }, null, 2));
 
       const systemContent = contextBlocks.join("\n");
       const messages = bookMessagesQ.data ?? [];
@@ -1930,10 +2061,22 @@ export default function MobiBookPage(props: { bookId: number }) {
             b.text.toLowerCase().includes(snippet.toLowerCase())
           );
           
+          // Since we only include text from the current page in the context,
+          // all citations should be on currentPage
           const pageNum = matchingBlock?.pageNumber ?? currentPage;
+          const foundBlockIndex = matchingBlock?.blockIndex;
+          
+          console.log("[Citation Debug] Processing citation:\n" + JSON.stringify({
+            snippet: snippet.slice(0, 40),
+            matchingBlockFound: !!matchingBlock,
+            matchingBlockPageNumber: matchingBlock?.pageNumber,
+            finalPageNum: pageNum,
+            citeIndex,
+          }, null, 2));
+          
           mapping[citeIndex] = {
             text: snippet,
-            blockIndex: matchingBlock?.blockIndex,
+            blockIndex: foundBlockIndex,
             pageNumber: pageNum,
           };
           
