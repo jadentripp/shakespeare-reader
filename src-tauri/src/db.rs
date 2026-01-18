@@ -548,22 +548,13 @@ pub fn list_book_messages<R: tauri::Runtime>(
 ) -> Result<Vec<BookMessage>, anyhow::Error> {
     let conn = open(app_handle)?;
     
-    let (query, params_vec) = match thread_id {
-        Some(tid) => (
-            "SELECT id, book_id, thread_id, role, content, created_at
-             FROM book_message WHERE book_id = ?1 AND thread_id = ?2 ORDER BY created_at ASC",
-            params![book_id, tid],
-        ),
-        None => (
-            "SELECT id, book_id, thread_id, role, content, created_at
-             FROM book_message WHERE book_id = ?1 AND thread_id IS NULL ORDER BY created_at ASC",
-            params![book_id],
-        ),
-    };
+    let mut stmt = conn.prepare(
+        "SELECT id, book_id, thread_id, role, content, created_at
+         FROM book_message WHERE book_id = ?1 AND thread_id IS ?2 ORDER BY created_at ASC",
+    )?;
 
-    let mut stmt = conn.prepare(query)?;
     let rows = stmt
-        .query_map(params_vec, |row| {
+        .query_map(params![book_id, thread_id], |row| {
             Ok(BookMessage {
                 id: row.get(0)?,
                 book_id: row.get(1)?,
