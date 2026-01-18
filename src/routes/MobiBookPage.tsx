@@ -5,7 +5,7 @@ import HighlightsSidebar from "@/components/reader/HighlightsSidebar";
 import ChatSidebar from "@/components/reader/ChatSidebar";
 import ReaderTopBar from "@/components/reader/ReaderTopBar";
 import { Button } from "@/components/ui/button";
-import { PanelLeftOpen, PanelRightOpen } from "lucide-react";
+import { PanelLeftOpen, PanelRightOpen, Download, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { injectHead, wrapBody, processGutenbergContent } from "@/lib/readerHtml";
 import type { ChatPrompt, PendingHighlight } from "@/lib/readerTypes";
@@ -178,6 +178,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [activeCitation, setActiveCitation] = useState<{ content: string; rect: { top: number; left: number; width: number; height: number } } | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; alt?: string } | null>(null);
 
   const bookQ = useQuery({ queryKey: ["book", id], queryFn: () => getBook(id) });
   const htmlQ = useQuery({ queryKey: ["bookHtml", id], queryFn: () => getBookHtml(id) });
@@ -235,7 +236,7 @@ export default function MobiBookPage(props: { bookId: number }) {
 
   const srcDoc = useMemo(() => {
     if (!htmlQ.data) return "";
-    const { html: processedHtml } = processGutenbergContent(htmlQ.data);
+    const { html: processedHtml } = processGutenbergContent(htmlQ.data, id);
     const gap = pageGap;
     let css = `
       :root {
@@ -378,6 +379,26 @@ export default function MobiBookPage(props: { bookId: number }) {
       img {
         max-width: 100%;
         height: auto;
+        display: block;
+        margin: 1.5rem auto;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        cursor: zoom-in;
+      }
+      .fig {
+        margin: 2rem 0;
+        text-align: center;
+      }
+      .caption {
+        font-size: 0.9rem;
+        color: var(--page-muted);
+        margin-top: 0.75rem;
+        font-style: italic;
+        text-align: center;
+      }
+      .mobi-inline-image {
+        min-height: 100px;
+        background: rgba(0,0,0,0.05);
       }
       img[src^="kindle:"], img[src^="cid:"] {
         display: none;
@@ -1080,6 +1101,29 @@ export default function MobiBookPage(props: { bookId: number }) {
     stripGutenbergBoilerplate(doc);
     syncPageMetrics();
 
+    // Resolve MOBI images
+    const resolveMobiImages = async () => {
+      const imgs = doc.querySelectorAll("img.mobi-inline-image");
+      for (const img of Array.from(imgs)) {
+        const bookId = img.getAttribute("data-book-id");
+        const relativeIndex = img.getAttribute("data-kindle-index");
+        if (bookId && relativeIndex) {
+          try {
+            const { invoke } = await import("@tauri-apps/api/core");
+            const { convertFileSrc } = await import("@tauri-apps/api/core");
+            const path = await invoke<string>("get_book_image_path", { 
+              bookId: parseInt(bookId), 
+              relativeIndex: parseInt(relativeIndex) 
+            });
+            (img as HTMLImageElement).src = convertFileSrc(path);
+          } catch (e) {
+            console.error("Failed to resolve image:", e);
+          }
+        }
+      }
+    };
+    resolveMobiImages();
+
     // Build TOC from headings
     const headings = Array.from(doc.querySelectorAll("h1, h2, h3, h4, h5, h6")) as HTMLElement[];
     const entries = headings
@@ -1168,6 +1212,14 @@ export default function MobiBookPage(props: { bookId: number }) {
     doc.addEventListener("keyup", handleSelection);
 
     const handleHighlightClick = (event: Event) => {
+      const target = getEventTargetElement(event.target);
+      if (target && target.tagName === "IMG") {
+        setLightboxImage({ 
+          src: (target as HTMLImageElement).src, 
+          alt: (target as HTMLImageElement).alt 
+        });
+        return;
+      }
       const highlightEl = findHighlightFromEvent(event);
       const highlightId = highlightEl?.dataset?.highlightId;
       if (highlightId) {
@@ -1770,6 +1822,28 @@ export default function MobiBookPage(props: { bookId: number }) {
   const chatPlaceholder = selectedHighlight
     ? "Ask about this highlight..."
     : "Ask about the current page...";
+  const handleSaveImage = async (src: string) => {
+    try {
+      const { save } = await import("@tauri-apps/plugin-dialog");
+      const { writeFile } = await import("@tauri-apps/plugin-fs");
+      
+      const filePath = await save({
+        filters: [{
+          name: 'Image',
+          extensions: ['jpg', 'png', 'gif']
+        }]
+      });
+
+      if (filePath) {
+        const response = await fetch(src);
+        const arrayBuffer = await response.arrayBuffer();
+        await writeFile(filePath, new Uint8Array(arrayBuffer));
+      }
+    } catch (e) {
+      console.error("Failed to save image:", e);
+    }
+  };
+
   if (htmlQ.isLoading) {
     return <div className="px-4 py-6 text-sm text-muted-foreground">Loading book content...</div>;
   }
@@ -1924,6 +1998,41 @@ export default function MobiBookPage(props: { bookId: number }) {
           )}
         </div>
       </div>
+
+      {lightboxImage && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative max-h-full max-w-full">
+            <img 
+              src={lightboxImage.src} 
+              alt={lightboxImage.alt} 
+              className="max-h-[90vh] max-w-full rounded-md shadow-2xl object-contain"
+            />
+            <div className="absolute -top-12 right-0 flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleSaveImage(lightboxImage.src)}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Save Image
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={() => setLightboxImage(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            {lightboxImage.alt && (
+              <p className="absolute -bottom-8 left-0 right-0 text-center text-sm text-white/80 italic">
+                {lightboxImage.alt}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

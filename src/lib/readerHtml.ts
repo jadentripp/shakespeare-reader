@@ -45,7 +45,13 @@ export interface ProcessedGutenberg {
   metadata: GutenbergMetadata;
 }
 
-export function processGutenbergContent(html: string): ProcessedGutenberg {
+function parseKindleIndex(s: string): number {
+  // Kindle indices in kindle:embed:XXXX are Base32 (0-9, A-V).
+  // Some might be decimal if they only contain digits, but parseInt with base 32 handles both.
+  return parseInt(s, 32);
+}
+
+export function processGutenbergContent(html: string, bookId?: number): ProcessedGutenberg {
   const metadata: GutenbergMetadata = {};
   
   const titleMatch = html.match(/Title:\s*([^\n<]+)/i);
@@ -71,6 +77,25 @@ export function processGutenbergContent(html: string): ProcessedGutenberg {
         
         const doc = parser.parseFromString(normalized, "text/html");
         
+        // Rewrite image sources
+        const images = doc.querySelectorAll("img");
+        images.forEach(img => {
+          const src = img.getAttribute("src") || "";
+          // kindle:embed:0016?mime=image/jpeg
+          if (src.startsWith("kindle:embed:")) {
+            const indexPart = src.split(":")[2]?.split("?")[0];
+            if (indexPart && bookId !== undefined) {
+              const relativeIndex = parseKindleIndex(indexPart);
+              // We'll use a data attribute and let the frontend resolve it or use a custom protocol.
+              // For now, let's mark it for the MobiBookPage to resolve or use a placeholder.
+              img.setAttribute("data-kindle-index", relativeIndex.toString());
+              img.setAttribute("data-book-id", bookId.toString());
+              img.src = ""; // Clear for now
+              img.classList.add("mobi-inline-image");
+            }
+          }
+        });
+
         // Mark the first element of this fragment with the fid
         const firstEl = doc.body.firstElementChild;
         if (firstEl) {
@@ -104,6 +129,7 @@ export function processGutenbergContent(html: string): ProcessedGutenberg {
 
   return { html, metadata };
 }
+
 
 
 

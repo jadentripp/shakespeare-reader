@@ -167,6 +167,8 @@ fn hard_delete_book(app_handle: AppHandle, book_id: i64) -> Result<(), String> {
     if let Some(path) = book.html_path.clone() {
         books::delete_html_file(path).map_err(|e| e.to_string())?;
     }
+    
+    books::delete_book_assets(&app_handle, book.gutenberg_id).map_err(|e| e.to_string())?;
 
     db::hard_delete_book(&app_handle, book_id).map_err(|e| e.to_string())
 }

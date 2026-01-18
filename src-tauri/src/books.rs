@@ -437,9 +437,10 @@ pub fn extract_mobi_images(bytes: &[u8]) -> Result<(std::collections::HashMap<us
     let record_count = be_u16(rec0, 8).unwrap_or(0) as usize;
 
     let mobi_off = find_mobi_header_offset(rec0).unwrap_or(0);
-    let first_image_index = be_u32(rec0, mobi_off + 0x6c).map(|v| v as i32);
+    let mut first_image_index = be_u32(rec0, mobi_off + 0x6c).map(|v| v as i32);
 
     let mut images = std::collections::HashMap::new();
+    let mut first_found_index = None;
     
     // Heuristic: images start after text records.
     // We search all records from record_count + 1 to num_records for image signatures.
@@ -459,8 +460,16 @@ pub fn extract_mobi_images(bytes: &[u8]) -> Result<(std::collections::HashMap<us
             || data.starts_with(&[0x89, 0x50, 0x4e, 0x47])
             || data.starts_with(&[0x47, 0x49, 0x46, 0x38])
         {
+            if first_found_index.is_none() {
+                first_found_index = Some(i as i32);
+            }
             images.insert(i, data.to_vec());
         }
+    }
+
+    // Fallback: If header says 0 or is missing, but we found images, use the first one we found.
+    if (first_image_index.is_none() || first_image_index == Some(0) || first_image_index == Some(-1)) && first_found_index.is_some() {
+        first_image_index = first_found_index;
     }
 
     Ok((images, first_image_index))
@@ -632,6 +641,15 @@ pub fn read_html_string(html_path: String) -> Result<String, anyhow::Error> {
 
 pub fn delete_html_file(html_path: String) -> Result<(), anyhow::Error> {
     let _ = fs::remove_file(html_path);
+    Ok(())
+}
+
+pub fn delete_book_assets(app_handle: &AppHandle, gutenberg_id: i64) -> Result<(), anyhow::Error> {
+    let dir = books_dir(app_handle)?;
+    let assets_dir = dir.join(format!("{}_assets", gutenberg_id));
+    if assets_dir.exists() {
+        let _ = fs::remove_dir_all(assets_dir);
+    }
     Ok(())
 }
 
