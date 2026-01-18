@@ -64,7 +64,7 @@ export default function HighlightsSidebar({
       <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/50 bg-card shadow-sm">
         {/* Tab Navigation - Editorial Style */}
         <div className="shrink-0 border-b border-border/40">
-          <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center justify-between px-3 py-2">
             <div className="flex items-center gap-6">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
