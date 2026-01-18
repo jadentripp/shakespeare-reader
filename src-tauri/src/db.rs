@@ -647,6 +647,18 @@ pub fn delete_book_message<R: tauri::Runtime>(
     Ok(())
 }
 
+pub fn clear_default_book_messages<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    book_id: i64,
+) -> Result<(), anyhow::Error> {
+    let conn = open(app_handle)?;
+    conn.execute(
+        "DELETE FROM book_message WHERE book_id = ?1 AND thread_id IS NULL",
+        params![book_id],
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -797,6 +809,43 @@ mod tests {
 
         delete_book_message(&handle, msg.id).unwrap();
         assert_eq!(list_book_messages(&handle, book_id, None).unwrap().len(), 0);
+
+        std::fs::remove_file(db_path).ok();
+    }
+
+    #[test]
+    fn test_clear_default_messages() {
+        let (handle, db_path) = setup("clear_default");
+        init(&handle).expect("Failed to init DB");
+
+        let book_id = upsert_book(
+            &handle,
+            1,
+            "Title".to_string(),
+            "Author".to_string(),
+            None,
+            None,
+            "mobi".to_string(),
+            "html".to_string(),
+            None,
+        ).unwrap();
+
+        let thread = create_book_chat_thread(&handle, book_id, "Thread".to_string()).unwrap();
+
+        // Default chat messages (thread_id IS NULL)
+        add_book_message(&handle, book_id, None, "user".to_string(), "Default 1".to_string()).unwrap();
+        add_book_message(&handle, book_id, None, "assistant".to_string(), "Default 2".to_string()).unwrap();
+
+        // Threaded messages
+        add_book_message(&handle, book_id, Some(thread.id), "user".to_string(), "Threaded 1".to_string()).unwrap();
+
+        assert_eq!(list_book_messages(&handle, book_id, None).unwrap().len(), 2);
+        assert_eq!(list_book_messages(&handle, book_id, Some(thread.id)).unwrap().len(), 1);
+
+        clear_default_book_messages(&handle, book_id).unwrap();
+
+        assert_eq!(list_book_messages(&handle, book_id, None).unwrap().len(), 0, "Default messages should be cleared");
+        assert_eq!(list_book_messages(&handle, book_id, Some(thread.id)).unwrap().len(), 1, "Threaded messages should remain");
 
         std::fs::remove_file(db_path).ok();
     }
