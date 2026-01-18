@@ -1,8 +1,0 @@
-{
-  "track_id": "ai_illustrations_20260117",
-  "type": "feature",
-  "status": "new",
-  "created_at": "2026-01-17T14:00:00Z",
-  "updated_at": "2026-01-17T14:00:00Z",
-  "description": "Add support for illustrations and images in book files (e.g., Iliad) with inline rendering and click-to-zoom."
-}

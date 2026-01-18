@@ -213,7 +213,7 @@ pub async fn download_mobi_to_app_data(
     throttle_gutenberg_if_needed(&mobi_url).await;
 
     let client = reqwest::Client::builder()
-        .user_agent("shakespeare-reader/0.1 (polite; see https://www.gutenberg.org/policy/robot)")
+        .user_agent("ai-reader/0.1 (polite; see https://www.gutenberg.org/policy/robot)")
         .build()?;
 
     let resp = client.get(&mobi_url).send().await?;
