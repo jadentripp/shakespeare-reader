@@ -7,6 +7,7 @@ import AppLayout from "./App";
 import BookPage from "./routes/BookPage";
 import LibraryPage from "./routes/LibraryPage";
 import SettingsPage from "./routes/SettingsPage";
+import ThreeDLibraryPage from "./routes/ThreeDLibraryPage";
 
 const rootRoute = new RootRoute({
   component: AppLayout,
@@ -16,6 +17,12 @@ const indexRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "/",
   component: LibraryPage,
+});
+
+const threeDLibraryRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/3d-library",
+  component: ThreeDLibraryPage,
 });
 
 const bookRoute = new Route({
@@ -30,7 +37,12 @@ const settingsRoute = new Route({
   component: SettingsPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, bookRoute, settingsRoute]);
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  threeDLibraryRoute,
+  bookRoute,
+  settingsRoute,
+]);
 
 export const router = new Router({
   routeTree,
