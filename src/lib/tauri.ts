@@ -265,8 +265,8 @@ export async function createBookChatThread(params: {
   });
 }
 
-export async function getThreadMaxCitationIndex(threadId: number): Promise<number> {
-  return await invoke("get_thread_max_citation_index", { threadId });
+export async function getThreadMaxCitationIndex(bookId: number, threadId: number | null): Promise<number> {
+  return await invoke("get_thread_max_citation_index", { bookId, threadId });
 }
 
 export async function deleteBookChatThread(threadId: number): Promise<void> {
@@ -308,8 +308,8 @@ export type ChatResult = {
   reasoning_summary: string | null;
 };
 
-export async function openAiChat(messages: ChatMessage[]): Promise<ChatResult> {
-  return await invoke("openai_chat", { messages });
+export async function openAiChat(messages: ChatMessage[], model?: string): Promise<ChatResult> {
+  return await invoke("openai_chat", { messages, model: model ?? null });
 }
 
 export async function openAiListModels(): Promise<string[]> {

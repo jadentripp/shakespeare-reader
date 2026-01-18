@@ -280,6 +280,11 @@ pub fn hard_delete_book<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, boo
     )?;
     conn.execute("DELETE FROM highlight WHERE book_id = ?1", params![book_id])?;
     conn.execute("DELETE FROM book_position WHERE book_id = ?1", params![book_id])?;
+    conn.execute("DELETE FROM book_message WHERE book_id = ?1", params![book_id])?;
+    conn.execute(
+        "DELETE FROM book_chat_thread WHERE book_id = ?1",
+        params![book_id],
+    )?;
     let deleted = conn.execute("DELETE FROM book WHERE id = ?1", params![book_id])?;
     if deleted == 0 {
         anyhow::bail!("No book deleted for id {}", book_id);
@@ -691,34 +696,46 @@ pub fn clear_default_book_messages<R: tauri::Runtime>(
 
 pub fn get_thread_max_citation_index<R: tauri::Runtime>(
     app_handle: &tauri::AppHandle<R>,
-    thread_id: i64,
+    book_id: i64,
+    thread_id: Option<i64>,
 ) -> Result<i32, anyhow::Error> {
     let conn = open(app_handle)?;
-    let mut stmt = conn.prepare(
-        "SELECT context_map FROM book_message WHERE thread_id = ?1 AND context_map IS NOT NULL",
-    )?;
-    let rows = stmt.query_map(params![thread_id], |row| {
-        let json_str: String = row.get(0)?;
-        Ok(json_str)
-    })?;
+    
+    // Collect context_map JSON strings from the appropriate messages
+    let json_strings: Vec<String> = match thread_id {
+        Some(tid) => {
+            let mut stmt = conn.prepare(
+                "SELECT context_map FROM book_message WHERE book_id = ?1 AND thread_id = ?2 AND context_map IS NOT NULL"
+            )?;
+            let rows = stmt.query_map(params![book_id, tid], |row| row.get(0))?;
+            rows.filter_map(|r| r.ok()).collect()
+        }
+        None => {
+            let mut stmt = conn.prepare(
+                "SELECT context_map FROM book_message WHERE book_id = ?1 AND thread_id IS NULL AND context_map IS NOT NULL"
+            )?;
+            let rows = stmt.query_map(params![book_id], |row| row.get(0))?;
+            rows.filter_map(|r| r.ok()).collect()
+        }
+    };
 
     let mut max_index = 0;
-    for row in rows {
-        let json_str = row?;
+    let msg_count = json_strings.len();
+    for json_str in json_strings {
         if let Ok(json) = serde_json::from_str::<serde_json::Value>(&json_str) {
-            // Assuming context_map is an object with an "indices" array or similar.
-            // Let's assume it has a "sources" array where each source has an "index".
-            if let Some(sources) = json.get("sources").and_then(|s| s.as_array()) {
-                for source in sources {
-                    if let Some(idx) = source.get("index").and_then(|i| i.as_i64()) {
-                        if idx as i32 > max_index {
-                            max_index = idx as i32;
+            // Our context_map is a Record<string, Source> where the keys are the indices
+            if let Some(map) = json.as_object() {
+                for key in map.keys() {
+                    if let Ok(idx) = key.parse::<i32>() {
+                        if idx > max_index {
+                            max_index = idx;
                         }
                     }
                 }
             }
         }
     }
+    println!("[DB] Max citation index for book {} thread {:?}: {} (checked {} messages)", book_id, thread_id, max_index, msg_count);
     Ok(max_index)
 }
 

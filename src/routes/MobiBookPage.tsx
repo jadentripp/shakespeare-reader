@@ -10,10 +10,6 @@ import { cn } from "@/lib/utils";
 import { injectHead, wrapBody, processGutenbergContent } from "@/lib/readerHtml";
 import type { ChatPrompt, PendingHighlight } from "@/lib/readerTypes";
 import {
-  Popover,
-  PopoverContent,  PopoverAnchor,
-} from "@/components/ui/popover";
-import {
   addBookMessage,
   createHighlight,
   deleteHighlight,
@@ -34,7 +30,8 @@ import {
   openAiChat,
   openAiListModels,
   setSetting,
-  updateHighlightNote
+  updateHighlightNote,
+  getThreadMaxCitationIndex
 } from "../lib/tauri";
 import { useReaderAppearance } from "../lib/appearance";
 
@@ -170,7 +167,6 @@ export default function MobiBookPage(props: { bookId: number }) {
   const [highlightLibraryExpanded, setHighlightLibraryExpanded] = useState(false);
   const [highlightPageMap] = useState<Record<number, number>>({});
   const [noteDraft, setNoteDraft] = useState("");
-  const [contextText] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
   const [iframeReady, setIframeReady] = useState(false);
@@ -914,8 +910,6 @@ export default function MobiBookPage(props: { bookId: number }) {
       const root = getScrollRoot();
       if (!root) return;
       
-      const metrics = getPageMetrics();
-      const stride = metrics.pageWidth + metrics.gap;
       const currentScroll = root.scrollLeft;
       
       // Find the first visible block
@@ -1395,10 +1389,11 @@ export default function MobiBookPage(props: { bookId: number }) {
             ];
             
             for (const p of patterns) {
-              targetEl = ownerDoc.getElementById(p) || 
+              const found = ownerDoc.getElementById(p) || 
                          ownerDoc.querySelector(`[id="${p}"]`) ||
                          ownerDoc.querySelector(`[name="${p}"]`);
-              if (targetEl) {
+              if (found) {
+                targetEl = found as HTMLElement;
                 console.log("[Link] Found target with pattern:", p);
                 break;
               }
@@ -1406,16 +1401,22 @@ export default function MobiBookPage(props: { bookId: number }) {
 
             // Try searching for any element containing "footnote" and the number in its ID
             if (!targetEl) {
-              targetEl = ownerDoc.querySelector(`[id*="footnote"][id*="${num}"]`) ||
+              const found = ownerDoc.querySelector(`[id*="footnote"][id*="${num}"]`) ||
                          ownerDoc.querySelector(`[id*="note"][id*="${num}"]`) ||
                          ownerDoc.querySelector(`[id*="fn"][id*="${num}"]`);
-              if (targetEl) console.log("[Link] Found target with fuzzy ID search");
+              if (found) {
+                targetEl = found as HTMLElement;
+                console.log("[Link] Found target with fuzzy ID search");
+              }
             }
 
             // Try "aid" attribute - common in some MOBI/EPUB formats
             if (!targetEl) {
-              targetEl = ownerDoc.querySelector(`[aid*="${num}"]`);
-              if (targetEl) console.log("[Link] Found target with aid attribute search");
+              const found = ownerDoc.querySelector(`[aid*="${num}"]`);
+              if (found) {
+                targetEl = found as HTMLElement;
+                console.log("[Link] Found target with aid attribute search");
+              }
             }
           }
         }
@@ -1459,7 +1460,6 @@ export default function MobiBookPage(props: { bookId: number }) {
         // kindle:pos:fid:000Q:off:000000001K
         const parts = lowerHref.split(":");
         const fidIndex = parts.indexOf("fid");
-        const offIndex = parts.indexOf("off");
         const ownerDoc = anchor.ownerDocument;
 
         if (fidIndex !== -1) {
@@ -1752,12 +1752,10 @@ export default function MobiBookPage(props: { bookId: number }) {
     let threadId = currentThreadId;
 
     try {
-      // Get starting index for cumulative citations
-      let localId = 1;
-      if (threadId !== null) {
-        const maxIdx = await getThreadMaxCitationIndex(threadId);
-        localId = maxIdx + 1;
-      }
+      // Get starting index for cumulative citations (works for both threads and default chat)
+      const maxIdx = await getThreadMaxCitationIndex(id, threadId);
+      console.log(`[Chat:Citations] Found maxIdx: ${maxIdx} for book ${id}. Next ID starts at: ${maxIdx + 1}`);
+      let localId = maxIdx + 1;
 
       // Optimistic update: immediately show user message in UI
       const optimisticUserMsg: any = {
@@ -1782,115 +1780,128 @@ export default function MobiBookPage(props: { bookId: number }) {
         content: input,
       });
 
-      // Build context blocks
+      // Build context blocks with citation prompting
       const contextBlocks = [
-        "You are an assistant embedded in an AI reader.",
-        "IMPORTANT: You have access to the reader's current context. Respond thoughtfully using all context provided below.",
-        "CITATIONS: For every specific claim, fact, or summary point, you MUST insert a citation: <cite snippet=\"...\" index=\"...\" />.",
-        "The 'snippet' MUST be the verbatim text from the book supporting that specific claim. NEVER use ellipses '...' - if a quote is too long, cite multiple shorter verbatim snippets.",
-        "The 'index' MUST be the exact number from the [SOURCE_ID: ...] tag provided in the context blocks below.",
-        "CRITICAL: You MUST use the unique IDs provided. Do NOT default to '1'. Each claim must point to its specific source block.",
-        "Example: Agamemnon refused the ransom <cite snippet=\"The priest being refused\" index=\"1\" /> and dismissed him rudely.",
-        "Always use the self-closing format <cite ... />. Do NOT wrap your summary text in the tag.",
+        "You are an assistant helping users understand books.",
+        "",
+        "## CITATION RULES (CRITICAL)",
+        "After EVERY factual claim, add: <cite snippet=\"...\"/>",
+        "",
+        "Requirements:",
+        "- Copy text EXACTLY as written - preserve spelling, punctuation, capitalization",
+        "- Keep snippets SHORT: 5-12 words is ideal. Cite the most distinctive phrase.",
+        "- Only cite 3-5 most important claims per response.",
+        "- One citation per claim. Don't stack multiple cites together.",
+        "- Place the cite tag immediately after the claim it supports.",
+        "",
+        "Good example:",
+        "The narrator describes an era of contradictions <cite snippet=\"it was the best of times, it was the worst of times\"/> where wisdom and foolishness coexisted <cite snippet=\"it was the age of wisdom, it was the age of foolishness\"/>.",
+        "",
+        "Bad examples:",
+        "- Too long: <cite snippet=\"It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief\"/>",
+        "- Paraphrased: <cite snippet=\"the best and worst of times\"/> (must be exact)",
+        "- Stacked: <cite snippet=\"...\"/><cite snippet=\"...\"/><cite snippet=\"...\"/>",
+        "",
+        "## BOOK CONTENT",
       ];
 
-      const idMap: Record<number, { text: string; blockIndex?: number; cfi?: string; pageNumber?: number }> = {}; 
-
+      // Build block index lookup for finding citations in the book
+      const blockIndexLookup: Array<{ text: string; blockIndex: number; pageNumber: number }> = [];
+      
       if (selectedHighlight) {
-        idMap[localId] = { 
-          text: selectedHighlight.text,
-          cfi: selectedHighlight.start_path, // Highlights use start_path as CFI
-        };
-        contextBlocks.push(`[SOURCE_ID: ${localId}] Currently Focused Highlight: "${selectedHighlight.text}"`);
+        contextBlocks.push(`Currently Focused Highlight: "${selectedHighlight.text}"`);
         if (selectedHighlight.note) {
           contextBlocks.push(`User's Note on Highlight: "${selectedHighlight.note}"`);
         }
-        localId++;
+        contextBlocks.push("");
       }
 
       if (attachedHighlights.length > 0) {
         contextBlocks.push("Additional Attached Highlights:");
         attachedHighlights.forEach((h: any) => {
           if (selectedHighlight && h.id === selectedHighlight.id) return;
-          idMap[localId] = { 
-            text: h.text,
-            cfi: h.start_path
-          };
-          contextBlocks.push(`[SOURCE_ID: ${localId}] "${h.text}"${h.note ? ` (Note: ${h.note})` : ""}`);
-          localId++;
+          contextBlocks.push(`"${h.text}"${h.note ? ` (Note: ${h.note})` : ""}`);
         });
+        contextBlocks.push("");
       }
 
       // Always add visible page content to the context
       const doc = iframeRef.current?.contentDocument;
       const root = getScrollRoot();
       if (doc && root) {
-        const metrics = getPageMetrics();
-        const stride = metrics.pageWidth + metrics.gap;
         const rootRect = root.getBoundingClientRect();
+        const blocks = Array.from(doc.querySelectorAll("[data-block-index]")) as HTMLElement[];
+        contextBlocks.push("Current View Content:");
+        
+        const visibleWidth = rootRect.width;
 
-        console.log(`[Chat:Context] Filtering blocks. CurrentPage: ${currentPage}, Columns: ${columns}, Stride: ${stride}, scrollLeft: ${root.scrollLeft}`);
+        blocks.forEach((block) => {
+          const rects = Array.from(block.getClientRects());
+          const indexAttr = block.getAttribute("data-block-index");
+          if (!indexAttr) return;
+          const blockIndex = parseInt(indexAttr, 10);
 
-          const blocks = Array.from(doc.querySelectorAll("[data-block-index]")) as HTMLElement[];
-          contextBlocks.push("Current View Content:");
-          
-          const visibleWidth = rootRect.width;
-
-          blocks.forEach((block) => {
-            const rects = Array.from(block.getClientRects());
-            const indexAttr = block.getAttribute("data-block-index");
-            if (!indexAttr) return;
-            const blockIndex = parseInt(indexAttr, 10);
-
-            // A block is visible if any of its column fragments are within the visible viewport bounds
-            const isVisible = rects.some(rect => {
-              const visualLeft = rect.left - rootRect.left;
-              const visualRight = rect.right - rootRect.left;
-              
-              // We use a 2px buffer to ignore microscopic slivers on the edges
-              return (visualRight > 2 && visualLeft < visibleWidth - 2);
-            });
-            
-            if (isVisible) {
-              const text = block.textContent?.trim();
-              if (text) {
-                const sentences = text.split(/(?<=[.!?])\s+(?=[A-Z"])/);
-                sentences.forEach(sentence => {
-                  const cleanSentence = sentence.trim();
-                  if (cleanSentence.length > 5) {
-                    idMap[localId] = { 
-                      text: cleanSentence, 
-                      blockIndex,
-                      cfi: `epubcfi(/6/2!/4/${blockIndex * 2})`, // Simple block-based CFI
-                      pageNumber: currentPage
-                    }; 
-                    contextBlocks.push(`[SOURCE_ID: ${localId}] ${cleanSentence}`);
-                    localId++;
-                  }
-                });
-              }
-            }
+          // A block is visible if any of its column fragments are within the visible viewport bounds
+          const isVisible = rects.some(rect => {
+            const visualLeft = rect.left - rootRect.left;
+            const visualRight = rect.right - rootRect.left;
+            return (visualRight > 2 && visualLeft < visibleWidth - 2);
           });
+          
+          if (isVisible) {
+            const text = block.textContent?.trim();
+            if (text) {
+              blockIndexLookup.push({ text, blockIndex, pageNumber: currentPage });
+              contextBlocks.push(text);
+              contextBlocks.push(""); // blank line between paragraphs for readability
+            }
+          }
+        });
+        contextBlocks.push("```");
       }
 
-      const mapping = idMap;
-      setContextMap(mapping);
-
       const systemContent = contextBlocks.join("\n");
-      
       const messages = bookMessagesQ.data ?? [];
 
+      // Single API call: generate response with citations
       const response = await openAiChat([
         { role: "system", content: systemContent },
         ...messages.map((message: any) => ({ role: message.role, content: message.content })),
         { role: "user", content: input },
       ]);
 
+      // Post-process: assign incrementing indices to each <cite> tag in order
+      const mapping: Record<number, { text: string; blockIndex?: number; pageNumber?: number }> = {};
+      let citeIndex = localId;
+      
+      const processedContent = response.content.replace(
+        /<cite\s+snippet="([^"]*)"\s*\/?>/g,
+        (_match: string, snippet: string) => {
+          // Try to find the block that contains this snippet
+          const matchingBlock = blockIndexLookup.find(b => 
+            b.text.toLowerCase().includes(snippet.toLowerCase())
+          );
+          
+          const pageNum = matchingBlock?.pageNumber ?? currentPage;
+          mapping[citeIndex] = {
+            text: snippet,
+            blockIndex: matchingBlock?.blockIndex,
+            pageNumber: pageNum,
+          };
+          
+          const result = `<cite snippet="${snippet}" index="${citeIndex}" page="${pageNum}"/>`;
+          citeIndex++;
+          return result;
+        }
+      );
+
+      setContextMap(mapping);
+
       await addBookMessage({
         bookId: id,
         threadId: threadId,
         role: "assistant",
-        content: response.content,
+        content: processedContent,
         reasoningSummary: response.reasoning_summary,
         contextMap: JSON.stringify(mapping),
       });
@@ -1924,7 +1935,7 @@ export default function MobiBookPage(props: { bookId: number }) {
     }
   };
 
-  const handleTocNavigate = (entry: { id: string; element: HTMLElement }) => {
+  const handleTocNavigate = (entry: { id: string; element: HTMLElement; text?: string }) => {
     console.log("[TOC] Navigating to entry:", entry.text, entry.id);
     setCurrentTocEntryId(entry.id);
     jumpToElement(entry.element);

@@ -373,9 +373,10 @@ fn openai_key_status(app_handle: AppHandle) -> Result<openai::KeyStatus, String>
 async fn openai_chat(
     app_handle: AppHandle,
     messages: Vec<openai::ChatMessage>,
+    model: Option<String>,
 ) -> Result<openai::ChatResult, String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
-    openai::chat(&app_handle, messages)
+    openai::chat(&app_handle, messages, model)
         .await
         .map_err(|e| e.to_string())
 }
@@ -401,10 +402,11 @@ fn set_thread_last_cfi(
 #[tauri::command]
 fn get_thread_max_citation_index(
     app_handle: AppHandle,
-    thread_id: i64,
+    book_id: i64,
+    thread_id: Option<i64>,
 ) -> Result<i32, String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::get_thread_max_citation_index(&app_handle, thread_id).map_err(|e| e.to_string())
+    db::get_thread_max_citation_index(&app_handle, book_id, thread_id).map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

@@ -20,14 +20,16 @@ function parseMarkdownIntoBlocks(markdown: string): string[] {
   const processed = markdown.replace(/<cite\s+([^>]*)\/?>([\s\S]*?)(?:<\/cite>)?/g, (match, attrs, body) => {
     const snippetMatch = attrs.match(/snippet="([^"]*)"/);
     const indexMatch = attrs.match(/index="([^"]*)"/);
+    const pageMatch = attrs.match(/page="([^"]*)"/);
     
     if (!snippetMatch && !indexMatch) return match; // Not a valid cite tag
     
     const snippet = snippetMatch ? snippetMatch[1] : "";
     const index = indexMatch ? indexMatch[1] : "";
+    const page = pageMatch ? pageMatch[1] : "";
     const cleanBody = body ? body.trim() : "";
     
-    return `@@CITE@@${index}@@${encodeURIComponent(snippet)}@@${cleanBody}@@`;
+    return `@@CITE@@${index}@@${encodeURIComponent(snippet)}@@${page}@@${cleanBody}@@`;
   });
 
   const tokens = marked.lexer(processed)
@@ -88,32 +90,34 @@ const MemoizedMarkdownBlock = memo(
       p: function ParagraphComponent({ children, ...props }) {
         const processNode = (node: any): any => {
           if (typeof node === 'string') {
-            // First handle our new @@CITE@@ format
-            const citeParts = node.split(/(@@CITE@@[^@]+@@[^@]*@@[^@]*@@)/g);
+            // First handle our new @@CITE@@ format (now with page: index@@snippet@@page@@body)
+            const citeParts = node.split(/(@@CITE@@[^@]+@@[^@]*@@[^@]*@@[^@]*@@)/g);
             const processedCiteParts = citeParts.flatMap((part, i) => {
-              const citeMatch = part.match(/@@CITE@@([^@]+)@@([^@]+)@@([^@]*)@@/);
+              const citeMatch = part.match(/@@CITE@@([^@]+)@@([^@]*)@@([^@]*)@@([^@]*)@@/);
               if (citeMatch) {
                 const index = parseInt(citeMatch[1], 10);
                 const snippet = decodeURIComponent(citeMatch[2]);
-                const wrappedText = citeMatch[3];
-                                return (
-                                  <span key={`cite-group-${i}`}>
-                                    {wrappedText}
-                                    <sup
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        onCitationClick?.(index, snippet);
-                                      }}
-                                      className="cursor-pointer text-primary hover:text-primary/70 font-bold px-0.5 select-none inline-block align-baseline hover:scale-110 transition-transform underline decoration-dotted underline-offset-2 ml-0.5"
-                                      style={{ fontSize: '0.75em', verticalAlign: 'super', lineHeight: 0 }}
-                                      title={`Source: "${snippet}"`}
-                                    >
-                                      [{index}]
-                                    </sup>
-                                  </span>
-                                );
-                              }
+                const page = citeMatch[3];
+                const wrappedText = citeMatch[4];
+                const displayText = page ? `${index}, p.${page}` : `${index}`;
+                return (
+                  <span key={`cite-group-${i}`}>
+                    {wrappedText}
+                    <sup
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onCitationClick?.(index, snippet);
+                      }}
+                      className="cursor-pointer text-primary hover:text-primary/70 font-bold px-0.5 select-none inline-block align-baseline hover:scale-110 transition-transform underline decoration-dotted underline-offset-2 ml-0.5"
+                      style={{ fontSize: '0.75em', verticalAlign: 'super', lineHeight: 0 }}
+                      title={`Source: "${snippet}"`}
+                    >
+                      [{displayText}]
+                    </sup>
+                  </span>
+                );
+              }
               
               // Then handle legacy [1] format within the remaining string parts
               const parts = part.split(/(\[\d+\])/g);
@@ -161,13 +165,15 @@ const MemoizedMarkdownBlock = memo(
       li: function LiComponent({ children, ...props }) {
         const processNode = (node: any): any => {
           if (typeof node === 'string') {
-            const citeParts = node.split(/(@@CITE@@[^@]+@@[^@]*@@[^@]*@@)/g);
+            const citeParts = node.split(/(@@CITE@@[^@]+@@[^@]*@@[^@]*@@[^@]*@@)/g);
             const processedCiteParts = citeParts.flatMap((part, i) => {
-              const citeMatch = part.match(/@@CITE@@([^@]+)@@([^@]+)@@([^@]*)@@/);
+              const citeMatch = part.match(/@@CITE@@([^@]+)@@([^@]*)@@([^@]*)@@([^@]*)@@/);
               if (citeMatch) {
                 const index = parseInt(citeMatch[1], 10);
                 const snippet = decodeURIComponent(citeMatch[2]);
-                const wrappedText = citeMatch[3];
+                const page = citeMatch[3];
+                const wrappedText = citeMatch[4];
+                const displayText = page ? `${index}, p.${page}` : `${index}`;
                 return (
                   <span key={`cite-group-${i}`}>
                     {wrappedText}
@@ -181,7 +187,7 @@ const MemoizedMarkdownBlock = memo(
                       style={{ fontSize: '0.75em', verticalAlign: 'super', lineHeight: 0 }}
                       title={`Source: "${snippet}"`}
                     >
-                      [{index}]
+                      [{displayText}]
                     </sup>
                   </span>
                 );

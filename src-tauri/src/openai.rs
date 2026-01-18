@@ -103,10 +103,14 @@ pub struct ChatResult {
     pub reasoning_summary: Option<String>,
 }
 
-pub async fn chat(app_handle: &AppHandle, messages: Vec<ChatMessage>) -> Result<ChatResult, anyhow::Error> {
+pub async fn chat(app_handle: &AppHandle, messages: Vec<ChatMessage>, model_override: Option<String>) -> Result<ChatResult, anyhow::Error> {
     let api_key = resolve_api_key(app_handle)?;
-    let model = crate::db::get_setting(app_handle, "openai_model".to_string())?
-        .unwrap_or_else(|| "gpt-4o".to_string());
+    let model = model_override.unwrap_or_else(|| {
+        crate::db::get_setting(app_handle, "openai_model".to_string())
+            .ok()
+            .flatten()
+            .unwrap_or_else(|| "gpt-4o".to_string())
+    });
 
     let client = reqwest::Client::new();
     let request_body = ChatRequest {
@@ -131,7 +135,11 @@ pub async fn chat(app_handle: &AppHandle, messages: Vec<ChatMessage>) -> Result<
         return Err(anyhow::anyhow!("OpenAI API error {}: {}", status, error_body));
     }
 
-    let body: ChatResponse = resp.json().await?;
+    let response_text = resp.text().await?;
+    println!("[OpenAI] Response body: {}", &response_text[..response_text.len().min(500)]);
+    
+    let body: ChatResponse = serde_json::from_str(&response_text)
+        .map_err(|e| anyhow::anyhow!("Failed to parse response: {}. Body: {}", e, &response_text[..response_text.len().min(500)]))?;
     
     let mut content = String::new();
     let mut reasoning_summary = None;

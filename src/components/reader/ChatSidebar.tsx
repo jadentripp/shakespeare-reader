@@ -5,7 +5,7 @@ import {
   ChatContainerContent,
   ChatContainerScrollAnchor,
 } from "@/components/ui/chat-container";
-import { Message, MessageAvatar, MessageContent, MessageActions, MessageAction } from "@/components/ui/message";
+import { Message, MessageAvatar, MessageContent, MessageAction } from "@/components/ui/message";
 import {
   PromptInput,
   PromptInputTextarea,
@@ -380,7 +380,7 @@ export default function ChatSidebar({
                             </button>
                           )}
                           {thread.last_cfi && (
-                            <MapPin className="h-2.5 w-2.5 text-primary/60" title="Saved position" />
+                            <MapPin className="h-2.5 w-2.5 text-primary/60" />
                           )}
                           {onClearThreadChat && currentThreadId === thread.id && messages.length > 0 && (
                             <button
