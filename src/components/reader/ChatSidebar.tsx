@@ -5,7 +5,7 @@ import {
   ChatContainerContent,
   ChatContainerScrollAnchor,
 } from "@/components/ui/chat-container";
-import { Message, MessageAvatar, MessageContent } from "@/components/ui/message";
+import { Message, MessageAvatar, MessageContent, MessageActions, MessageAction } from "@/components/ui/message";
 import {
   PromptInput,
   PromptInputTextarea,
@@ -47,6 +47,7 @@ type ChatSidebarProps = {
   onRenameThread?: (id: number, title: string) => void;
   onClearDefaultChat?: () => void;
   onClearThreadChat?: (id: number) => void;
+  onDeleteMessage?: (id: number) => void;
   placeholder?: string;
   isHighlightContext?: boolean;
   attachedContext?: Highlight[];
@@ -438,30 +439,58 @@ export default function ChatSidebar({
                 {messages.map((message) => {
                   const isUser = message.role === "user";
                   return (
-                    <Message
-                      key={message.id}
-                      className={cn(isUser && "flex-row-reverse")}
-                    >
-                      <MessageAvatar
-                        src=""
-                        alt={isUser ? "You" : "Assistant"}
-                        fallback={isUser ? "U" : "AI"}
-                        className={cn(
-                          "h-6 w-6 text-[10px]",
-                          isUser ? "bg-primary text-primary-foreground" : "bg-muted"
-                        )}
-                      />
-                      <MessageContent
-                        markdown={!isUser}
-                        onCitationClick={message.onCitationClick ?? onCitationClick}
-                        className={cn(
-                          "max-w-[85%] text-sm py-2 px-3",
-                          isUser ? "bg-primary text-primary-foreground" : "bg-muted/60"
-                        )}
+                    <div key={message.id} className="group/msg relative">
+                      <Message
+                        className={cn(isUser && "flex-row-reverse")}
                       >
-                        {message.content}
-                      </MessageContent>
-                    </Message>
+                        <MessageAvatar
+                          src=""
+                          alt={isUser ? "You" : "Assistant"}
+                          fallback={isUser ? "U" : "AI"}
+                          className={cn(
+                            "h-6 w-6 text-[10px]",
+                            isUser ? "bg-primary text-primary-foreground" : "bg-muted"
+                          )}
+                        />
+                        <MessageContent
+                          markdown={!isUser}
+                          onCitationClick={message.onCitationClick ?? onCitationClick}
+                          className={cn(
+                            "max-w-[85%] text-sm py-2 px-3",
+                            isUser ? "bg-primary text-primary-foreground" : "bg-muted/60"
+                          )}
+                        >
+                          {message.content}
+                        </MessageContent>
+                      </Message>
+                      {onDeleteMessage && (
+                        <div className={cn(
+                          "absolute top-0 opacity-0 group-hover/msg:opacity-100 transition-opacity",
+                          isUser ? "left-0 -translate-x-full pr-1" : "right-0 translate-x-full pl-1"
+                        )}>
+                          <MessageAction
+                            tooltip="Delete message"
+                            side={isUser ? "left" : "right"}
+                          >
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                              onClick={() => {
+                                const confirmed = message.role === 'assistant' 
+                                  ? window.confirm("Are you sure you want to delete this AI response?")
+                                  : true;
+                                if (confirmed) {
+                                  onDeleteMessage(Number(message.id));
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </MessageAction>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
                 {chatSending && (
