@@ -1776,14 +1776,13 @@ export default function MobiBookPage(props: { bookId: number }) {
         { role: "user", content: input },
       ]);
 
-      // Append hidden mapping to the assistant's message
-      const finalResponse = `${response}\n\n<!-- context-map: ${JSON.stringify(mapping)} -->`;
-
       await addBookMessage({
         bookId: id,
         threadId: threadId,
         role: "assistant",
-        content: finalResponse,
+        content: response.content,
+        reasoningSummary: response.reasoning_summary,
+        contextMap: JSON.stringify(mapping),
       });
 
       await queryClient.invalidateQueries({

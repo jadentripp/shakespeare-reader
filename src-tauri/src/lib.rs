@@ -282,9 +282,11 @@ fn add_book_message(
     thread_id: Option<i64>,
     role: String,
     content: String,
+    reasoning_summary: Option<String>,
+    context_map: Option<String>,
 ) -> Result<BookMessage, String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::add_book_message(&app_handle, book_id, thread_id, role, content).map_err(|e| e.to_string())
+    db::add_book_message(&app_handle, book_id, thread_id, role, content, reasoning_summary, context_map).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -371,7 +373,7 @@ fn openai_key_status(app_handle: AppHandle) -> Result<openai::KeyStatus, String>
 async fn openai_chat(
     app_handle: AppHandle,
     messages: Vec<openai::ChatMessage>,
-) -> Result<String, String> {
+) -> Result<openai::ChatResult, String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
     openai::chat(&app_handle, messages)
         .await
@@ -384,6 +386,25 @@ async fn openai_list_models(app_handle: AppHandle) -> Result<Vec<String>, String
     openai::list_models(&app_handle)
         .await
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn set_thread_last_cfi(
+    app_handle: AppHandle,
+    thread_id: i64,
+    cfi: String,
+) -> Result<(), String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::set_thread_last_cfi(&app_handle, thread_id, cfi).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_thread_max_citation_index(
+    app_handle: AppHandle,
+    thread_id: i64,
+) -> Result<i32, String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::get_thread_max_citation_index(&app_handle, thread_id).map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -417,6 +438,8 @@ pub fn run() {
             list_book_chat_threads,
             create_book_chat_thread,
             rename_book_chat_thread,
+            set_thread_last_cfi,
+            get_thread_max_citation_index,
             delete_book_chat_thread,
             delete_book_messages,
             delete_book_message,

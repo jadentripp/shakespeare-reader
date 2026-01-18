@@ -1,0 +1,8 @@
+{
+  "track_id": "ai_assistant_robustness_20260118",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-01-18T09:40:00Z",
+  "updated_at": "2026-01-18T09:40:00Z",
+  "description": "Fix AI citation indexing, implement optimistic UI/loading states for chat, separate thread timestamps from titles, and fix thread navigation."
+}
