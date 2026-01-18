@@ -1216,17 +1216,58 @@ export default function MobiBookPage(props: { bookId: number }) {
     };
     resolveMobiImages();
 
-    // Build TOC from headings
-    const headings = Array.from(doc.querySelectorAll("h1, h2, h3, h4, h5, h6")) as HTMLElement[];
-    const entries = headings
-      .filter((el) => el.textContent?.trim())
-      .map((el, idx) => ({
-        id: `toc-${idx}`,
-        level: parseInt(el.tagName.charAt(1), 10),
-        text: el.textContent?.trim() ?? "",
-        element: el,
-      }));
-    setTocEntries(entries);
+    // Build TOC from internal anchor links (the book's own table of contents)
+    // First, try to find TOC entries from anchor links that point to internal targets
+    const anchors = Array.from(doc.querySelectorAll('a[href^="#"]')) as HTMLAnchorElement[];
+    const tocFromAnchors: Array<{ id: string; level: number; text: string; element: HTMLElement }> = [];
+    const seenHrefs = new Set<string>();
+    
+    for (const anchor of anchors) {
+      const href = anchor.getAttribute("href") ?? "";
+      const text = (anchor.textContent ?? "").trim().replace(/\s+/g, " ");
+      if (!href || href === "#" || !text || seenHrefs.has(href)) continue;
+      
+      // Find the target element this anchor points to
+      const targetId = href.slice(1);
+      const target = doc.getElementById(targetId) || doc.querySelector(`[name="${targetId}"]`);
+      if (!target || !(target instanceof HTMLElement)) continue;
+      
+      // Determine level based on text pattern
+      let level = 3;
+      const upper = text.toUpperCase();
+      if (upper.match(/^BOOK\s+/)) level = 1;
+      else if (upper.match(/^(CHAPTER|PART|ACT)\s+/)) level = 2;
+      else if (upper.match(/^(SCENE|SECTION)\s+/)) level = 3;
+      
+      seenHrefs.add(href);
+      tocFromAnchors.push({
+        id: `toc-${tocFromAnchors.length}`,
+        level,
+        text,
+        element: target,
+      });
+    }
+    
+    // If we found TOC entries from anchors, use those; otherwise fall back to headings
+    if (tocFromAnchors.length >= 3) {
+      setTocEntries(tocFromAnchors);
+    } else {
+      const headings = Array.from(doc.querySelectorAll("h1, h2, h3, h4, h5, h6")) as HTMLElement[];
+      const entries = headings
+        .filter((el) => {
+          const text = el.textContent?.trim().toLowerCase();
+          if (!text) return false;
+          if (text === "original" || text === "original transcription") return false;
+          return true;
+        })
+        .map((el, idx) => ({
+          id: `toc-${idx}`,
+          level: parseInt(el.tagName.charAt(1), 10),
+          text: el.textContent?.trim() ?? "",
+          element: el,
+        }));
+      setTocEntries(entries);
+    }
 
     const handleScroll = () => {
       if (isNavigatingRef.current) {

@@ -69,6 +69,7 @@ pub struct BookChatThread {
 }
 
 fn db_path<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<std::path::PathBuf, anyhow::Error> {
+    #[cfg(test)]
     if let Ok(override_path) = std::env::var("SHAKESPEARE_DB_PATH") {
         return Ok(std::path::PathBuf::from(override_path));
     }
@@ -720,7 +721,6 @@ pub fn get_thread_max_citation_index<R: tauri::Runtime>(
     };
 
     let mut max_index = 0;
-    let msg_count = json_strings.len();
     for json_str in json_strings {
         if let Ok(json) = serde_json::from_str::<serde_json::Value>(&json_str) {
             // Our context_map is a Record<string, Source> where the keys are the indices
@@ -735,7 +735,6 @@ pub fn get_thread_max_citation_index<R: tauri::Runtime>(
             }
         }
     }
-    println!("[DB] Max citation index for book {} thread {:?}: {} (checked {} messages)", book_id, thread_id, max_index, msg_count);
     Ok(max_index)
 }
 

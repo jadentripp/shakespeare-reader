@@ -182,15 +182,6 @@ async fn throttle_gutenberg_if_needed(url: &str) {
 }
 
 pub fn books_dir(app_handle: &AppHandle) -> Result<PathBuf, anyhow::Error> {
-    if let Ok(db_path) = env::var("SHAKESPEARE_DB_PATH") {
-        let db_path = PathBuf::from(db_path);
-        if let Some(parent) = db_path.parent() {
-            let dir = parent.join("books");
-            fs::create_dir_all(&dir)?;
-            return Ok(dir);
-        }
-    }
-
     let mut base = env::current_dir().unwrap_or(app_handle.path().resolve(".", BaseDirectory::AppLocalData)?);
     if base.file_name().and_then(|s| s.to_str()) == Some("src-tauri") {
         if let Some(parent) = base.parent() {

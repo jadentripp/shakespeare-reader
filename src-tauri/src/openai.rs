@@ -136,7 +136,6 @@ pub async fn chat(app_handle: &AppHandle, messages: Vec<ChatMessage>, model_over
     }
 
     let response_text = resp.text().await?;
-    println!("[OpenAI] Response body: {}", &response_text[..response_text.len().min(500)]);
     
     let body: ChatResponse = serde_json::from_str(&response_text)
         .map_err(|e| anyhow::anyhow!("Failed to parse response: {}. Body: {}", e, &response_text[..response_text.len().min(500)]))?;
