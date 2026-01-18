@@ -540,6 +540,19 @@ pub fn create_book_chat_thread<R: tauri::Runtime>(
     .context("failed to create book chat thread")
 }
 
+pub fn rename_book_chat_thread<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    thread_id: i64,
+    title: String,
+) -> Result<(), anyhow::Error> {
+    let conn = open(app_handle)?;
+    conn.execute(
+        "UPDATE book_chat_thread SET title = ?1, updated_at=(strftime('%Y-%m-%dT%H:%M:%fZ','now')) WHERE id = ?2",
+        params![title, thread_id],
+    )?;
+    Ok(())
+}
+
 pub fn delete_book_chat_thread<R: tauri::Runtime>(
     app_handle: &tauri::AppHandle<R>,
     thread_id: i64,
@@ -720,6 +733,35 @@ mod tests {
 
         let messages_after = list_book_messages(&handle, book_id, Some(thread.id)).unwrap();
         assert_eq!(messages_after.len(), 0, "Messages should be deleted when thread is deleted");
+
+        std::fs::remove_file(db_path).ok();
+    }
+
+    #[test]
+    fn test_rename_thread() {
+        let (handle, db_path) = setup("rename");
+        init(&handle).expect("Failed to init DB");
+
+        let book_id = upsert_book(
+            &handle,
+            1,
+            "Title".to_string(),
+            "Author".to_string(),
+            None,
+            None,
+            "mobi".to_string(),
+            "html".to_string(),
+            None,
+        ).unwrap();
+
+        let thread = create_book_chat_thread(&handle, book_id, "Old Title".to_string()).unwrap();
+        assert_eq!(thread.title, "Old Title");
+
+        rename_book_chat_thread(&handle, thread.id, "New Title".to_string()).unwrap();
+
+        let threads = list_book_chat_threads(&handle, book_id).unwrap();
+        assert_eq!(threads.len(), 1);
+        assert_eq!(threads[0].title, "New Title");
 
         std::fs::remove_file(db_path).ok();
     }

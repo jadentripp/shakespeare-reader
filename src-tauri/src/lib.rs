@@ -307,6 +307,16 @@ fn create_book_chat_thread(
 }
 
 #[tauri::command]
+fn rename_book_chat_thread(
+    app_handle: AppHandle,
+    thread_id: i64,
+    title: String,
+) -> Result<(), String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::rename_book_chat_thread(&app_handle, thread_id, title).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn delete_book_chat_thread(
     app_handle: AppHandle,
     thread_id: i64,
@@ -379,6 +389,7 @@ pub fn run() {
             add_book_message,
             list_book_chat_threads,
             create_book_chat_thread,
+            rename_book_chat_thread,
             delete_book_chat_thread,
             delete_book_messages,
             openai_key_status,
