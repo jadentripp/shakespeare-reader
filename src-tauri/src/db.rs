@@ -53,6 +53,8 @@ pub struct BookMessage {
     pub thread_id: Option<i64>,
     pub role: String,
     pub content: String,
+    pub reasoning_summary: Option<String>,
+    pub context_map: Option<String>,
     pub created_at: String,
 }
 
@@ -61,6 +63,7 @@ pub struct BookChatThread {
     pub id: i64,
     pub book_id: i64,
     pub title: String,
+    pub last_cfi: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -148,6 +151,7 @@ CREATE TABLE IF NOT EXISTS book_chat_thread (
   id INTEGER PRIMARY KEY,
   book_id INTEGER NOT NULL,
   title TEXT NOT NULL,
+  last_cfi TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE
@@ -160,6 +164,8 @@ CREATE TABLE IF NOT EXISTS book_message (
   thread_id INTEGER,
   role TEXT NOT NULL,
   content TEXT NOT NULL,
+  reasoning_summary TEXT,
+  context_map TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE,
   FOREIGN KEY(thread_id) REFERENCES book_chat_thread(id) ON DELETE CASCADE
@@ -176,6 +182,9 @@ CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN html_path TEXT", []);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN first_image_index INTEGER", []);
     let _ = conn.execute("ALTER TABLE book_message ADD COLUMN thread_id INTEGER", []);
+    let _ = conn.execute("ALTER TABLE book_message ADD COLUMN reasoning_summary TEXT", []);
+    let _ = conn.execute("ALTER TABLE book_message ADD COLUMN context_map TEXT", []);
+    let _ = conn.execute("ALTER TABLE book_chat_thread ADD COLUMN last_cfi TEXT", []);
     let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id)", []);
 
     Ok(())
@@ -496,7 +505,7 @@ pub fn list_book_chat_threads<R: tauri::Runtime>(
 ) -> Result<Vec<BookChatThread>, anyhow::Error> {
     let conn = open(app_handle)?;
     let mut stmt = conn.prepare(
-        "SELECT id, book_id, title, created_at, updated_at
+        "SELECT id, book_id, title, last_cfi, created_at, updated_at
          FROM book_chat_thread WHERE book_id = ?1 ORDER BY updated_at DESC",
     )?;
     let rows = stmt
@@ -505,8 +514,9 @@ pub fn list_book_chat_threads<R: tauri::Runtime>(
                 id: row.get(0)?,
                 book_id: row.get(1)?,
                 title: row.get(2)?,
-                created_at: row.get(3)?,
-                updated_at: row.get(4)?,
+                last_cfi: row.get(3)?,
+                created_at: row.get(4)?,
+                updated_at: row.get(5)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -525,15 +535,16 @@ pub fn create_book_chat_thread<R: tauri::Runtime>(
     )?;
     let id = conn.last_insert_rowid();
     conn.query_row(
-        "SELECT id, book_id, title, created_at, updated_at FROM book_chat_thread WHERE id = ?1",
+        "SELECT id, book_id, title, last_cfi, created_at, updated_at FROM book_chat_thread WHERE id = ?1",
         params![id],
         |row| {
             Ok(BookChatThread {
                 id: row.get(0)?,
                 book_id: row.get(1)?,
                 title: row.get(2)?,
-                created_at: row.get(3)?,
-                updated_at: row.get(4)?,
+                last_cfi: row.get(3)?,
+                created_at: row.get(4)?,
+                updated_at: row.get(5)?,
             })
         },
     )
@@ -549,6 +560,19 @@ pub fn rename_book_chat_thread<R: tauri::Runtime>(
     conn.execute(
         "UPDATE book_chat_thread SET title = ?1, updated_at=(strftime('%Y-%m-%dT%H:%M:%fZ','now')) WHERE id = ?2",
         params![title, thread_id],
+    )?;
+    Ok(())
+}
+
+pub fn set_thread_last_cfi<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    thread_id: i64,
+    cfi: String,
+) -> Result<(), anyhow::Error> {
+    let conn = open(app_handle)?;
+    conn.execute(
+        "UPDATE book_chat_thread SET last_cfi = ?1, updated_at=(strftime('%Y-%m-%dT%H:%M:%fZ','now')) WHERE id = ?2",
+        params![cfi, thread_id],
     )?;
     Ok(())
 }
@@ -571,7 +595,7 @@ pub fn list_book_messages<R: tauri::Runtime>(
     let conn = open(app_handle)?;
     
     let mut stmt = conn.prepare(
-        "SELECT id, book_id, thread_id, role, content, created_at
+        "SELECT id, book_id, thread_id, role, content, reasoning_summary, context_map, created_at
          FROM book_message WHERE book_id = ?1 AND thread_id IS ?2 ORDER BY created_at ASC",
     )?;
 
@@ -583,7 +607,9 @@ pub fn list_book_messages<R: tauri::Runtime>(
                 thread_id: row.get(2)?,
                 role: row.get(3)?,
                 content: row.get(4)?,
-                created_at: row.get(5)?,
+                reasoning_summary: row.get(5)?,
+                context_map: row.get(6)?,
+                created_at: row.get(7)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -596,12 +622,14 @@ pub fn add_book_message<R: tauri::Runtime>(
     thread_id: Option<i64>,
     role: String,
     content: String,
+    reasoning_summary: Option<String>,
+    context_map: Option<String>,
 ) -> Result<BookMessage, anyhow::Error> {
     let conn = open(app_handle)?;
     
     conn.execute(
-        "INSERT INTO book_message(book_id, thread_id, role, content) VALUES (?1, ?2, ?3, ?4)",
-        params![book_id, thread_id, role, content],
+        "INSERT INTO book_message(book_id, thread_id, role, content, reasoning_summary, context_map) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![book_id, thread_id, role, content, reasoning_summary, context_map],
     )?;
 
     if let Some(tid) = thread_id {
@@ -613,7 +641,7 @@ pub fn add_book_message<R: tauri::Runtime>(
 
     let id = conn.last_insert_rowid();
     conn.query_row(
-        "SELECT id, book_id, thread_id, role, content, created_at FROM book_message WHERE id = ?1",
+        "SELECT id, book_id, thread_id, role, content, reasoning_summary, context_map, created_at FROM book_message WHERE id = ?1",
         params![id],
         |row| {
             Ok(BookMessage {
@@ -622,7 +650,9 @@ pub fn add_book_message<R: tauri::Runtime>(
                 thread_id: row.get(2)?,
                 role: row.get(3)?,
                 content: row.get(4)?,
-                created_at: row.get(5)?,
+                reasoning_summary: row.get(5)?,
+                context_map: row.get(6)?,
+                created_at: row.get(7)?,
             })
         },
     )
@@ -657,6 +687,39 @@ pub fn clear_default_book_messages<R: tauri::Runtime>(
         params![book_id],
     )?;
     Ok(())
+}
+
+pub fn get_thread_max_citation_index<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    thread_id: i64,
+) -> Result<i32, anyhow::Error> {
+    let conn = open(app_handle)?;
+    let mut stmt = conn.prepare(
+        "SELECT context_map FROM book_message WHERE thread_id = ?1 AND context_map IS NOT NULL",
+    )?;
+    let rows = stmt.query_map(params![thread_id], |row| {
+        let json_str: String = row.get(0)?;
+        Ok(json_str)
+    })?;
+
+    let mut max_index = 0;
+    for row in rows {
+        let json_str = row?;
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&json_str) {
+            // Assuming context_map is an object with an "indices" array or similar.
+            // Let's assume it has a "sources" array where each source has an "index".
+            if let Some(sources) = json.get("sources").and_then(|s| s.as_array()) {
+                for source in sources {
+                    if let Some(idx) = source.get("index").and_then(|i| i.as_i64()) {
+                        if idx as i32 > max_index {
+                            max_index = idx as i32;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(max_index)
 }
 
 pub fn delete_book_thread_messages<R: tauri::Runtime>(
@@ -723,7 +786,7 @@ mod tests {
             None,
         ).unwrap();
 
-        let msg = add_book_message(&handle, book_id, None, "user".to_string(), "Hello".to_string()).unwrap();
+        let msg = add_book_message(&handle, book_id, None, "user".to_string(), "Hello".to_string(), None, None).unwrap();
         assert_eq!(msg.content, "Hello");
         assert_eq!(msg.role, "user");
 
@@ -756,8 +819,8 @@ mod tests {
         ).unwrap();
 
         let thread = create_book_chat_thread(&handle, book_id, "Thread".to_string()).unwrap();
-        add_book_message(&handle, book_id, Some(thread.id), "user".to_string(), "Msg 1".to_string()).unwrap();
-        add_book_message(&handle, book_id, Some(thread.id), "assistant".to_string(), "Msg 2".to_string()).unwrap();
+        add_book_message(&handle, book_id, Some(thread.id), "user".to_string(), "Msg 1".to_string(), None, None).unwrap();
+        add_book_message(&handle, book_id, Some(thread.id), "assistant".to_string(), "Msg 2".to_string(), None, None).unwrap();
 
         let messages = list_book_messages(&handle, book_id, Some(thread.id)).unwrap();
         assert_eq!(messages.len(), 2);
@@ -816,7 +879,7 @@ mod tests {
             None,
         ).unwrap();
 
-        let msg = add_book_message(&handle, book_id, None, "user".to_string(), "Msg".to_string()).unwrap();
+        let msg = add_book_message(&handle, book_id, None, "user".to_string(), "Msg".to_string(), None, None).unwrap();
         assert_eq!(list_book_messages(&handle, book_id, None).unwrap().len(), 1);
 
         delete_book_message(&handle, msg.id).unwrap();
@@ -845,11 +908,11 @@ mod tests {
         let thread = create_book_chat_thread(&handle, book_id, "Thread".to_string()).unwrap();
 
         // Default chat messages (thread_id IS NULL)
-        add_book_message(&handle, book_id, None, "user".to_string(), "Default 1".to_string()).unwrap();
-        add_book_message(&handle, book_id, None, "assistant".to_string(), "Default 2".to_string()).unwrap();
+        add_book_message(&handle, book_id, None, "user".to_string(), "Default 1".to_string(), None, None).unwrap();
+        add_book_message(&handle, book_id, None, "assistant".to_string(), "Default 2".to_string(), None, None).unwrap();
 
         // Threaded messages
-        add_book_message(&handle, book_id, Some(thread.id), "user".to_string(), "Threaded 1".to_string()).unwrap();
+        add_book_message(&handle, book_id, Some(thread.id), "user".to_string(), "Threaded 1".to_string(), None, None).unwrap();
 
         assert_eq!(list_book_messages(&handle, book_id, None).unwrap().len(), 2);
         assert_eq!(list_book_messages(&handle, book_id, Some(thread.id)).unwrap().len(), 1);
@@ -882,8 +945,8 @@ mod tests {
         let thread1 = create_book_chat_thread(&handle, book_id, "Thread 1".to_string()).unwrap();
         let thread2 = create_book_chat_thread(&handle, book_id, "Thread 2".to_string()).unwrap();
 
-        add_book_message(&handle, book_id, Some(thread1.id), "user".to_string(), "T1 Msg".to_string()).unwrap();
-        add_book_message(&handle, book_id, Some(thread2.id), "user".to_string(), "T2 Msg".to_string()).unwrap();
+        add_book_message(&handle, book_id, Some(thread1.id), "user".to_string(), "T1 Msg".to_string(), None, None).unwrap();
+        add_book_message(&handle, book_id, Some(thread2.id), "user".to_string(), "T2 Msg".to_string(), None, None).unwrap();
 
         assert_eq!(list_book_messages(&handle, book_id, Some(thread1.id)).unwrap().len(), 1);
         assert_eq!(list_book_messages(&handle, book_id, Some(thread2.id)).unwrap().len(), 1);
@@ -892,6 +955,70 @@ mod tests {
 
         assert_eq!(list_book_messages(&handle, book_id, Some(thread1.id)).unwrap().len(), 0);
         assert_eq!(list_book_messages(&handle, book_id, Some(thread2.id)).unwrap().len(), 1);
+
+        std::fs::remove_file(db_path).ok();
+    }
+
+    #[test]
+    fn test_new_fields_robustness() {
+        let (handle, db_path) = setup("robustness");
+        init(&handle).expect("Failed to init DB");
+
+        let book_id = upsert_book(
+            &handle,
+            1,
+            "Title".to_string(),
+            "Author".to_string(),
+            None,
+            None,
+            "mobi".to_string(),
+            "html".to_string(),
+            None,
+        ).unwrap();
+
+        // Test last_cfi in thread
+        let thread = create_book_chat_thread(&handle, book_id, "Thread".to_string()).unwrap();
+        assert_eq!(thread.last_cfi, None);
+
+        set_thread_last_cfi(&handle, thread.id, "epubcfi(/6/4[chap01]!/4/2/10/1:0)".to_string()).unwrap();
+        
+        let threads = list_book_chat_threads(&handle, book_id).unwrap();
+        assert_eq!(threads[0].last_cfi, Some("epubcfi(/6/4[chap01]!/4/2/10/1:0)".to_string()));
+
+        // Test reasoning_summary and context_map in book_message
+        let msg = add_book_message(
+            &handle, 
+            book_id, 
+            Some(thread.id), 
+            "assistant".to_string(), 
+            "Content".to_string(),
+            Some("Reasoning...".to_string()),
+            Some("{\"sources\": []}".to_string())
+        ).unwrap();
+
+        assert_eq!(msg.reasoning_summary, Some("Reasoning...".to_string()));
+        assert_eq!(msg.context_map, Some("{\"sources\": []}".to_string()));
+
+        let messages = list_book_messages(&handle, book_id, Some(thread.id)).unwrap();
+        assert_eq!(messages[0].reasoning_summary, Some("Reasoning...".to_string()));
+        assert_eq!(messages[0].context_map, Some("{\"sources\": []}".to_string()));
+
+        // Test max citation index
+        let max_idx = get_thread_max_citation_index(&handle, thread.id).unwrap();
+        assert_eq!(max_idx, 0);
+
+        add_book_message(
+            &handle, 
+            book_id, 
+            Some(thread.id), 
+            "assistant".to_string(), 
+            "More content".to_string(),
+            None,
+            Some("{\"sources\": [{\"index\": 5}, {\"index\": 12}]}".to_string())
+        ).unwrap();
+
+        let max_idx = get_thread_max_citation_index(&handle, thread.id).unwrap();
+        assert_eq!(max_idx, 12);
 
         std::fs::remove_file(db_path).ok();
     }

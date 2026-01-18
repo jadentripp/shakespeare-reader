@@ -12,3 +12,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Interactive AI Citations**
 
 *Link: [./tracks/ai_citations_20260117/](./tracks/ai_citations_20260117/)*
+
+---
+
+- [~] **Track: AI Assistant Robustness & UX Overhaul**
+*Link: [./tracks/ai_assistant_robustness_20260118/](./tracks/ai_assistant_robustness_20260118/)*

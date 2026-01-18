@@ -18,22 +18,31 @@ pub struct KeyStatus {
 struct ChatRequest {
     model: String,
     messages: Vec<ChatMessage>,
-    temperature: f32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    temperature: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reasoning: Option<ReasoningConfig>,
+}
+
+#[derive(Debug, Serialize)]
+struct ReasoningConfig {
+    summary: String,
 }
 
 #[derive(Debug, Deserialize)]
 struct ChatResponse {
-    choices: Vec<ChatChoice>,
+    output: Option<ChatOutput>,
 }
 
 #[derive(Debug, Deserialize)]
-struct ChatChoice {
-    message: ChatChoiceMessage,
+struct ChatOutput {
+    message: ChatOutputMessage,
 }
 
 #[derive(Debug, Deserialize)]
-struct ChatChoiceMessage {
+struct ChatOutputMessage {
     content: Option<String>,
+    reasoning_summary: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -74,34 +83,44 @@ pub fn key_status(app_handle: &AppHandle) -> Result<KeyStatus, anyhow::Error> {
     })
 }
 
-pub async fn chat(app_handle: &AppHandle, messages: Vec<ChatMessage>) -> Result<String, anyhow::Error> {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChatResult {
+    pub content: String,
+    pub reasoning_summary: Option<String>,
+}
+
+pub async fn chat(app_handle: &AppHandle, messages: Vec<ChatMessage>) -> Result<ChatResult, anyhow::Error> {
     let api_key = resolve_api_key(app_handle)?;
     let model = crate::db::get_setting(app_handle, "openai_model".to_string())?
-        .unwrap_or_else(|| "gpt-4.1-mini".to_string());
+        .unwrap_or_else(|| "gpt-4.5-preview".to_string());
 
     let client = reqwest::Client::new();
     let resp = client
-        .post("https://api.openai.com/v1/chat/completions")
+        .post("https://api.openai.com/v1/responses")
         .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
         .json(&ChatRequest {
             model,
             messages,
-            temperature: 0.2,
+            temperature: Some(0.2),
+            reasoning: Some(ReasoningConfig {
+                summary: "auto".to_string(),
+            }),
         })
         .send()
         .await?
         .error_for_status()?;
 
     let body: ChatResponse = resp.json().await?;
-    let content = body
-        .choices
-        .into_iter()
-        .next()
-        .and_then(|c| c.message.content)
-        .unwrap_or_default();
+    let output = body.output.ok_or_else(|| anyhow::anyhow!("Missing output in response"))?;
+    
+    let content = output.message.content.unwrap_or_default();
+    let reasoning_summary = output.message.reasoning_summary;
 
-    Ok(content)
+    Ok(ChatResult {
+        content,
+        reasoning_summary,
+    })
 }
 
 pub async fn list_models(app_handle: &AppHandle) -> Result<Vec<String>, anyhow::Error> {
