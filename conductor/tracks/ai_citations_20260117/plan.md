@@ -29,7 +29,7 @@ Connect the citation events to the reader's view and highlighting logic.
 ## Phase 4: Integration & Edge Case Handling
 Refine the experience and handle complex scenarios.
 
-- [ ] Task: Ensure highlights are cleared or updated when a new citation is clicked or the chat is reset.
-- [ ] Task: Handle "not found" scenarios gracefully (e.g., if the AI hallucinated a snippet).
-- [ ] Task: Verify cross-page navigation works seamlessly for cited snippets.
-- [ ] Task: Conductor - User Manual Verification 'Integration & Edge Case Handling' (Protocol in workflow.md)
+- [x] Task: Ensure highlights are cleared or updated when a new citation is clicked or the chat is reset.
+- [x] Task: Handle "not found" scenarios gracefully (e.g., if the AI hallucinated a snippet).
+- [x] Task: Verify cross-page navigation works seamlessly for cited snippets.
+- [x] Task: Conductor - User Manual Verification 'Integration & Edge Case Handling' (Protocol in workflow.md)
