@@ -1,6 +1,6 @@
 # Plan - Improved AI Chat CRUD Reliability
 
-## Phase 1: Backend & Database Enhancements
+## Phase 1: Backend & Database Enhancements [checkpoint: 88c7e0c]
 Implement the necessary Rust commands and database logic to support full CRUD for threads and messages.
 
 - [x] Task: Update SQLite schema to ensure foreign key cascade for `book_message` (or implement manual cleanup) (1e249fc)
