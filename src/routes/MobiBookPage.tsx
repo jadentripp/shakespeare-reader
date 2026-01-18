@@ -10,6 +10,11 @@ import { cn } from "@/lib/utils";
 import { injectHead, wrapBody, processGutenbergContent } from "@/lib/readerHtml";
 import type { ChatPrompt, PendingHighlight } from "@/lib/readerTypes";
 import {
+  Popover,
+  PopoverContent,
+  PopoverAnchor,
+} from "@/components/ui/popover";
+import {
   addBookMessage,
   createHighlight,
   deleteHighlight,
@@ -111,6 +116,37 @@ function findTextRange(root: HTMLElement, targetText: string, blockIndex?: numbe
   return null;
 }
 
+export function cleanFootnoteContent(html: string): string {
+  if (typeof document === "undefined") return html;
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  
+  // Remove links that look like return links
+  const links = div.querySelectorAll("a");
+  links.forEach(a => {
+    const text = a.textContent?.trim().toLowerCase() || "";
+    // Common back-link patterns
+    if (
+      text.includes("back") || 
+      text.includes("return") || 
+      text === "↩" || 
+      text === "↑" || 
+      text === "top" ||
+      text.includes("jump up")
+    ) {
+      a.remove();
+    }
+  });
+  
+  // Also common in Gutenberg: [1] at the start of footnote
+  const firstChild = div.firstChild;
+  if (firstChild && firstChild.nodeType === 3) { // Text node
+     firstChild.nodeValue = firstChild.nodeValue?.replace(/^\[\d+\]\s*/, "") || "";
+  }
+  
+  return div.innerHTML.trim();
+}
+
 export default function MobiBookPage(props: { bookId: number }) {
   const id = props.bookId;
   const [columns, setColumns] = useState<1 | 2>(1);
@@ -140,6 +176,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   const [tocExpanded, setTocExpanded] = useState(false);
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [activeCitation, setActiveCitation] = useState<{ content: string; rect: { top: number; left: number; width: number; height: number } } | null>(null);
 
   const bookQ = useQuery({ queryKey: ["book", id], queryFn: () => getBook(id) });
   const htmlQ = useQuery({ queryKey: ["bookHtml", id], queryFn: () => getBookHtml(id) });
@@ -172,6 +209,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   const linkClickRef = useRef<((event: MouseEvent) => void) | null>(null);
   const headingIndexRef = useRef<Array<{ norm: string; el: HTMLElement }> | null>(null);
   const pageLockRef = useRef(1);
+  const isNavigatingRef = useRef(false);
   const restoredRef = useRef(false);
   const pendingRestoreRef = useRef<{ page?: number } | null>(null);
 
@@ -609,11 +647,13 @@ export default function MobiBookPage(props: { bookId: number }) {
   const jumpToElement = (element: HTMLElement) => {
     const root = getScrollRoot();
     if (!root) {
+      console.log("[Navigation] jumpToElement failed: no root");
       return { ok: false, reason: "no root" as const };
     }
     syncPageMetrics();
     const rect = getElementRect(element);
     if (!rect) {
+      console.log("[Navigation] jumpToElement failed: no rect for element", element);
       return { ok: false, reason: "no rect" as const };
     }
     const rootRect = root.getBoundingClientRect();
@@ -623,9 +663,34 @@ export default function MobiBookPage(props: { bookId: number }) {
     const page = stride ? Math.max(1, Math.floor(offsetLeft / stride) + 1) : 1;
     const maxLeft = Math.max(0, root.scrollWidth - root.clientWidth);
     const targetLeft = Math.min(maxLeft, Math.max(0, offsetLeft));
+
+    console.log("[Navigation] jumpToElement start:", {
+      element,
+      offsetLeft,
+      targetLeft,
+      page,
+      currentScroll: root.scrollLeft,
+      stride
+    });
+
+    // Start navigation lock
+    isNavigatingRef.current = true;
+    const oldSmooth = root.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
+    
     pageLockRef.current = page;
     root.scrollLeft = targetLeft;
-    schedulePaginationUpdate();
+    
+    // Force immediate pagination update while locked
+    updatePagination();
+
+    // Release lock after a delay to allow scroll events to settle
+    setTimeout(() => {
+      root.style.scrollBehavior = oldSmooth;
+      isNavigatingRef.current = false;
+      console.log("[Navigation] jumpToElement: lock released");
+    }, 150);
+
     return {
       ok: true,
       rect,
@@ -756,7 +821,9 @@ export default function MobiBookPage(props: { bookId: number }) {
     if (!pageWidth) return;
     const stride = pageWidth + gap;
     const target = Math.max(0, (page - 1) * stride);
+    
     if (Math.abs(root.scrollLeft - target) > 1) {
+      console.log("[Navigation] lockToPage: Snapping to", { page, target, current: root.scrollLeft });
       root.scrollLeft = target;
     }
   };
@@ -768,6 +835,9 @@ export default function MobiBookPage(props: { bookId: number }) {
     if (!pageWidth) return;
     const stride = pageWidth + gap;
     const target = Math.max(0, (page - 1) * stride);
+    
+    console.log("[Navigation] scrollToPage:", { page, target });
+    
     pageLockRef.current = page;
     root.scrollTo({ left: target, behavior: "smooth" });
   };
@@ -787,7 +857,10 @@ export default function MobiBookPage(props: { bookId: number }) {
     const calculatedPage = Math.round(currentScroll / (stride || 1)) + 1;
     const lockedPage = Math.min(total, Math.max(1, calculatedPage));
     
-    setCurrentPage(lockedPage);
+    if (lockedPage !== currentPage) {
+      setCurrentPage(lockedPage);
+    }
+
     // Only update pageLock if we are close to a page boundary or it's a significant move
     if (Math.abs(currentScroll - (pageLockRef.current - 1) * stride) > stride / 2) {
       pageLockRef.current = lockedPage;
@@ -799,6 +872,7 @@ export default function MobiBookPage(props: { bookId: number }) {
     if (rafRef.current !== null) return;
     rafRef.current = window.requestAnimationFrame(() => {
       rafRef.current = null;
+      if (isNavigatingRef.current) return;
       updatePagination();
     });
   };
@@ -809,6 +883,7 @@ export default function MobiBookPage(props: { bookId: number }) {
     }
     lockTimeoutRef.current = window.setTimeout(() => {
       lockTimeoutRef.current = null;
+      console.log("[Navigation] scheduleLock: Firing lockToPage");
       lockToPage();
     }, 250); // Increased delay to allow smooth manual scrolling
   };
@@ -1010,6 +1085,9 @@ export default function MobiBookPage(props: { bookId: number }) {
     setTocEntries(entries);
 
     const handleScroll = () => {
+      if (isNavigatingRef.current) {
+        return;
+      }
       schedulePaginationUpdate();
       scheduleLock();
     };
@@ -1097,8 +1175,73 @@ export default function MobiBookPage(props: { bookId: number }) {
       const eventTargetEl = getEventTargetElement(event.target);
       const anchor = (eventTargetEl?.closest?.("a") as HTMLAnchorElement | null) ?? null;
       if (!anchor) return;
+      
       const hrefAttr = anchor.getAttribute("href") ?? "";
       const lowerHref = hrefAttr.toLowerCase();
+      const anchorId = anchor.id ?? "";
+      
+      console.log("[Link] Clicked:", { href: hrefAttr, id: anchorId });
+
+      // Check if it's a footnote/citation
+      const isFootnote = lowerHref.includes("#fn") || 
+                         anchorId.startsWith("fnref") || 
+                         anchor.className.includes("footnote") ||
+                         anchor.className.includes("noteref");
+
+      const anchorHash = anchor.hash ?? "";
+      let rawHash = "";
+      if (anchorHash && anchorHash !== "#") {
+        rawHash = anchorHash.startsWith("#") ? anchorHash.slice(1) : anchorHash;
+      } else {
+        const hashIndex = hrefAttr.indexOf("#");
+        if (hashIndex >= 0) {
+          rawHash = hrefAttr.slice(hashIndex + 1);
+        }
+      }
+
+      // If it's a footnote but we don't have a hash from href, try to derive it from anchor ID
+      // e.g. <a id="fnref40" href="kindle:pos:...">[40]</a> -> target is id="fn40"
+      if (!rawHash && isFootnote && anchorId) {
+        if (anchorId.startsWith("fnref")) {
+          rawHash = anchorId.replace("fnref", "fn");
+          console.log("[Link] Derived footnote target ID from anchor ID:", rawHash);
+        } else if (anchorId.startsWith("noteref")) {
+          rawHash = anchorId.replace("noteref", "note");
+          console.log("[Link] Derived note target ID from anchor ID:", rawHash);
+        }
+      }
+
+      if (isFootnote && rawHash) {
+        event.preventDefault();
+        const ownerDoc = anchor.ownerDocument;
+        const targetId = decodeURIComponent(rawHash);
+        const targetEl = ownerDoc.getElementById(targetId) || 
+                         ownerDoc.getElementsByName(targetId)[0] ||
+                         ownerDoc.querySelector(`[id="${targetId}"]`);
+        
+        if (targetEl && targetEl instanceof HTMLElement) {
+          console.log("[Link] Footnote target found:", targetId);
+          const rect = anchor.getBoundingClientRect();
+          const iframeRect = iframeRef.current?.getBoundingClientRect();
+          const containerRect = containerRef.current?.getBoundingClientRect();
+          
+          if (iframeRect && containerRect) {
+            setActiveCitation({
+              content: cleanFootnoteContent(targetEl.innerHTML),
+              rect: {
+                top: iframeRect.top + rect.top - containerRect.top,
+                left: iframeRect.left + rect.left - containerRect.left,
+                width: rect.width,
+                height: rect.height,
+              }
+            });
+            return;
+          }
+        } else {
+          console.log("[Link] Footnote target NOT found:", targetId);
+        }
+      }
+
       if (lowerHref.startsWith("kindle:pos:")) {
         event.preventDefault();
         const linkText = anchor.textContent ?? "";
@@ -1109,16 +1252,7 @@ export default function MobiBookPage(props: { bookId: number }) {
         }
         return;
       }
-      const anchorHash = anchor.hash ?? "";
-      let rawHash = "";
-      if (anchorHash && anchorHash !== "#") {
-        rawHash = anchorHash.startsWith("#") ? anchorHash.slice(1) : anchorHash;
-      } else {
-        if (!hrefAttr || hrefAttr === "#") return;
-        const hashIndex = hrefAttr.indexOf("#");
-        if (hashIndex < 0) return;
-        rawHash = hrefAttr.slice(hashIndex + 1);
-      }
+
       if (!rawHash) return;
       let targetId = rawHash;
       try {
@@ -1130,6 +1264,7 @@ export default function MobiBookPage(props: { bookId: number }) {
       const anchorTargetEl =
         (ownerDoc.getElementById(targetId) as HTMLElement | null) ??
         (ownerDoc.getElementsByName(targetId)[0] as HTMLElement | undefined);
+      
       event.preventDefault();
       if (!anchorTargetEl) {
         return;
@@ -1699,6 +1834,31 @@ export default function MobiBookPage(props: { bookId: number }) {
           )}
         </div>
       </div>
+
+      <Popover open={!!activeCitation} onOpenChange={(open) => !open && setActiveCitation(null)}>
+        <PopoverAnchor
+          style={{
+            position: "absolute",
+            top: activeCitation?.rect.top ?? 0,
+            left: activeCitation?.rect.left ?? 0,
+            width: activeCitation?.rect.width ?? 0,
+            height: activeCitation?.rect.height ?? 0,
+            pointerEvents: "none",
+          }}
+        />
+        <PopoverContent 
+          className="w-80 max-h-[300px] overflow-y-auto bg-popover p-4 shadow-xl border-border"
+          side="top"
+          align="center"
+        >
+          <div 
+            className="text-sm leading-relaxed prose prose-sm dark:prose-invert"
+            dangerouslySetInnerHTML={{ 
+              __html: activeCitation ? activeCitation.content : "" 
+            }} 
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
