@@ -10,9 +10,9 @@
 - [ ] **Task: Conductor - User Manual Verification 'Phase 1: Persistence' (Protocol in workflow.md)**
 
 ## Phase 2: Frontend Integration & Markdown
-- [x] **Task: Implement Markdown Rendering** 6f08a04
-- [x] **Task: Connect General Chat to Database** 6f08a04
-- [x] **Task: Add "New Chat" Functionality** 6f08a04
+- [x] **Task: Implement Markdown Rendering** b5c96de
+- [x] **Task: Connect General Chat to Database** b5c96de
+- [x] **Task: Add "New Chat" Functionality** b5c96de
 - [ ] **Task: Conductor - User Manual Verification 'Phase 2: UI & Integration' (Protocol in workflow.md)**
 
 ## Phase 3: UX Polish
