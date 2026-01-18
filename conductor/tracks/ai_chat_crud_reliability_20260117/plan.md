@@ -4,7 +4,7 @@
 Implement the necessary Rust commands and database logic to support full CRUD for threads and messages.
 
 - [x] Task: Update SQLite schema to ensure foreign key cascade for `book_message` (or implement manual cleanup) (1e249fc)
-- [ ] Task: Implement `rename_book_chat_thread` command in `db.rs` and expose in `lib.rs`
+- [x] Task: Implement `rename_book_chat_thread` command in `db.rs` and expose in `lib.rs` (dc8fd8e)
 - [ ] Task: Implement `delete_book_message` command in `db.rs` and expose in `lib.rs`
 - [ ] Task: Implement `clear_default_book_messages` command in `db.rs` to remove messages with `thread_id IS NULL`
 - [ ] Task: Add unit tests in `db.rs` for new CRUD operations
