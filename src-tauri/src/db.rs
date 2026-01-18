@@ -638,6 +638,15 @@ pub fn delete_book_messages<R: tauri::Runtime>(
     Ok(())
 }
 
+pub fn delete_book_message<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    message_id: i64,
+) -> Result<(), anyhow::Error> {
+    let conn = open(app_handle)?;
+    conn.execute("DELETE FROM book_message WHERE id = ?1", params![message_id])?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -762,6 +771,32 @@ mod tests {
         let threads = list_book_chat_threads(&handle, book_id).unwrap();
         assert_eq!(threads.len(), 1);
         assert_eq!(threads[0].title, "New Title");
+
+        std::fs::remove_file(db_path).ok();
+    }
+
+    #[test]
+    fn test_delete_message() {
+        let (handle, db_path) = setup("delete_msg");
+        init(&handle).expect("Failed to init DB");
+
+        let book_id = upsert_book(
+            &handle,
+            1,
+            "Title".to_string(),
+            "Author".to_string(),
+            None,
+            None,
+            "mobi".to_string(),
+            "html".to_string(),
+            None,
+        ).unwrap();
+
+        let msg = add_book_message(&handle, book_id, None, "user".to_string(), "Msg".to_string()).unwrap();
+        assert_eq!(list_book_messages(&handle, book_id, None).unwrap().len(), 1);
+
+        delete_book_message(&handle, msg.id).unwrap();
+        assert_eq!(list_book_messages(&handle, book_id, None).unwrap().len(), 0);
 
         std::fs::remove_file(db_path).ok();
     }

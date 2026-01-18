@@ -335,6 +335,15 @@ fn delete_book_messages(
 }
 
 #[tauri::command]
+fn delete_book_message(
+    app_handle: AppHandle,
+    message_id: i64,
+) -> Result<(), String> {
+    db::init(&app_handle).map_err(|e| e.to_string())?;
+    db::delete_book_message(&app_handle, message_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn openai_key_status(app_handle: AppHandle) -> Result<openai::KeyStatus, String> {
     db::init(&app_handle).map_err(|e| e.to_string())?;
     openai::key_status(&app_handle).map_err(|e| e.to_string())
@@ -392,6 +401,7 @@ pub fn run() {
             rename_book_chat_thread,
             delete_book_chat_thread,
             delete_book_messages,
+            delete_book_message,
             openai_key_status,
             openai_chat,
             openai_list_models,
