@@ -15,10 +15,4 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 
 
----
 
-
-
-- [x] **Track: Fix TOC jump snap-back bug and implement citation/footnote popovers**
-
-*Link: [./tracks/fix_toc_and_citations_20260117/](./tracks/fix_toc_and_citations_20260117/)*

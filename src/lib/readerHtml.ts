@@ -62,16 +62,40 @@ export function processGutenbergContent(html: string): ProcessedGutenberg {
   if (typeof DOMParser !== "undefined") {
     try {
       const parser = new DOMParser();
-      // Normalize before parsing to remove multiple html/body/head tags
-      const normalized = normalizeHtmlFragment(html);
-      const doc = parser.parseFromString(normalized, "text/html");
-      
-      // We want to index meaningful content blocks
-      const blocks = doc.querySelectorAll("p, h1, h2, h3, h4, h5, h6, blockquote, pre, table, li");
-      blocks.forEach((block, index) => {
+      // Split into fragments by </html> to handle multi-part MOBI/EPUB html
+      const fragments = html.split(/<\/html>/i);
+      const processedFragments = fragments.map((fragment, fid) => {
+        if (!fragment.trim()) return "";
+        const normalized = normalizeHtmlFragment(fragment);
+        if (!normalized) return "";
+        
+        const doc = parser.parseFromString(normalized, "text/html");
+        
+        // Mark the first element of this fragment with the fid
+        const firstEl = doc.body.firstElementChild;
+        if (firstEl) {
+          firstEl.setAttribute("data-fid", fid.toString());
+        }
+
+        // We want to index meaningful content blocks
+        const blocks = doc.querySelectorAll("p, h1, h2, h3, h4, h5, h6, blockquote, pre, table, li");
+        blocks.forEach((block) => {
+          // We'll need a way to keep block indices unique across fragments if needed, 
+          // but for now let's just mark them.
+          (block as HTMLElement).setAttribute("data-block-index", "pending");
+        });
+        
+        return doc.body.innerHTML;
+      });
+
+      // Join and re-index blocks globally
+      const fullHtml = processedFragments.join("\n");
+      const doc = parser.parseFromString(fullHtml, "text/html");
+      const allBlocks = doc.querySelectorAll("[data-block-index=\"pending\"]");
+      allBlocks.forEach((block, index) => {
         (block as HTMLElement).setAttribute("data-block-index", index.toString());
       });
-      
+
       html = doc.body.innerHTML;
     } catch (e) {
       console.error("Failed to inject block indices:", e);

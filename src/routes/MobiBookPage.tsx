@@ -741,8 +741,15 @@ export default function MobiBookPage(props: { bookId: number }) {
 
   const getElementRect = (element: HTMLElement) => {
     const rects = Array.from(element.getClientRects());
-    const directRect = rects.find((rect) => rect.width || rect.height) ?? rects[0];
-    if (directRect) return directRect;
+    let directRect = rects.find((rect) => rect.width || rect.height) ?? rects[0];
+    
+    if (!directRect || (directRect.width === 0 && directRect.height === 0)) {
+      const bcr = element.getBoundingClientRect();
+      if (bcr.width || bcr.height) directRect = bcr;
+    }
+
+    if (directRect && (directRect.width || directRect.height)) return directRect;
+    
     const doc = element.ownerDocument;
     if (doc) {
       const range = doc.createRange();
@@ -1297,6 +1304,30 @@ export default function MobiBookPage(props: { bookId: number }) {
 
       if (lowerHref.startsWith("kindle:pos:")) {
         const linkText = anchor.textContent ?? "";
+        
+        // Try to extract fid/off to find aid
+        // kindle:pos:fid:000Q:off:000000001K
+        const parts = lowerHref.split(":");
+        const fidIndex = parts.indexOf("fid");
+        const offIndex = parts.indexOf("off");
+        const ownerDoc = anchor.ownerDocument;
+
+        if (fidIndex !== -1) {
+          const fidStr = parts[fidIndex + 1];
+          // Kindle fid is base32 (0-9, A-V)
+          const fidNum = parseInt(fidStr, 32);
+          console.log("[Link] kindle:pos fid:", fidStr, "->", fidNum);
+          
+          // Use the data-fid attribute we injected in readerHtml.ts
+          const targetEl = ownerDoc.querySelector(`[data-fid="${fidNum}"]`);
+          if (targetEl && targetEl instanceof HTMLElement) {
+             console.log("[Link] Found target by data-fid:", fidNum);
+             event.preventDefault();
+             jumpToElement(targetEl);
+             return;
+          }
+        }
+
         const headingMatch = findHeadingByText(linkText, anchor);
         if (headingMatch) {
           event.preventDefault();
