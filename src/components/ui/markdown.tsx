@@ -16,10 +16,9 @@ export type MarkdownProps = {
 
 function parseMarkdownIntoBlocks(markdown: string): string[] {
   // Pre-process <cite> tags into a unique format that won't be mangled by Markdown
-  // We use a syntax like CITE_START[index|snippet]textCITE_END
   const processed = markdown.replace(
     /<cite\s+snippet="([^"]*)"\s+index="([^"]*)">([\s\S]*?)<\/cite>/g,
-    (_, snippet, index, text) => `__CITE_START__[${index}|${snippet}]${text}__CITE_END__`
+    (_, snippet, index, text) => `@@CITE_START@@[${index}:::${snippet}]${text}@@CITE_END@@`
   );
 
   const tokens = marked.lexer(processed)
@@ -80,10 +79,10 @@ const MemoizedMarkdownBlock = memo(
       p: function ParagraphComponent({ children, ...props }) {
         const processNode = (node: any): any => {
           if (typeof node === 'string') {
-            // First handle our new __CITE__ format
-            const citeParts = node.split(/(__CITE_START__\[[^\]]*\][\s\S]*?__CITE_END__)/g);
+            // First handle our new @@CITE@@ format
+            const citeParts = node.split(/(@@CITE_START@@\[[^\]]*\][\s\S]*?@@CITE_END@@)/g);
             const processedCiteParts = citeParts.flatMap((part, i) => {
-              const citeMatch = part.match(/__CITE_START__\[([^|]*)\|([^\]]*)\]([\s\S]*?)__CITE_END__/);
+              const citeMatch = part.match(/@@CITE_START@@\[([^:]*):::([^\]]*)\]([\s\S]*?)@@CITE_END@@/);
               if (citeMatch) {
                 const index = parseInt(citeMatch[1], 10);
                 const snippet = citeMatch[2];
@@ -150,9 +149,9 @@ const MemoizedMarkdownBlock = memo(
       li: function LiComponent({ children, ...props }) {
         const processNode = (node: any): any => {
           if (typeof node === 'string') {
-            const citeParts = node.split(/(__CITE_START__\[[^\]]*\][\s\S]*?__CITE_END__)/g);
+            const citeParts = node.split(/(@@CITE_START@@\[[^\]]*\][\s\S]*?@@CITE_END@@)/g);
             const processedCiteParts = citeParts.flatMap((part, i) => {
-              const citeMatch = part.match(/__CITE_START__\[([^|]*)\|([^\]]*)\]([\s\S]*?)__CITE_END__/);
+              const citeMatch = part.match(/@@CITE_START@@\[([^:]*):::([^\]]*)\]([\s\S]*?)@@CITE_END@@/);
               if (citeMatch) {
                 const index = parseInt(citeMatch[1], 10);
                 const snippet = citeMatch[2];
