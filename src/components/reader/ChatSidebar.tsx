@@ -248,6 +248,8 @@ export default function ChatSidebar({
   onDeleteThread,
   onRenameThread,
   onClearDefaultChat,
+  onClearThreadChat,
+  onDeleteMessage,
   placeholder = "Ask about the text...",
   isHighlightContext = false,
   attachedContext = [],
