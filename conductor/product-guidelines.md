@@ -14,6 +14,7 @@
 ## AI Interaction Guidelines
 - **Context Awareness:** AI responses should always consider the current page and any selected text.
 - **Transparency:** Clearly indicate when a summary or explanation is AI-generated.
+- **Verifiability:** Provide interactive citations for AI claims, allowing users to instantly jump to and highlight the source text in the reader.
 - **Action-Oriented:** Focus on helping the user understand the text, rather than just providing abstract facts.
 
 ## Design Patterns
