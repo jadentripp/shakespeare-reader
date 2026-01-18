@@ -155,15 +155,12 @@ CREATE INDEX IF NOT EXISTS idx_book_chat_thread_book ON book_chat_thread(book_id
 CREATE TABLE IF NOT EXISTS book_message (
   id INTEGER PRIMARY KEY,
   book_id INTEGER NOT NULL,
-  thread_id INTEGER,
   role TEXT NOT NULL,
   content TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-  FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE,
-  FOREIGN KEY(thread_id) REFERENCES book_chat_thread(id) ON DELETE CASCADE
+  FOREIGN KEY(book_id) REFERENCES book(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_book_message_book ON book_message(book_id);
-CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id);
 "#,
     )
     .context("failed to initialize sqlite schema")?;
@@ -173,6 +170,7 @@ CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN mobi_path TEXT", []);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN html_path TEXT", []);
     let _ = conn.execute("ALTER TABLE book_message ADD COLUMN thread_id INTEGER", []);
+    let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id)", []);
 
     Ok(())
 }
@@ -667,16 +665,16 @@ mod tests {
             "html".to_string(),
         ).unwrap();
 
-        let msg = add_book_message(&handle, book_id, "user".to_string(), "Hello".to_string()).unwrap();
+        let msg = add_book_message(&handle, book_id, None, "user".to_string(), "Hello".to_string()).unwrap();
         assert_eq!(msg.content, "Hello");
         assert_eq!(msg.role, "user");
 
-        let messages = list_book_messages(&handle, book_id).unwrap();
+        let messages = list_book_messages(&handle, book_id, None).unwrap();
         assert_eq!(messages.len(), 1);
         assert_eq!(messages[0].content, "Hello");
 
         delete_book_messages(&handle, book_id).unwrap();
-        let messages = list_book_messages(&handle, book_id).unwrap();
+        let messages = list_book_messages(&handle, book_id, None).unwrap();
         assert_eq!(messages.len(), 0);
 
         std::fs::remove_file(db_path).ok();
