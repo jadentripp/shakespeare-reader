@@ -252,6 +252,24 @@ export async function deleteBookChatThread(threadId: number): Promise<void> {
   await invoke("delete_book_chat_thread", { threadId });
 }
 
+export async function renameBookChatThread(params: {
+  threadId: number;
+  title: string;
+}): Promise<void> {
+  await invoke("rename_book_chat_thread", {
+    threadId: params.threadId,
+    title: params.title,
+  });
+}
+
+export async function deleteBookMessage(messageId: number): Promise<void> {
+  await invoke("delete_book_message", { messageId });
+}
+
+export async function clearDefaultBookMessages(bookId: number): Promise<void> {
+  await invoke("clear_default_book_messages", { bookId });
+}
+
 export async function deleteBookMessages(bookId: number): Promise<void> {
   await invoke("delete_book_messages", { bookId });
 }
