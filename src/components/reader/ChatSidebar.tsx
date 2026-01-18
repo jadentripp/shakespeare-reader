@@ -22,7 +22,7 @@ import { Loader } from "@/components/ui/loader";
 import { cn } from "@/lib/utils";
 import type { BookChatThread, ChatPrompt, LocalChatMessage } from "@/lib/readerTypes";
 import type { Highlight } from "@/lib/tauri";
-import { Send, Sparkles, ChevronDown, Check, Settings2, PanelRightClose, PlusSquare, History, MessageSquare, X, Trash2, Edit2, Eraser, Brain, ChevronRight, MapPin } from "lucide-react";
+import { Send, Sparkles, ChevronDown, Check, Settings2, PanelRightClose, PlusSquare, History, MessageSquare, X, Trash2, Edit2, Eraser, Brain, ChevronRight, MapPin, BookOpen, Feather, Quote, Lightbulb } from "lucide-react";
 
 type ChatSidebarProps = {
   contextHint: string;
@@ -100,13 +100,14 @@ function ModelSelector({
           variant="ghost"
           size="sm"
           disabled={modelsLoading || disabled}
-          className="h-7 gap-1 border-0 bg-muted/50 px-2 text-[11px] hover:bg-muted"
+          className="h-7 gap-1.5 rounded-full border border-border/40 bg-background/80 px-3 text-[11px] font-medium backdrop-blur-sm transition-all hover:border-primary/30 hover:bg-primary/5"
         >
+          <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
           {modelsLoading ? "..." : formatModelName(currentModel)}
-          <ChevronDown className="h-3 w-3 opacity-50" />
+          <ChevronDown className="h-3 w-3 opacity-40" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-52 p-2">
+      <PopoverContent align="end" className="w-56 rounded-xl border-border/50 bg-popover/95 p-2 shadow-xl backdrop-blur-md">
         {availableModels.length === 0 && !modelsLoading ? (
           <div className="px-2 py-1.5 text-xs text-muted-foreground">
             No models available
@@ -289,9 +290,9 @@ export default function ChatSidebar({
 }: ChatSidebarProps) {
   return (
     <aside className="min-h-0 flex flex-col">
-      <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/50 bg-card shadow-sm">
+      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-b from-card to-background shadow-xl">
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between gap-3 border-b border-border/40 px-4 py-3">
+        <div className="shrink-0 flex items-center justify-between gap-2 border-b border-border/30 bg-gradient-to-r from-muted/40 via-transparent to-muted/20 px-4 py-3">
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -420,26 +421,31 @@ export default function ChatSidebar({
               </Popover>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-lg transition-colors",
-              chatSending ? "bg-primary/20" : (isHighlightContext ? "bg-primary/10" : "bg-muted")
+              "relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300",
+              chatSending 
+                ? "bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg shadow-primary/10" 
+                : (isHighlightContext ? "bg-gradient-to-br from-primary/10 to-accent/10" : "bg-gradient-to-br from-muted to-muted/50")
             )}>
+              {chatSending && (
+                <div className="absolute inset-0 rounded-xl bg-primary/20 animate-ping" />
+              )}
               {isHighlightContext ? (
                 <MessageSquare className={cn(
                   "h-4 w-4 transition-colors",
-                  chatSending ? "text-primary animate-pulse" : "text-primary/70"
+                  chatSending ? "text-primary" : "text-primary/70"
                 )} />
               ) : (
                 <Sparkles className={cn(
                   "h-4 w-4 transition-colors",
-                  chatSending ? "text-primary animate-pulse" : "text-muted-foreground"
+                  chatSending ? "text-primary" : "text-muted-foreground"
                 )} />
               )}
             </div>
             <div>
-              <h2 className="text-sm font-semibold">AI Assistant</h2>
-              <p className="text-[11px] text-muted-foreground">{contextHint}</p>
+              <h2 className="font-serif text-[15px] font-semibold tracking-tight">AI Assistant</h2>
+              <p className="text-[11px] text-muted-foreground/70">{contextHint}</p>
             </div>
           </div>
 
@@ -454,29 +460,34 @@ export default function ChatSidebar({
 
         {/* Quick prompts */}
         {prompts.length > 0 && (
-          <div className="shrink-0 flex flex-wrap gap-1.5 border-b border-border/30 px-3 py-2">
-            {prompts.map((prompt) => (
-              <Button
-                key={prompt.label}
-                variant="outline"
-                size="sm"
-                className="h-6 rounded-full border-dashed px-2.5 text-[11px] hover:border-primary/50 hover:bg-primary/5"
-                onClick={() => {
-                  onPromptSelect(prompt.prompt);
-                  chatInputRef.current?.focus();
-                }}
-                disabled={chatSending}
-                type="button"
-              >
-                {prompt.label}
-              </Button>
-            ))}
+          <div className="shrink-0 flex flex-wrap gap-2 px-4 py-3">
+            {prompts.map((prompt, index) => {
+              const icons = [BookOpen, Quote, Lightbulb, Feather];
+              const Icon = icons[index % icons.length];
+              return (
+                <Button
+                  key={prompt.label}
+                  variant="ghost"
+                  size="sm"
+                  className="group h-8 gap-2 rounded-xl border border-border/30 bg-gradient-to-br from-background to-muted/30 px-3 text-xs font-medium shadow-sm transition-all duration-200 hover:border-primary/40 hover:from-primary/5 hover:to-primary/10 hover:shadow-md"
+                  onClick={() => {
+                    onPromptSelect(prompt.prompt);
+                    chatInputRef.current?.focus();
+                  }}
+                  disabled={chatSending}
+                  type="button"
+                >
+                  <Icon className="h-3.5 w-3.5 text-muted-foreground transition-colors group-hover:text-primary" />
+                  {prompt.label}
+                </Button>
+              );
+            })}
           </div>
         )}
 
         {/* Messages */}
         <ChatContainerRoot className="flex-1 min-h-0">
-          <ChatContainerContent className="gap-3 p-3">
+          <ChatContainerContent className="gap-4 p-4">
             {messages.length ? (
               <>
                 {messages.map((message: any) => {
@@ -489,10 +500,12 @@ export default function ChatSidebar({
                         <MessageAvatar
                           src=""
                           alt={isUser ? "You" : "Assistant"}
-                          fallback={isUser ? "U" : "AI"}
+                          fallback={isUser ? "U" : "✦"}
                           className={cn(
-                            "h-6 w-6 text-[10px]",
-                            isUser ? "bg-primary text-primary-foreground" : "bg-muted"
+                            "h-7 w-7 text-[10px] font-medium shadow-sm",
+                            isUser 
+                              ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground" 
+                              : "bg-gradient-to-br from-muted to-muted/60 border border-border/30"
                           )}
                         />
                         <div className={cn("flex max-w-[85%] flex-col", isUser && "items-end")}>
@@ -503,8 +516,10 @@ export default function ChatSidebar({
                             markdown={!isUser}
                             onCitationClick={message.onCitationClick ?? onCitationClick}
                             className={cn(
-                              "w-full text-sm py-2 px-3",
-                              isUser ? "bg-primary text-primary-foreground" : "bg-muted/60"
+                              "w-full text-[13px] leading-relaxed py-2.5 px-3.5 shadow-sm",
+                              isUser 
+                                ? "rounded-2xl rounded-tr-md bg-gradient-to-br from-primary to-primary/90 text-primary-foreground" 
+                                : "rounded-2xl rounded-tl-md bg-gradient-to-br from-muted/70 to-muted/40 border border-border/20"
                             )}
                           >
                             {message.content}
@@ -513,17 +528,17 @@ export default function ChatSidebar({
                       </Message>
                       {onDeleteMessage && (
                         <div className={cn(
-                          "absolute top-0 opacity-0 group-hover/msg:opacity-100 transition-opacity",
-                          isUser ? "left-0 -translate-x-full pr-1" : "right-0 translate-x-full pl-1"
+                          "absolute -top-1 opacity-0 group-hover/msg:opacity-100 transition-all duration-200",
+                          isUser ? "left-8" : "right-8"
                         )}>
                           <MessageAction
                             tooltip="Delete message"
-                            side={isUser ? "left" : "right"}
+                            side="top"
                           >
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                              className="h-5 w-5 rounded-full bg-background/90 text-muted-foreground shadow-sm backdrop-blur-sm hover:bg-destructive/10 hover:text-destructive"
                               onClick={() => {
                                 const confirmed = message.role === 'assistant' 
                                   ? window.confirm("Are you sure you want to delete this AI response?")
@@ -533,7 +548,7 @@ export default function ChatSidebar({
                                 }
                               }}
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Trash2 className="h-2.5 w-2.5" />
                             </Button>
                           </MessageAction>
                         </div>
@@ -546,24 +561,44 @@ export default function ChatSidebar({
                     <MessageAvatar
                       src=""
                       alt="Assistant"
-                      fallback="AI"
-                      className="h-6 w-6 text-[10px] bg-muted"
+                      fallback="✦"
+                      className="h-7 w-7 text-[10px] font-medium bg-gradient-to-br from-muted to-muted/60 border border-border/30 shadow-sm"
                     />
-                    <div className="rounded-lg py-2 px-3 text-foreground bg-muted/60 text-sm">
+                    <div className="rounded-2xl rounded-tl-md py-3 px-4 bg-gradient-to-br from-muted/70 to-muted/40 border border-border/20 shadow-sm">
                       <Loader variant="loading-dots" size="sm" text="Thinking" />
                     </div>
                   </Message>
                 )}
               </>
             ) : (
-              <div className="flex h-full items-center justify-center py-8">
-                <div className="text-center max-w-[220px]">
-                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted/50">
-                    <Sparkles className="h-5 w-5 text-muted-foreground/50" />
+              <div className="flex h-full items-center justify-center py-12">
+                <div className="relative text-center max-w-[260px]">
+                  {/* Decorative background */}
+                  <div className="absolute inset-0 -z-10 mx-auto h-32 w-32 rounded-full bg-gradient-to-br from-primary/5 via-transparent to-accent/5 blur-2xl" />
+                  
+                  {/* Icon with layered rings */}
+                  <div className="relative mx-auto mb-6 h-16 w-16">
+                    <div className="absolute inset-0 rounded-full border border-border/20" />
+                    <div className="absolute inset-2 rounded-full border border-border/30" />
+                    <div className="absolute inset-4 flex items-center justify-center rounded-full bg-gradient-to-br from-muted/80 to-muted">
+                      <Feather className="h-5 w-5 text-muted-foreground/70" />
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Ask questions about the text, request summaries, or explore interpretations.
+                  
+                  {/* Typography */}
+                  <h3 className="mb-2 font-serif text-base font-medium tracking-tight text-foreground/90">
+                    Literary Assistant
+                  </h3>
+                  <p className="text-[13px] leading-relaxed text-muted-foreground/80">
+                    Ask questions, request summaries, or explore deeper interpretations of the text.
                   </p>
+                  
+                  {/* Decorative divider */}
+                  <div className="mx-auto mt-5 flex items-center justify-center gap-2">
+                    <div className="h-px w-8 bg-gradient-to-r from-transparent to-border/50" />
+                    <Quote className="h-3 w-3 text-muted-foreground/30" />
+                    <div className="h-px w-8 bg-gradient-to-l from-transparent to-border/50" />
+                  </div>
                 </div>
               </div>
             )}
@@ -597,31 +632,35 @@ export default function ChatSidebar({
         )}
 
         {/* Input */}
-        <div className="shrink-0 border-t border-border/40 p-3">
+        <div className="shrink-0 border-t border-border/30 bg-gradient-to-t from-muted/20 to-transparent p-4">
           <PromptInput
             value={chatInput}
             onValueChange={onChatInputChange}
             onSubmit={onSend}
             isLoading={chatSending}
-            className="rounded-lg border-border/50"
+            className="rounded-2xl border-border/40 bg-background/80 shadow-lg backdrop-blur-sm transition-all focus-within:border-primary/30 focus-within:shadow-xl focus-within:shadow-primary/5"
           >
             <PromptInputTextarea
               ref={chatInputRef}
               placeholder={placeholder}
-              className="min-h-[52px] text-sm"
+              className="min-h-[48px] text-sm placeholder:text-muted-foreground/50"
             />
-            <PromptInputActions className="justify-between pt-2">
-              <span className="text-[10px] text-muted-foreground">
-                ⌘ + Enter to send
+            <PromptInputActions className="justify-between pt-2 border-t border-border/20 mt-2">
+              <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
+                <kbd className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-[9px]">⌘</kbd>
+                <span>+</span>
+                <kbd className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-[9px]">↵</kbd>
+                <span className="ml-1">to send</span>
               </span>
               <PromptInputAction tooltip="Send message">
                 <Button
                   size="sm"
                   onClick={onSend}
                   disabled={chatSending || !chatInput.trim()}
-                  className="h-7 px-3"
+                  className="h-8 gap-2 rounded-xl bg-primary px-4 font-medium shadow-md transition-all hover:shadow-lg disabled:opacity-40"
                 >
                   <Send className="h-3.5 w-3.5" />
+                  <span className="text-xs">Send</span>
                 </Button>
               </PromptInputAction>
             </PromptInputActions>

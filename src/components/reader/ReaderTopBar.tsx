@@ -47,49 +47,34 @@ export default function ReaderTopBar({
   onJumpPageGo,
   onBack,
 }: ReaderTopBarProps) {
-  const progress = totalPages > 0 ? (currentPage / totalPages) * 100 : 0;
-
   return (
-    <div className="shrink-0 flex items-center gap-4 px-1">
+    <div className="shrink-0 flex items-center gap-4 px-2 py-1.5">
       {/* Left: Back + Title */}
-      <div className="flex items-center gap-3 min-w-0 flex-1">
+      <div className="flex items-center gap-2 min-w-0 flex-1">
         <Button
           variant="ghost"
           size="sm"
           onClick={onBack}
-          className="h-9 w-9 p-0 shrink-0"
+          className="h-8 w-8 p-0 shrink-0 rounded-full hover:bg-muted/60"
         >
-          <ChevronLeft className="h-5 w-5" />
+          <ChevronLeft className="h-4 w-4" />
         </Button>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-semibold leading-tight">{title}</p>
-          <div className="flex items-center gap-2.5 mt-0.5">
-            <div className="h-1.5 w-32 rounded-full bg-muted/80 overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <span className="text-sm font-medium text-foreground/80 tabular-nums">
-              {currentPage} / {totalPages}
-            </span>
-          </div>
-        </div>
+        <p className="truncate text-sm font-medium text-foreground/90">{title}</p>
       </div>
 
       {/* Center: Navigation */}
-      <div className="flex items-center gap-1 rounded-lg border bg-card/80 p-1 shadow-sm">
+      <div className="flex items-center rounded-full border bg-card/60 backdrop-blur-sm shadow-sm">
         <Button
           variant="ghost"
           size="sm"
           onClick={onPrev}
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0 rounded-full hover:bg-muted/60"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <div className="flex items-center gap-1 px-1">
+        <div className="flex items-center gap-0.5 px-1">
           <Input
-            className="h-7 w-14 text-center text-xs"
+            className="h-7 w-12 text-center text-sm font-medium border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 tabular-nums"
             value={jumpPage}
             onChange={(e) => onJumpPageChange(e.currentTarget.value)}
             onKeyDown={(e) => {
@@ -98,20 +83,16 @@ export default function ReaderTopBar({
             }}
             placeholder={String(currentPage)}
           />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onJumpPageGo}
-            className="h-7 px-2 text-xs"
-          >
-            Go
-          </Button>
+          <span className="text-muted-foreground/60 text-sm">/</span>
+          <span className="text-sm text-muted-foreground tabular-nums pr-1">
+            {totalPages}
+          </span>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={onNext}
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0 rounded-full hover:bg-muted/60"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>

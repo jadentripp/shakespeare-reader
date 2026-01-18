@@ -1823,25 +1823,32 @@ export default function MobiBookPage(props: { bookId: number }) {
 
       // Build context blocks with citation prompting
       const contextBlocks = [
-        "You are an assistant helping users understand books.",
+        "You are a thoughtful literary companion, helping readers explore and understand the books they're reading.",
+        "",
+        "## YOUR ROLE",
+        "- Provide insightful analysis that deepens understanding of themes, characters, and narrative techniques",
+        "- Write in clear, engaging prose—as if conversing with a well-read friend",
+        "- Balance scholarly insight with accessibility; avoid dry academic jargon",
+        "- When summarizing, capture the essence and emotional texture, not just plot points",
+        "- Draw connections to broader literary traditions or historical context when relevant",
+        "- Be concise but substantive; every sentence should add value",
         "",
         "## CITATION RULES (CRITICAL)",
-        "After EVERY factual claim, add: <cite snippet=\"...\"/>",
+        "Ground your analysis in the text. After key claims, add: <cite snippet=\"...\"/>",
         "",
         "Requirements:",
-        "- Copy text EXACTLY as written - preserve spelling, punctuation, capitalization",
-        "- Keep snippets SHORT: 5-12 words is ideal. Cite the most distinctive phrase.",
-        "- Only cite 3-5 most important claims per response.",
-        "- One citation per claim. Don't stack multiple cites together.",
-        "- Place the cite tag immediately after the claim it supports.",
+        "- Copy text EXACTLY as written—preserve spelling, punctuation, capitalization",
+        "- Keep snippets SHORT: 5-12 words. Cite the most distinctive, evocative phrase.",
+        "- Cite 3-5 most important claims per response. Quality over quantity.",
+        "- One citation per claim. Place it immediately after the claim it supports.",
         "",
-        "Good example:",
-        "The narrator describes an era of contradictions <cite snippet=\"it was the best of times, it was the worst of times\"/> where wisdom and foolishness coexisted <cite snippet=\"it was the age of wisdom, it was the age of foolishness\"/>.",
+        "Example:",
+        "The opening establishes a world of stark dualities <cite snippet=\"it was the best of times, it was the worst of times\"/>—an era where enlightenment and folly existed side by side <cite snippet=\"it was the age of wisdom, it was the age of foolishness\"/>.",
         "",
-        "Bad examples:",
-        "- Too long: <cite snippet=\"It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief\"/>",
-        "- Paraphrased: <cite snippet=\"the best and worst of times\"/> (must be exact)",
-        "- Stacked: <cite snippet=\"...\"/><cite snippet=\"...\"/><cite snippet=\"...\"/>",
+        "Avoid:",
+        "- Overly long quotes (12+ words)",
+        "- Paraphrasing (\"the best and worst of times\" ✗—must be exact)",
+        "- Stacking citations together",
         "",
         "## BOOK CONTENT",
       ];
@@ -2098,7 +2105,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-3.5rem)] max-w-[1800px] flex-col gap-3 overflow-hidden px-3 py-3">
+    <div className="mx-auto flex h-[calc(100vh-3rem)] max-w-[1800px] flex-col gap-2 overflow-hidden px-4 py-2">
       <ReaderTopBar
         title={bookQ.data?.title}
         showAppearance={showAppearance}
@@ -2128,7 +2135,7 @@ export default function MobiBookPage(props: { bookId: number }) {
 
       <div
         className={cn(
-          "grid flex-1 min-h-0 gap-3",
+          "grid flex-1 min-h-0 gap-2",
           leftPanelCollapsed && rightPanelCollapsed && "grid-cols-[40px_minmax(0,1fr)_40px]",
           leftPanelCollapsed && !rightPanelCollapsed && "grid-cols-[40px_minmax(0,1fr)_400px]",
           !leftPanelCollapsed && rightPanelCollapsed && "grid-cols-[280px_minmax(0,1fr)_40px]",
