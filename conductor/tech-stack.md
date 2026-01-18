@@ -20,7 +20,7 @@
 - **Networking:** reqwest (Rust), TanStack Query (Frontend)
 
 ## AI & Services
-- **LLM Provider:** OpenAI API
+- **LLM Provider:** OpenAI API (utilizing the Responses API for agentic reasoning)
 - **Book Source:** Project Gutenberg (via Gutendex API)
 
 ## Development & Infrastructure
