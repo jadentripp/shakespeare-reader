@@ -1,7 +1,6 @@
 mod books;
 mod db;
 mod gutendex;
-mod openai;
 
 use db::{Book, BookChatThread, BookMessage, BookPosition, Highlight, HighlightMessage};
 use tauri::AppHandle;
@@ -364,32 +363,6 @@ fn delete_book_thread_messages(
 }
 
 #[tauri::command]
-fn openai_key_status(app_handle: AppHandle) -> Result<openai::KeyStatus, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    openai::key_status(&app_handle).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn openai_chat(
-    app_handle: AppHandle,
-    messages: Vec<openai::ChatMessage>,
-    model: Option<String>,
-) -> Result<openai::ChatResult, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    openai::chat(&app_handle, messages, model)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn openai_list_models(app_handle: AppHandle) -> Result<Vec<String>, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    openai::list_models(&app_handle)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
 fn set_thread_last_cfi(
     app_handle: AppHandle,
     thread_id: i64,
@@ -447,9 +420,6 @@ pub fn run() {
             delete_book_message,
             clear_default_book_messages,
             delete_book_thread_messages,
-            openai_key_status,
-            openai_chat,
-            openai_list_models,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
