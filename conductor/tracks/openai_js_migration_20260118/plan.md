@@ -12,12 +12,12 @@ This plan outlines the migration of AI logic from the Rust backend to the React 
 - [x] Task: Conductor - User Manual Verification 'Foundation & Research' (Protocol in workflow.md) 3442538
 
 ## Phase 2: AI Service Implementation
-- [ ] Task: Create `src/lib/openai.ts` service.
+- [x] Task: Create `src/lib/openai.ts` service. 00f93bf
     - [ ] Research with `deepwiki` the most idiomatic way to structure a shared AI service in React/TypeScript.
     - [ ] Implement `resolveApiKey` to check Tauri settings first, then environment variables.
     - [ ] Implement `listModels` with the same filtering logic as the Rust version.
     - [ ] Implement `chat` using the Responses API, ensuring support for reasoning and message parts.
-- [ ] Task: Write unit tests for `src/lib/openai.ts`.
+- [x] Task: Write unit tests for `src/lib/openai.ts`. 117aabb
     - [ ] Mock the OpenAI SDK and Tauri commands.
     - [ ] Verify API key resolution priority.
     - [ ] Verify model filtering and chat response parsing.
