@@ -6,3 +6,4 @@ export { useToc, type UseTocOptions, type UseTocResult } from "./useToc";
 export { useModels, type UseModelsResult } from "./useModels";
 export { useHighlights, type UseHighlightsOptions, type UseHighlightsResult } from "./useHighlights";
 export { useChat, type UseChatOptions, type UseChatResult, type ChatMessage } from "./useChat";
+export { useTTS } from "./useTTS";
