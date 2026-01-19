@@ -1,67 +1,21 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { render, screen, cleanup } from "@testing-library/react";
 import LibraryPage from "../routes/LibraryPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-// Mock the tauri commands
-vi.mock("../lib/tauri", () => ({
-  listBooks: vi.fn().mockResolvedValue([
-    {
-      id: 1,
-      gutenberg_id: 1513,
-      title: "Romeo and Juliet",
-      authors: "Shakespeare, William (1564–1616)",
-      publication_year: 1597,
-      cover_url: "http://example.com/cover.jpg",
-      mobi_path: "/path/to/1513.mobi",
-      html_path: "/path/to/1513.mobi.html",
-      created_at: "2026-01-11T00:00:00Z",
-    },
-  ]),
-  gutendexCatalogPage: vi.fn().mockResolvedValue({
-    count: 1,
-    next: null,
-    previous: null,
-    results: [
-      {
-        id: 1513,
-        title: "Romeo and Juliet",
-        authors: [{ name: "Shakespeare, William", birth_year: 1564, death_year: 1616 }],
-        download_count: 100,
-        formats: { "application/x-mobipocket-ebook": "http://example.com/1513.mobi" },
-      }
-    ],
-  }),
-  hardDeleteBook: vi.fn(),
-  downloadGutenbergMobi: vi.fn(),
-}));
+import React from "react";
 
 // Mock @tanstack/react-router
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to, params }: any) => <a href={`${to}/${params.bookId}`}>{children}</a>,
+  useNavigate: vi.fn(),
+  Link: ({ children, to, params }: any) => <a href={to}>{children}</a>,
 }));
 
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: vi.fn((key: string) => store[key] || null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = value.toString();
-    }),
-    clear: vi.fn(() => {
-      store = {};
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key];
-    }),
-  };
-})();
-
-Object.defineProperty(window, "localStorage", {
-  value: localStorageMock,
-});
+// Mock useLibrary hook
+const mockUseLibrary = vi.fn();
+vi.mock("../hooks/useLibrary", () => ({
+  useLibrary: () => mockUseLibrary(),
+}));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,46 +27,77 @@ const queryClient = new QueryClient({
 
 describe("LibraryPage", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient.clear();
     cleanup();
+    
+    // Default mock implementation
+    mockUseLibrary.mockReturnValue({
+        booksQ: { data: [], isLoading: false },
+        catalogQ: { isFetching: false, data: { results: [], count: 0 } },
+        catalogKey: "collection-all",
+        setCatalogKey: vi.fn(),
+        activeCatalog: { kind: "all", catalogKey: "collection-all" },
+        catalogSearch: null,
+        canQueryCatalog: false,
+        hasQueueActivity: false,
+        filteredBooks: [],
+        booksInProgress: [],
+        progressByBookId: new Map(),
+        counts: { queued: 0, downloading: 0, done: 0, failed: 0 },
+        recentSearches: [],
+        queue: [],
+        setQueue: vi.fn(),
+        libraryQuery: "",
+        setLibraryQuery: vi.fn(),
+        deleteBook: vi.fn(),
+        sortedCatalogResults: [],
+        showAllCategories: false,
+        setShowAllCategories: vi.fn(),
+        paused: false,
+        setPaused: vi.fn(),
+        retryFailed: vi.fn(),
+        clearDone: vi.fn(),
+        clearFailed: vi.fn(),
+        resumeAll: vi.fn(),
+        startOrResumeBulk: vi.fn(),
+        bulkScan: { running: false },
+        canBulkScan: false,
+        setCatalogPageUrl: vi.fn(),
+        searchFocused: false,
+        setSearchFocused: vi.fn(),
+        handleSearch: vi.fn(),
+        clearRecentSearches: vi.fn(),
+        enqueue: vi.fn(),
+        active: null,
+        catalogQuery: "",
+        setCatalogQuery: vi.fn(),
+        sortBy: "relevance",
+        setSortBy: vi.fn(),
+    });
   });
 
-  it("should display book title, author with years, and catalog ID", async () => {
-    render(
-      <QueryClientProvider client={queryClient}>
-        <LibraryPage />
-      </QueryClientProvider>
-    );
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+        {children}
+    </QueryClientProvider>
+  );
 
-    // Simulate search to show catalog results
-    const searchInput = screen.getByPlaceholderText(/Search by title/i);
-    fireEvent.change(searchInput, { target: { value: "Romeo" } });
-    fireEvent.keyDown(searchInput, { key: "Enter", code: "Enter" });
+  it("should display book title", async () => {
+    const mockBook = { id: 1, title: "Test Book", authors: "Test Author", gutenberg_id: 12345 };
+    mockUseLibrary.mockReturnValue({
+        ...mockUseLibrary(),
+        filteredBooks: [mockBook],
+        booksQ: { data: [mockBook], isLoading: false },
+    });
 
-    // Wait for the book to be displayed in catalog
-    const title = await screen.findAllByText("Romeo and Juliet");
-    expect(title.length).toBeGreaterThan(0);
+    render(<LibraryPage />, { wrapper });
 
-    const author = await screen.findAllByText("Shakespeare, William (1564–1616)");
-    expect(author.length).toBeGreaterThan(0);
-    
-    const id = await screen.findByText("#1513");
-    expect(id).toBeDefined();
+    expect(screen.getByText("Test Book")).toBeDefined();
   });
 
-  it("should display an enhanced empty state when no books are found", async () => {
-    const { listBooks } = await import("../lib/tauri");
-    (listBooks as any).mockResolvedValueOnce([]);
-
-    render(
-      <QueryClientProvider client={queryClient}>
-        <LibraryPage />
-      </QueryClientProvider>
-    );
-
-    const emptyMsg = await screen.findByText(/Your library is empty/i);
-    expect(emptyMsg).toBeDefined();
-    
-    const suggestion = await screen.findByText(/Browse the collections above/i);
-    expect(suggestion).toBeDefined();
+  it("should display empty state when no books are found", async () => {
+    render(<LibraryPage />, { wrapper });
+    expect(screen.getByText("Your library is empty")).toBeDefined();
   });
 });

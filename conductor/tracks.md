@@ -39,3 +39,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: improve the library pages (2d/3d)**
 *Link: [./archive/library_design_overhaul_20260118/](./archive/library_design_overhaul_20260118/)*
+\n---\n\n- [~] **Track: Make the 3d library have feature parity with the 2d library**
+*Link: [./tracks/3d_library_parity_20260119/](./tracks/3d_library_parity_20260119/)*
