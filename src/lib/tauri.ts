@@ -1,4 +1,14 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke as tauriInvoke } from "@tauri-apps/api/core";
+
+const isTauri = typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined;
+
+async function invoke<T>(cmd: string, args?: any): Promise<T> {
+  if (isTauri) {
+    return await tauriInvoke(cmd, args);
+  }
+  console.warn(`Tauri invoke "${cmd}" suppressed - not in Tauri environment.`);
+  return null as any;
+}
 
 export type Book = {
   id: number;
@@ -95,15 +105,46 @@ export async function dbInit(): Promise<void> {
   await invoke("db_init");
 }
 
+const WEB_BOOKS_KEY = 'reader-web-books';
+
+function getWebBooks(): Book[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(WEB_BOOKS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveWebBooks(books: Book[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(WEB_BOOKS_KEY, JSON.stringify(books));
+}
+
 export async function listBooks(): Promise<Book[]> {
-  return await invoke("list_books");
+  if (!isTauri) {
+    return getWebBooks();
+  }
+  return (await invoke<Book[]>("list_books")) ?? [];
 }
 
 export async function getBook(bookId: number): Promise<Book> {
+  if (!isTauri) {
+    const books = getWebBooks();
+    const b = books.find(x => x.id === bookId);
+    if (!b) throw new Error("Book not found in web library");
+    return b;
+  }
   return await invoke("get_book", { bookId });
 }
 
 export async function hardDeleteBook(bookId: number): Promise<void> {
+  if (!isTauri) {
+    const books = getWebBooks();
+    saveWebBooks(books.filter(x => x.id !== bookId));
+    return;
+  }
   await invoke("hard_delete_book", { bookId });
 }
 
@@ -119,12 +160,52 @@ export async function gutendexCatalogPage(params: {
   searchQuery?: string | null;
   topic?: string | null;
 }): Promise<GutendexResponse> {
-  return await invoke("gutendex_catalog_page", {
-    catalogKey: params.catalogKey,
-    pageUrl: params.pageUrl ?? null,
-    searchQuery: params.searchQuery ?? null,
-    topic: params.topic ?? null,
-  });
+  if (isTauri) {
+    return await tauriInvoke("gutendex_catalog_page", {
+      catalogKey: params.catalogKey,
+      pageUrl: params.pageUrl ?? null,
+      searchQuery: params.searchQuery ?? null,
+      topic: params.topic ?? null,
+    });
+  }
+
+  // Browse-only fallback for standard browsers
+  console.log("Using web-fetch fallback for Gutendex");
+  let urlStr = params.pageUrl;
+
+  if (!urlStr) {
+    const bases: Record<string, string> = {
+      "all": "https://gutendex.com/books/",
+      "shakespeare": "https://gutendex.com/books/?search=Shakespeare%2C%20William",
+      "greek-tragedy": "https://gutendex.com/books/?search=greek%20tragedy",
+      "greek-epic": "https://gutendex.com/books/?search=homer",
+      "roman-drama": "https://gutendex.com/books/?search=roman%20drama",
+    };
+
+    // Default to 'all' if key not found
+    const base = bases[params.catalogKey] || bases["collection-all"];
+    const url = new URL(base);
+
+    if (params.searchQuery) {
+      const existing = url.searchParams.get("search") || "";
+      url.searchParams.set("search", existing ? `${existing} ${params.searchQuery}` : params.searchQuery);
+    }
+
+    if (params.topic) {
+      url.searchParams.append("topic", params.topic);
+    }
+
+    urlStr = url.toString();
+  }
+
+  try {
+    const resp = await fetch(urlStr);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  } catch (e) {
+    console.error("Web fetch fallback failed:", e);
+    return { count: 0, next: null, previous: null, results: [] };
+  }
 }
 
 export async function downloadGutenbergMobi(params: {
@@ -135,18 +216,108 @@ export async function downloadGutenbergMobi(params: {
   coverUrl: string | null;
   mobiUrl: string;
 }): Promise<number> {
-  return await invoke("download_gutenberg_mobi", {
-    gutenbergId: params.gutenbergId,
+  if (isTauri) {
+    return await tauriInvoke("download_gutenberg_mobi", {
+      gutenbergId: params.gutenbergId,
+      title: params.title,
+      authors: params.authors,
+      publicationYear: params.publicationYear,
+      coverUrl: params.coverUrl,
+      mobiUrl: params.mobiUrl,
+    });
+  }
+
+  // Browse-only mock download
+  console.log("Mocking download for web library");
+  const books = getWebBooks();
+  if (books.some(b => b.gutenberg_id === params.gutenbergId)) {
+    return books.find(b => b.gutenberg_id === params.gutenbergId)!.id;
+  }
+
+  const newId = Math.floor(Math.random() * 1000000);
+  const newBook: Book = {
+    id: newId,
+    gutenberg_id: params.gutenbergId,
     title: params.title,
     authors: params.authors,
-    publicationYear: params.publicationYear,
-    coverUrl: params.coverUrl,
-    mobiUrl: params.mobiUrl,
-  });
+    publication_year: params.publicationYear,
+    cover_url: params.coverUrl,
+    mobi_path: null,
+    html_path: null, // Will fetch dynamically in getBookHtml for web
+    first_image_index: null,
+    created_at: new Date().toISOString()
+  };
+
+  saveWebBooks([...books, newBook]);
+  return newId;
 }
 
 export async function getBookHtml(bookId: number): Promise<string> {
-  return await invoke("get_book_html", { bookId });
+  if (isTauri) {
+    return await invoke("get_book_html", { bookId });
+  }
+
+  // Web fallback: try to fetch HTML directly from Project Gutenberg
+  const books = getWebBooks();
+  const book = books.find(b => b.id === bookId);
+  if (!book) throw new Error("Book not found in web library");
+
+  const urls = [
+    `https://www.gutenberg.org/cache/epub/${book.gutenberg_id}/pg${book.gutenberg_id}-images.html`,
+    `https://www.gutenberg.org/cache/epub/${book.gutenberg_id}/pg${book.gutenberg_id}.html`,
+    `https://www.gutenberg.org/files/${book.gutenberg_id}/${book.gutenberg_id}-h/${book.gutenberg_id}-h.htm`,
+  ];
+
+  // Multiple CORS proxy services to try
+  const corsProxies = [
+    (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  ];
+
+  // Try each URL with each proxy
+  for (const url of urls) {
+    // First try direct fetch
+    try {
+      console.log(`Web fallback: attempting direct fetch from ${url}`);
+      const resp = await fetch(url);
+      if (resp.ok) {
+        const html = await resp.text();
+        if (html && html.length > 100) {
+          console.log(`✓ Successfully fetched book HTML directly from ${url}`);
+          return html;
+        }
+      }
+    } catch (e) {
+      console.log(`Direct fetch failed for ${url}, trying proxies...`);
+    }
+
+    // Try each CORS proxy
+    for (let i = 0; i < corsProxies.length; i++) {
+      try {
+        const proxyUrl = corsProxies[i](url);
+        console.log(`Trying CORS proxy ${i + 1}/${corsProxies.length}: ${proxyUrl.substring(0, 80)}...`);
+
+        const proxyResp = await fetch(proxyUrl, {
+          headers: {
+            'Accept': 'text/html,application/xhtml+xml',
+          }
+        });
+
+        if (proxyResp.ok) {
+          const html = await proxyResp.text();
+          if (html && html.length > 100) {
+            console.log(`✓ Successfully fetched book HTML via proxy ${i + 1}`);
+            return html;
+          }
+        }
+      } catch (proxyErr) {
+        console.log(`CORS proxy ${i + 1} failed:`, proxyErr);
+      }
+    }
+  }
+
+  return `<h1>Reading Unavailable in Browser</h1><p>Sorry, we couldn't load the HTML version of this book directly (CORS blocks or missing files). Please use the desktop version of the app for full offline reading.</p>`;
 }
 
 export async function getBookPosition(bookId: number): Promise<BookPosition | null> {
@@ -166,7 +337,7 @@ export async function getSetting(key: string): Promise<string | null> {
 }
 
 export async function listHighlights(bookId: number): Promise<Highlight[]> {
-  return await invoke("list_highlights", { bookId });
+  return (await invoke<Highlight[]>("list_highlights", { bookId })) ?? [];
 }
 
 export async function createHighlight(params: {
@@ -204,7 +375,7 @@ export async function deleteHighlight(highlightId: number): Promise<void> {
 }
 
 export async function listHighlightMessages(highlightId: number): Promise<HighlightMessage[]> {
-  return await invoke("list_highlight_messages", { highlightId });
+  return (await invoke<HighlightMessage[]>("list_highlight_messages", { highlightId })) ?? [];
 }
 
 export async function addHighlightMessage(params: {
@@ -220,7 +391,7 @@ export async function addHighlightMessage(params: {
 }
 
 export async function listBookMessages(bookId: number, threadId: number | null = null): Promise<BookMessage[]> {
-  return await invoke("list_book_messages", { bookId, threadId });
+  return (await invoke<BookMessage[]>("list_book_messages", { bookId, threadId })) ?? [];
 }
 
 export async function addBookMessage(params: {
@@ -252,7 +423,7 @@ export async function setThreadLastCfi(params: {
 }
 
 export async function listBookChatThreads(bookId: number): Promise<BookChatThread[]> {
-  return await invoke("list_book_chat_threads", { bookId });
+  return (await invoke<BookChatThread[]>("list_book_chat_threads", { bookId })) ?? [];
 }
 
 export async function createBookChatThread(params: {
@@ -313,9 +484,19 @@ export async function openAiChat(messages: ChatMessage[], model?: string): Promi
 }
 
 export async function openAiListModels(): Promise<string[]> {
-  return await invoke("openai_list_models");
+  return (await invoke<string[]>("openai_list_models")) ?? [];
 }
 
 export async function getBookImageData(bookId: number, relativeIndex: number): Promise<string> {
-  return await invoke("get_book_image_data", { bookId, relativeIndex });
+  if (isTauri) {
+    return await invoke("get_book_image_data", { bookId, relativeIndex });
+  }
+
+  // For web fallback, we might not be able to easily map relativeIndex to a URL 
+  // without parsing the original MOBI (which is what the backend does).
+  // However, Gutenberg HTML usually uses standard filenames.
+  // If we are here, it means processGutenbergContent found a kindle: link.
+  // Since we don't have the MOBI extraction logic in web, we might just have to 
+  // return a placeholder or try to guess if the HTML was from Gutenberg.
+  return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
 }

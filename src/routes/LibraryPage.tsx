@@ -60,14 +60,14 @@ function formatYear(year: number | null | undefined): string {
 
 function formatAuthorDates(birth: number | null | undefined, death: number | null | undefined): string {
   if (birth == null && death == null) return "";
-  
+
   const birthStr = formatYear(birth);
   const deathStr = formatYear(death);
-  
+
   if (birth != null && birth < 0 && death != null && death < 0) {
     return `c. ${birthStr}`;
   }
-  
+
   return `${birthStr}–${deathStr}`;
 }
 
@@ -96,36 +96,36 @@ type ResultType = "primary" | "related" | "tangential";
 
 function classifyResult(book: GutendexBook, searchQuery: string): ResultType {
   if (!searchQuery.trim()) return "primary";
-  
+
   const query = searchQuery.toLowerCase().trim();
   const title = book.title.toLowerCase();
   const authorNames = (book.authors ?? []).map(a => a.name.toLowerCase());
-  
+
   const queryWords = query.split(/\s+/).filter(w => w.length > 2);
-  
-  const titleStartsWithQuery = title.startsWith(query) || 
+
+  const titleStartsWithQuery = title.startsWith(query) ||
     title.startsWith("the " + query) ||
     title === query;
-  
-  const authorMatchesQuery = authorNames.some(name => 
+
+  const authorMatchesQuery = authorNames.some(name =>
     name.includes(query) || queryWords.some(w => name.includes(w))
   );
-  
-  const isByClassicAuthor = authorNames.some(name => 
+
+  const isByClassicAuthor = authorNames.some(name =>
     queryWords.some(w => name.includes(w))
   );
-  
+
   if (titleStartsWithQuery && (authorMatchesQuery || book.authors?.length === 1)) {
     return "primary";
   }
-  
+
   if (title.includes(query) && isByClassicAuthor) {
     return "primary";
   }
-  
+
   if (title.includes(query)) {
     const titleWords = title.split(/\s+/);
-    const isSubstantialMatch = queryWords.every(qw => 
+    const isSubstantialMatch = queryWords.every(qw =>
       titleWords.some(tw => tw.includes(qw))
     );
     if (isSubstantialMatch && authorMatchesQuery) {
@@ -133,11 +133,11 @@ function classifyResult(book: GutendexBook, searchQuery: string): ResultType {
     }
     return "tangential";
   }
-  
+
   if (authorMatchesQuery) {
     return "related";
   }
-  
+
   return "tangential";
 }
 
@@ -145,7 +145,7 @@ type SortOption = "relevance" | "popular" | "title" | "author";
 
 function sortResults(results: GutendexBook[], sortBy: SortOption, searchQuery: string): GutendexBook[] {
   const sorted = [...results];
-  
+
   switch (sortBy) {
     case "popular":
       return sorted.sort((a, b) => (b.download_count ?? 0) - (a.download_count ?? 0));
@@ -443,16 +443,16 @@ export default function LibraryPage() {
     setBulkScan((prev) =>
       reset
         ? {
-            running: true,
-            scanned: 0,
-            enqueued: 0,
-            nextUrl: null,
-            done: false,
-            error: null,
-            catalogKey: key,
-            searchQuery,
-            topic,
-          }
+          running: true,
+          scanned: 0,
+          enqueued: 0,
+          nextUrl: null,
+          done: false,
+          error: null,
+          catalogKey: key,
+          searchQuery,
+          topic,
+        }
         : { ...prev, running: true, error: null, catalogKey: key, searchQuery, topic },
     );
 
@@ -611,14 +611,293 @@ export default function LibraryPage() {
     const results = catalogQ.data?.results ?? [];
     return sortResults(results, sortBy, catalogSearch);
   }, [catalogQ.data, sortBy, catalogSearch]);
-  
+
   const filteredCatalogResults = sortedCatalogResults;
 
   const hasQueueActivity = counts.downloading > 0 || counts.queued > 0 || counts.failed > 0 || counts.done > 0;
-  
+
   const booksInProgress = useMemo(() => {
     return (booksQ.data ?? []).filter(b => progressByBookId.has(b.id));
   }, [booksQ.data, progressByBookId]);
+
+  const CuratedCollectionsSection = () => (
+    <section className="relative">
+      <div className="mb-6 flex items-end justify-between">
+        <div>
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-600/80 dark:text-amber-400/70">Browse by</p>
+          <h2 className="font-serif text-2xl font-medium tracking-tight text-foreground">Collections</h2>
+        </div>
+        <button
+          onClick={() => setShowAllCategories(!showAllCategories)}
+          className="group flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <span className="border-b border-transparent group-hover:border-current">
+            {showAllCategories ? "Hide categories" : "All categories"}
+          </span>
+          <ChevronRight className={`h-3.5 w-3.5 transition-transform duration-200 ${showAllCategories ? "rotate-90" : ""}`} />
+        </button>
+      </div>
+
+      {/* Collection Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+        {/* All Books */}
+        <button
+          onClick={() => setCatalogKey("collection-all")}
+          className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all duration-300 ${catalogKey === "collection-all"
+              ? "border-amber-400 bg-gradient-to-br from-amber-50 via-orange-50/50 to-yellow-50/30 shadow-lg shadow-amber-500/10 dark:border-amber-500 dark:from-amber-950/60 dark:via-orange-950/40 dark:to-yellow-950/20"
+              : "border-border/40 bg-gradient-to-br from-card to-muted/20 hover:border-amber-300/60 hover:shadow-md dark:hover:border-amber-600/40"
+            }`}
+        >
+          <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-300/10 blur-2xl transition-opacity group-hover:opacity-100 dark:from-amber-500/10 dark:to-orange-400/5" />
+          <div className="relative">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 text-xl shadow-sm dark:from-amber-900/50 dark:to-orange-900/30">
+              📚
+            </div>
+            <div className="font-medium text-foreground">All Books</div>
+            <div className="mt-0.5 text-xs text-muted-foreground">Full catalog</div>
+          </div>
+        </button>
+
+        {FEATURED_COLLECTIONS.map((fc) => {
+          const catalog = CATALOG_BY_KEY.get(fc.key);
+          if (!catalog) return null;
+          const isActive = catalogKey === fc.key;
+          return (
+            <button
+              key={fc.key}
+              onClick={() => setCatalogKey(isActive ? "collection-all" : fc.key)}
+              className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all duration-300 ${isActive
+                  ? "border-amber-400 bg-gradient-to-br from-amber-50 via-orange-50/50 to-yellow-50/30 shadow-lg shadow-amber-500/10 dark:border-amber-500 dark:from-amber-950/60 dark:via-orange-950/40 dark:to-yellow-950/20"
+                  : "border-border/40 bg-gradient-to-br from-card to-muted/20 hover:border-amber-300/60 hover:shadow-md dark:hover:border-amber-600/40"
+                }`}
+            >
+              <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-300/10 opacity-0 blur-2xl transition-opacity group-hover:opacity-100 dark:from-amber-500/10 dark:to-orange-400/5" />
+              <div className="relative">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-stone-100 to-stone-50 text-xl shadow-sm dark:from-stone-800/50 dark:to-stone-900/30">
+                  {fc.icon}
+                </div>
+                <div className="font-medium text-foreground">{catalog.label}</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">{fc.subtitle}</div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Categories Panel */}
+      {showAllCategories && (
+        <div className="mt-6 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="rounded-2xl border border-border/60 bg-gradient-to-b from-card to-background p-6 shadow-sm">
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {CATALOG_GROUPS.slice(1).map((group) => (
+                <div key={group.label} className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-500 dark:text-amber-400">{CATEGORY_ICONS[group.label] || "◆"}</span>
+                    <h4 className="text-sm font-semibold tracking-wide text-foreground">
+                      {group.label}
+                    </h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {group.items.map((cat) => {
+                      const isActive = catalogKey === cat.key;
+                      return (
+                        <button
+                          key={cat.key}
+                          onClick={() => {
+                            setCatalogKey(cat.key);
+                            setShowAllCategories(false);
+                          }}
+                          className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${isActive
+                              ? "bg-amber-500 text-white shadow-md shadow-amber-500/25 dark:bg-amber-600"
+                              : "bg-muted/60 text-muted-foreground hover:bg-amber-100 hover:text-amber-800 dark:hover:bg-amber-900/30 dark:hover:text-amber-300"
+                            }`}
+                        >
+                          {cat.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
+  const ContinueReadingSection = () => (
+    <section>
+      <div className="mb-5 flex items-center gap-2">
+        <Sparkles className="h-5 w-5 text-amber-500" />
+        <h2 className="font-serif text-xl font-medium text-foreground">Continue Reading</h2>
+      </div>
+      <div className="flex gap-4 overflow-x-auto pb-2">
+        {booksInProgress.slice(0, 5).map((b) => (
+          <Link
+            key={b.id}
+            to="/book/$bookId"
+            params={{ bookId: String(b.id) }}
+            className="group flex-shrink-0"
+          >
+            <div className="relative h-40 w-28 overflow-hidden rounded-lg bg-gradient-to-br from-stone-100 to-stone-200 shadow-md transition-transform group-hover:scale-105 dark:from-stone-800 dark:to-stone-900">
+              {b.cover_url ? (
+                <img src={b.cover_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center p-3">
+                  <BookOpen className="h-8 w-8 text-stone-400" />
+                </div>
+              )}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                <div className="text-xs text-white/90">Page {progressByBookId.get(b.id)}</div>
+              </div>
+            </div>
+            <div className="mt-2 w-28">
+              <div className="truncate text-sm font-medium text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                {b.title}
+              </div>
+              <div className="truncate text-xs text-muted-foreground">{b.authors}</div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+
+  const YourLibrarySection = () => (
+    <section>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <h2 className="font-serif text-xl font-medium text-foreground">Your Library</h2>
+          <Badge variant="secondary" className="font-normal">
+            {(booksQ.data ?? []).length} {(booksQ.data ?? []).length === 1 ? "book" : "books"}
+          </Badge>
+        </div>
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
+          <Input
+            type="search"
+            placeholder="Filter library..."
+            value={libraryQuery}
+            onChange={(e) => setLibraryQuery(e.target.value)}
+            className="h-9 pl-9 pr-9"
+          />
+          {libraryQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+              onClick={() => setLibraryQuery("")}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {booksQ.isLoading ? (
+        <div className="flex h-48 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+        </div>
+      ) : (booksQ.data ?? []).length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border/60 bg-muted/20 py-16 text-center">
+          <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/40" />
+          <h3 className="mt-4 font-serif text-lg font-medium text-foreground">Your library is empty</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Browse the collections above or search for books to add
+          </p>
+        </div>
+      ) : filteredBooks.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border/60 bg-muted/20 py-12 text-center">
+          <Search className="mx-auto h-10 w-10 text-muted-foreground/40" />
+          <h3 className="mt-3 font-medium text-foreground">No matches</h3>
+          <p className="mt-1 text-sm text-muted-foreground">Try a different search term</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {filteredBooks.map((b) => (
+            <div
+              key={b.id}
+              className="group relative overflow-hidden rounded-xl border border-border/40 bg-card transition-all duration-200 hover:border-border hover:shadow-lg"
+            >
+              <Link to="/book/$bookId" params={{ bookId: String(b.id) }} className="block">
+                <div className="aspect-[2/3] w-full overflow-hidden bg-gradient-to-br from-stone-100 to-stone-200 dark:from-stone-800 dark:to-stone-900">
+                  {b.cover_url ? (
+                    <img
+                      src={b.cover_url}
+                      alt=""
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <BookOpen className="h-12 w-12 text-stone-300 dark:text-stone-600" />
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="font-medium leading-tight text-foreground line-clamp-2 group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                    {b.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{b.authors}</p>
+                  {progressByBookId.has(b.id) && (
+                    <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                      <BookOpen className="h-3 w-3" />
+                      Page {progressByBookId.get(b.id)}
+                    </div>
+                  )}
+                </div>
+              </Link>
+              <div className="flex items-center justify-between border-t border-border/40 px-4 py-2">
+                <Button asChild variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
+                  <Link to="/book/$bookId" params={{ bookId: String(b.id) }}>
+                    <BookOpen className="h-3.5 w-3.5" />
+                    {progressByBookId.has(b.id) ? "Continue" : "Read"}
+                  </Link>
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete "{b.title}"?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete this book and its downloaded files.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={async () => {
+                          try {
+                            await hardDeleteBook(b.id);
+                            await qc.invalidateQueries({ queryKey: ["books"] });
+                          } catch (e) {
+                            const msg = e instanceof Error ? e.message : String(e);
+                            console.error("Delete failed:", msg);
+                          }
+                        }}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 
   return (
     <TooltipProvider>
@@ -635,7 +914,7 @@ export default function LibraryPage() {
                 Over 70,000 free ebooks from Project Gutenberg
               </p>
             </div>
-            
+
             <div className="relative mx-auto mt-6 max-w-2xl">
               <div className={`relative transition-all duration-300 ${searchFocused ? "scale-[1.02]" : ""}`}>
                 <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-amber-400/20 via-orange-400/20 to-amber-400/20 opacity-0 blur-xl transition-opacity duration-300" style={{ opacity: searchFocused ? 0.6 : 0 }} />
@@ -708,7 +987,7 @@ export default function LibraryPage() {
                         </div>
                       </div>
                     )}
-                    
+
                     <div>
                       <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                         <TrendingUp className="h-3.5 w-3.5" />
@@ -738,8 +1017,8 @@ export default function LibraryPage() {
             {(catalogSearch || activeCatalog.kind !== "all") && (
               <div className="mt-4 flex items-center justify-center gap-2">
                 {activeCatalog.kind !== "all" && (
-                  <Badge 
-                    variant="secondary" 
+                  <Badge
+                    variant="secondary"
                     className="gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
                   >
                     {activeCatalog.kind === "collection" ? "📚" : "📁"} {activeCatalog.label}
@@ -752,8 +1031,8 @@ export default function LibraryPage() {
                   </Badge>
                 )}
                 {catalogSearch && (
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="gap-1.5 rounded-full px-3 py-1"
                   >
                     <Search className="h-3 w-3" />
@@ -879,552 +1158,550 @@ export default function LibraryPage() {
             </div>
           )}
 
-          {/* Curated Collections */}
-          <section className="relative">
-            <div className="mb-6 flex items-end justify-between">
-              <div>
-                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-600/80 dark:text-amber-400/70">Browse by</p>
-                <h2 className="font-serif text-2xl font-medium tracking-tight text-foreground">Collections</h2>
-              </div>
-              <button
-                onClick={() => setShowAllCategories(!showAllCategories)}
-                className="group flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <span className="border-b border-transparent group-hover:border-current">
-                  {showAllCategories ? "Hide categories" : "All categories"}
-                </span>
-                <ChevronRight className={`h-3.5 w-3.5 transition-transform duration-200 ${showAllCategories ? "rotate-90" : ""}`} />
-              </button>
-            </div>
-
-            {/* Collection Cards */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-              {/* All Books */}
-              <button
-                onClick={() => setCatalogKey("collection-all")}
-                className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all duration-300 ${
-                  catalogKey === "collection-all"
-                    ? "border-amber-400 bg-gradient-to-br from-amber-50 via-orange-50/50 to-yellow-50/30 shadow-lg shadow-amber-500/10 dark:border-amber-500 dark:from-amber-950/60 dark:via-orange-950/40 dark:to-yellow-950/20"
-                    : "border-border/40 bg-gradient-to-br from-card to-muted/20 hover:border-amber-300/60 hover:shadow-md dark:hover:border-amber-600/40"
-                }`}
-              >
-                <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-300/10 blur-2xl transition-opacity group-hover:opacity-100 dark:from-amber-500/10 dark:to-orange-400/5" />
-                <div className="relative">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 text-xl shadow-sm dark:from-amber-900/50 dark:to-orange-900/30">
-                    📚
+          {/* Main Content Sections - Reordered based on activity */}
+          {(catalogSearch || (activeCatalog.kind !== "all" && catalogKey !== "collection-all")) ? (
+            <>
+              {/* Elevated Catalog Results */}
+              <section className="rounded-2xl border border-border/40 bg-card/50 p-6">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <h2 className="font-serif text-xl font-medium text-foreground">
+                      {catalogSearch ? `Results for "${catalogSearch}"` : activeCatalog.label}
+                    </h2>
+                    {!catalogSearch && activeCatalog.kind !== "all" && (
+                      <p className="mt-1 text-sm text-muted-foreground">{activeCatalog.description}</p>
+                    )}
                   </div>
-                  <div className="font-medium text-foreground">All Books</div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">Full catalog</div>
-                </div>
-              </button>
+                  <div className="flex items-center gap-2">
+                    {/* Sort dropdown */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-2">
+                          <ArrowUpDown className="h-3.5 w-3.5" />
+                          {sortBy === "relevance" ? "Best match" :
+                            sortBy === "popular" ? "Most popular" :
+                              sortBy === "title" ? "Title A-Z" : "Author A-Z"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-44 p-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSortBy("relevance")}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === "relevance" ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                          Best match
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSortBy("popular")}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === "popular" ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
+                        >
+                          <Download className="h-4 w-4" />
+                          Most popular
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSortBy("title")}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === "title" ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
+                        >
+                          <BookOpen className="h-4 w-4" />
+                          Title A-Z
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSortBy("author")}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === "author" ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
+                        >
+                          <FileText className="h-4 w-4" />
+                          Author A-Z
+                        </button>
+                      </PopoverContent>
+                    </Popover>
 
-              {FEATURED_COLLECTIONS.map((fc) => {
-                const catalog = CATALOG_BY_KEY.get(fc.key);
-                if (!catalog) return null;
-                const isActive = catalogKey === fc.key;
-                return (
-                  <button
-                    key={fc.key}
-                    onClick={() => setCatalogKey(isActive ? "collection-all" : fc.key)}
-                    className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all duration-300 ${
-                      isActive
-                        ? "border-amber-400 bg-gradient-to-br from-amber-50 via-orange-50/50 to-yellow-50/30 shadow-lg shadow-amber-500/10 dark:border-amber-500 dark:from-amber-950/60 dark:via-orange-950/40 dark:to-yellow-950/20"
-                        : "border-border/40 bg-gradient-to-br from-card to-muted/20 hover:border-amber-300/60 hover:shadow-md dark:hover:border-amber-600/40"
-                    }`}
-                  >
-                    <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-300/10 opacity-0 blur-2xl transition-opacity group-hover:opacity-100 dark:from-amber-500/10 dark:to-orange-400/5" />
-                    <div className="relative">
-                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-stone-100 to-stone-50 text-xl shadow-sm dark:from-stone-800/50 dark:to-stone-900/30">
-                        {fc.icon}
-                      </div>
-                      <div className="font-medium text-foreground">{catalog.label}</div>
-                      <div className="mt-0.5 text-xs text-muted-foreground">{fc.subtitle}</div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Categories Panel */}
-            {showAllCategories && (
-              <div className="mt-6 animate-in fade-in slide-in-from-top-4 duration-300">
-                <div className="rounded-2xl border border-border/60 bg-gradient-to-b from-card to-background p-6 shadow-sm">
-                  <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                    {CATALOG_GROUPS.slice(1).map((group) => (
-                      <div key={group.label} className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-amber-500 dark:text-amber-400">{CATEGORY_ICONS[group.label] || "◆"}</span>
-                          <h4 className="text-sm font-semibold tracking-wide text-foreground">
-                            {group.label}
-                          </h4>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {group.items.map((cat) => {
-                            const isActive = catalogKey === cat.key;
-                            return (
-                              <button
-                                key={cat.key}
-                                onClick={() => {
-                                  setCatalogKey(cat.key);
-                                  setShowAllCategories(false);
-                                }}
-                                className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${
-                                  isActive
-                                    ? "bg-amber-500 text-white shadow-md shadow-amber-500/25 dark:bg-amber-600"
-                                    : "bg-muted/60 text-muted-foreground hover:bg-amber-100 hover:text-amber-800 dark:hover:bg-amber-900/30 dark:hover:text-amber-300"
-                                }`}
-                              >
-                                {cat.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* Continue Reading - only show when there are multiple books to avoid redundancy */}
-          {booksInProgress.length > 0 && (booksQ.data ?? []).length > 1 && (
-            <section>
-              <div className="mb-5 flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-amber-500" />
-                <h2 className="font-serif text-xl font-medium text-foreground">Continue Reading</h2>
-              </div>
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {booksInProgress.slice(0, 5).map((b) => (
-                  <Link
-                    key={b.id}
-                    to="/book/$bookId"
-                    params={{ bookId: String(b.id) }}
-                    className="group flex-shrink-0"
-                  >
-                    <div className="relative h-40 w-28 overflow-hidden rounded-lg bg-gradient-to-br from-stone-100 to-stone-200 shadow-md transition-transform group-hover:scale-105 dark:from-stone-800 dark:to-stone-900">
-                      {b.cover_url ? (
-                        <img src={b.cover_url} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full items-center justify-center p-3">
-                          <BookOpen className="h-8 w-8 text-stone-400" />
-                        </div>
-                      )}
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                        <div className="text-xs text-white/90">Page {progressByBookId.get(b.id)}</div>
-                      </div>
-                    </div>
-                    <div className="mt-2 w-28">
-                      <div className="truncate text-sm font-medium text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400">
-                        {b.title}
-                      </div>
-                      <div className="truncate text-xs text-muted-foreground">{b.authors}</div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Your Library */}
-          <section>
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <h2 className="font-serif text-xl font-medium text-foreground">Your Library</h2>
-                <Badge variant="secondary" className="font-normal">
-                  {(booksQ.data ?? []).length} {(booksQ.data ?? []).length === 1 ? "book" : "books"}
-                </Badge>
-              </div>
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
-                <Input
-                  type="search"
-                  placeholder="Filter library..."
-                  value={libraryQuery}
-                  onChange={(e) => setLibraryQuery(e.target.value)}
-                  className="h-9 pl-9 pr-9"
-                />
-                {libraryQuery && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
-                    onClick={() => setLibraryQuery("")}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {booksQ.isLoading ? (
-              <div className="flex h-48 items-center justify-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-              </div>
-            ) : (booksQ.data ?? []).length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border/60 bg-muted/20 py-16 text-center">
-                <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/40" />
-                <h3 className="mt-4 font-serif text-lg font-medium text-foreground">Your library is empty</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Browse the collections above or search for books to add
-                </p>
-              </div>
-            ) : filteredBooks.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border/60 bg-muted/20 py-12 text-center">
-                <Search className="mx-auto h-10 w-10 text-muted-foreground/40" />
-                <h3 className="mt-3 font-medium text-foreground">No matches</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Try a different search term</p>
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {filteredBooks.map((b) => (
-                  <div
-                    key={b.id}
-                    className="group relative overflow-hidden rounded-xl border border-border/40 bg-card transition-all duration-200 hover:border-border hover:shadow-lg"
-                  >
-                    <Link to="/book/$bookId" params={{ bookId: String(b.id) }} className="block">
-                      <div className="aspect-[2/3] w-full overflow-hidden bg-gradient-to-br from-stone-100 to-stone-200 dark:from-stone-800 dark:to-stone-900">
-                        {b.cover_url ? (
-                          <img
-                            src={b.cover_url}
-                            alt=""
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center">
-                            <BookOpen className="h-12 w-12 text-stone-300 dark:text-stone-600" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-medium leading-tight text-foreground line-clamp-2 group-hover:text-amber-600 dark:group-hover:text-amber-400">
-                          {b.title}
-                        </h3>
-                        <p className="mt-1 text-sm text-muted-foreground">{b.authors}</p>
-                        {progressByBookId.has(b.id) && (
-                          <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                            <BookOpen className="h-3 w-3" />
-                            Page {progressByBookId.get(b.id)}
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-                    <div className="flex items-center justify-between border-t border-border/40 px-4 py-2">
-                      <Button asChild variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
-                        <Link to="/book/$bookId" params={{ bookId: String(b.id) }}>
-                          <BookOpen className="h-3.5 w-3.5" />
-                          {progressByBookId.has(b.id) ? "Continue" : "Read"}
-                        </Link>
+                    {canBulkScan && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={startOrResumeBulk}
+                        disabled={bulkScan.running}
+                      >
+                        <Download className="h-4 w-4" />
+                        {bulkScan.running ? "Scanning..." : "Download All"}
                       </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Delete
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete "{b.title}"?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will permanently delete this book and its downloaded files.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              onClick={async () => {
-                                try {
-                                  await hardDeleteBook(b.id);
-                                  await qc.invalidateQueries({ queryKey: ["books"] });
-                                } catch (e) {
-                                  const msg = e instanceof Error ? e.message : String(e);
-                                  console.error("Delete failed:", msg);
-                                }
-                              }}
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Catalog Results */}
-          <section className="rounded-2xl border border-border/40 bg-card/50 p-6">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h2 className="font-serif text-xl font-medium text-foreground">
-                  {catalogSearch ? `Results for "${catalogSearch}"` : activeCatalog.label}
-                </h2>
-                {!catalogSearch && activeCatalog.kind !== "all" && (
-                  <p className="mt-1 text-sm text-muted-foreground">{activeCatalog.description}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {/* Sort dropdown */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <ArrowUpDown className="h-3.5 w-3.5" />
-                      {sortBy === "relevance" ? "Best match" : 
-                       sortBy === "popular" ? "Most popular" :
-                       sortBy === "title" ? "Title A-Z" : "Author A-Z"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-44 p-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setSortBy("relevance")}
-                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === "relevance" ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      Best match
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSortBy("popular")}
-                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === "popular" ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
-                    >
-                      <Download className="h-4 w-4" />
-                      Most popular
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSortBy("title")}
-                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === "title" ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
-                    >
-                      <BookOpen className="h-4 w-4" />
-                      Title A-Z
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSortBy("author")}
-                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === "author" ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
-                    >
-                      <FileText className="h-4 w-4" />
-                      Author A-Z
-                    </button>
-                  </PopoverContent>
-                </Popover>
-                
-                {canBulkScan && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={startOrResumeBulk}
-                    disabled={bulkScan.running}
-                  >
-                    <Download className="h-4 w-4" />
-                    {bulkScan.running ? "Scanning..." : "Download All"}
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {showSearchPrompt ? (
-              <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 py-12 text-center">
-                <Search className="mx-auto h-10 w-10 text-muted-foreground/40" />
-                <h3 className="mt-3 font-medium text-foreground">Search the catalog</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Enter a search term to browse over 70,000 free ebooks
-                </p>
-              </div>
-            ) : catalogQ.isLoading ? (
-              <div className="flex h-48 items-center justify-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-              </div>
-            ) : catalogQ.isError ? (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/5 py-8 text-center">
-                <p className="text-sm text-destructive">Failed to load catalog. Please try again.</p>
-              </div>
-            ) : (
-              <>
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    {filteredCatalogResults.length} of {catalogQ.data?.count ?? 0} results
-                  </p>
                 </div>
 
-                {filteredCatalogResults.length === 0 ? (
+                {showSearchPrompt ? (
                   <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 py-12 text-center">
-                    <BookOpen className="mx-auto h-10 w-10 text-muted-foreground/40" />
-                    <h3 className="mt-3 font-medium text-foreground">No results found</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">Try a different search or category</p>
+                    <Search className="mx-auto h-10 w-10 text-muted-foreground/40" />
+                    <h3 className="mt-3 font-medium text-foreground">Search the catalog</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Enter a search term to browse over 70,000 free ebooks
+                    </p>
+                  </div>
+                ) : catalogQ.isLoading ? (
+                  <div className="flex h-48 items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+                  </div>
+                ) : catalogQ.isError ? (
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/5 py-8 text-center">
+                    <p className="text-sm text-destructive">Failed to load catalog. Please try again.</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {filteredCatalogResults.map((b) => {
-                      const mobiUrl = bestMobiUrl(b);
-                      const already = localGutenbergIds.has(b.id);
-                      const queued = queue.some((t) => t.gutenbergId === b.id);
-                      const cover = coverUrl(b);
-                      const popular = isPopular(b.download_count);
-                      const downloadStr = formatDownloadCount(b.download_count);
-                      const resultType = classifyResult(b, catalogSearch);
-                      
-                      return (
-                        <div
-                          key={b.id}
-                          className={`group flex gap-4 rounded-xl border bg-background p-4 transition-all hover:shadow-md ${
-                            resultType === "primary" && popular 
-                              ? "border-amber-200/60 dark:border-amber-800/40" 
-                              : resultType === "tangential"
-                                ? "border-border/30 opacity-75"
-                                : "border-border/40"
-                          }`}
-                        >
-                          {/* Cover Image */}
-                          <div className="relative h-24 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-stone-100 to-stone-200 shadow-sm dark:from-stone-800 dark:to-stone-900">
-                            {cover ? (
-                              <img src={cover} alt="" className="h-full w-full object-cover" />
-                            ) : (
-                              <div className="flex h-full items-center justify-center">
-                                <BookOpen className="h-6 w-6 text-stone-400" />
-                              </div>
-                            )}
-                            {popular && resultType === "primary" && (
-                              <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] shadow-sm">
-                                ⭐
-                              </div>
-                            )}
-                          </div>
+                  <>
+                    <div className="mb-4 flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">
+                        {filteredCatalogResults.length} of {catalogQ.data?.count ?? 0} results
+                      </p>
+                    </div>
 
-                          {/* Content */}
-                          <div className="min-w-0 flex-1 space-y-1">
-                            <div className="flex items-start gap-2">
-                              <h4 className="font-medium leading-tight text-foreground line-clamp-2 group-hover:text-amber-600 dark:group-hover:text-amber-400">
-                                {b.title}
-                              </h4>
-                            </div>
-                            
-                            <p className="text-sm text-muted-foreground">{authorsString(b)}</p>
-                            
-                            <div className="flex flex-wrap items-center gap-2 pt-1">
-                              {resultType === "primary" && catalogSearch && (
-                                <Badge variant="secondary" className="gap-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                                  <BookMarked className="h-3 w-3" />
-                                  Primary work
-                                </Badge>
-                              )}
-                              {resultType === "related" && catalogSearch && (
-                                <Badge variant="outline" className="gap-1 text-xs">
-                                  <FileText className="h-3 w-3" />
-                                  Related
-                                </Badge>
-                              )}
-                              {resultType === "tangential" && catalogSearch && (
-                                <Badge variant="outline" className="gap-1 text-xs opacity-60">
-                                  Mentions "{catalogSearch}"
-                                </Badge>
-                              )}
-                              {popular && resultType === "primary" && (
-                                <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                                  <Sparkles className="h-3 w-3" />
-                                  Popular
-                                </Badge>
-                              )}
-                              {downloadStr && (
-                                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Download className="h-3 w-3" />
-                                  {downloadStr} downloads
-                                </span>
-                              )}
-                              <span className="text-xs text-muted-foreground">#{b.id}</span>
-                              {already && (
-                                <Badge variant="secondary" className="text-xs">
-                                  In Library
-                                </Badge>
-                              )}
-                              {queued && (
-                                <Badge variant="outline" className="text-xs">
-                                  Queued
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
+                    {filteredCatalogResults.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 py-12 text-center">
+                        <BookOpen className="mx-auto h-10 w-10 text-muted-foreground/40" />
+                        <h3 className="mt-3 font-medium text-foreground">No results found</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">Try a different search or category</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredCatalogResults.map((b) => {
+                          const mobiUrl = bestMobiUrl(b);
+                          const already = localGutenbergIds.has(b.id);
+                          const queued = queue.some((t) => t.gutenbergId === b.id);
+                          const cover = coverUrl(b);
+                          const popular = isPopular(b.download_count);
+                          const downloadStr = formatDownloadCount(b.download_count);
+                          const resultType = classifyResult(b, catalogSearch);
 
-                          {/* Action */}
-                          <div className="flex flex-shrink-0 flex-col items-end justify-center gap-2">
-                            {mobiUrl ? (
-                              <Button
-                                size="sm"
-                                variant={already ? "secondary" : "default"}
-                                disabled={already || queued}
-                                onClick={() => {
-                                  enqueue({
-                                    gutenbergId: b.id,
-                                    title: b.title,
-                                    authors: authorsString(b),
-                                    publicationYear: null,
-                                    coverUrl: cover,
-                                    mobiUrl,
-                                  });
-                                  setPaused(false);
-                                  void runQueue();
-                                }}
-                                className="min-w-[80px]"
-                              >
-                                {already ? "Added" : queued ? "Queued" : "Add"}
-                              </Button>
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
+                          return (
+                            <div
+                              key={b.id}
+                              className={`group flex gap-4 rounded-xl border bg-background p-4 transition-all hover:shadow-md ${resultType === "primary" && popular
+                                ? "border-amber-200/60 dark:border-amber-800/40"
+                                : resultType === "tangential"
+                                  ? "border-border/30 opacity-75"
+                                  : "border-border/40"
+                                }`}
+                            >
+                              {/* Cover Image */}
+                              <div className="relative h-24 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-stone-100 to-stone-200 shadow-sm dark:from-stone-800 dark:to-stone-900">
+                                {cover ? (
+                                  <img src={cover} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="flex h-full items-center justify-center">
+                                    <BookOpen className="h-6 w-6 text-stone-400" />
+                                  </div>
+                                )}
+                                {popular && resultType === "primary" && (
+                                  <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] shadow-sm">
+                                    ⭐
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Content */}
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <div className="flex items-start gap-2">
+                                  <h4 className="font-medium leading-tight text-foreground line-clamp-2 group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                                    {b.title}
+                                  </h4>
+                                </div>
+
+                                <p className="text-sm text-muted-foreground">{authorsString(b)}</p>
+
+                                <div className="flex flex-wrap items-center gap-2 pt-1">
+                                  {resultType === "primary" && catalogSearch && (
+                                    <Badge variant="secondary" className="gap-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                      <BookMarked className="h-3 w-3" />
+                                      Primary work
+                                    </Badge>
+                                  )}
+                                  {resultType === "related" && catalogSearch && (
+                                    <Badge variant="outline" className="gap-1 text-xs">
+                                      <FileText className="h-3 w-3" />
+                                      Related
+                                    </Badge>
+                                  )}
+                                  {resultType === "tangential" && catalogSearch && (
+                                    <Badge variant="outline" className="gap-1 text-xs opacity-60">
+                                      Mentions "{catalogSearch}"
+                                    </Badge>
+                                  )}
+                                  {popular && resultType === "primary" && (
+                                    <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                      <Sparkles className="h-3 w-3" />
+                                      Popular
+                                    </Badge>
+                                  )}
+                                  {downloadStr && (
+                                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <Download className="h-3 w-3" />
+                                      {downloadStr} downloads
+                                    </span>
+                                  )}
+                                  <span className="text-xs text-muted-foreground">#{b.id}</span>
+                                  {already && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      In Library
+                                    </Badge>
+                                  )}
+                                  {queued && (
+                                    <Badge variant="outline" className="text-xs">
+                                      Queued
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Action */}
+                              <div className="flex flex-shrink-0 flex-col items-end justify-center gap-2">
+                                {mobiUrl ? (
                                   <Button
                                     size="sm"
-                                    variant="outline"
-                                    disabled
-                                    className="min-w-[80px] cursor-not-allowed opacity-50"
+                                    variant={already ? "secondary" : "default"}
+                                    disabled={already || queued}
+                                    onClick={() => {
+                                      enqueue({
+                                        gutenbergId: b.id,
+                                        title: b.title,
+                                        authors: authorsString(b),
+                                        publicationYear: null,
+                                        coverUrl: cover,
+                                        mobiUrl,
+                                      });
+                                      setPaused(false);
+                                      void runQueue();
+                                    }}
+                                    className="min-w-[80px]"
                                   >
-                                    Unavailable
+                                    {already ? "Added" : queued ? "Queued" : "Add"}
                                   </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>No MOBI format available for this book</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                                ) : (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        disabled
+                                        className="min-w-[80px] cursor-not-allowed opacity-50"
+                                      >
+                                        Unavailable
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>No MOBI format available for this book</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
 
-                {(catalogQ.data?.previous || catalogQ.data?.next) && (
-                  <div className="mt-6 flex items-center justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!catalogQ.data?.previous}
-                      onClick={() => setCatalogPageUrl(catalogQ.data?.previous ?? null)}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!catalogQ.data?.next}
-                      onClick={() => setCatalogPageUrl(catalogQ.data?.next ?? null)}
-                    >
-                      Next
-                    </Button>
-                  </div>
+                    {(catalogQ.data?.previous || catalogQ.data?.next) && (
+                      <div className="mt-6 flex items-center justify-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!catalogQ.data?.previous}
+                          onClick={() => setCatalogPageUrl(catalogQ.data?.previous ?? null)}
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!catalogQ.data?.next}
+                          onClick={() => setCatalogPageUrl(catalogQ.data?.next ?? null)}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </section>
+              </section>
+
+              {/* Collections and Library at the bottom */}
+              <CuratedCollectionsSection />
+              {booksInProgress.length > 0 && (booksQ.data ?? []).length > 1 && <ContinueReadingSection />}
+              <YourLibrarySection />
+            </>
+          ) : (
+            <>
+              {/* Default Order: Collections -> Library -> Results */}
+              <CuratedCollectionsSection />
+              {booksInProgress.length > 0 && (booksQ.data ?? []).length > 1 && <ContinueReadingSection />}
+              <YourLibrarySection />
+              <section className="rounded-2xl border border-border/40 bg-card/50 p-6">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <h2 className="font-serif text-xl font-medium text-foreground">
+                      {catalogSearch ? `Results for "${catalogSearch}"` : activeCatalog.label}
+                    </h2>
+                    {!catalogSearch && activeCatalog.kind !== "all" && (
+                      <p className="mt-1 text-sm text-muted-foreground">{activeCatalog.description}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Sort dropdown */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-2">
+                          <ArrowUpDown className="h-3.5 w-3.5" />
+                          {sortBy === "relevance" ? "Best match" :
+                            sortBy === "popular" ? "Most popular" :
+                              sortBy === "title" ? "Title A-Z" : "Author A-Z"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-44 p-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSortBy("relevance")}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === "relevance" ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                          Best match
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSortBy("popular")}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === "popular" ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
+                        >
+                          <Download className="h-4 w-4" />
+                          Most popular
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSortBy("title")}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === "title" ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
+                        >
+                          <BookOpen className="h-4 w-4" />
+                          Title A-Z
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSortBy("author")}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === "author" ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
+                        >
+                          <FileText className="h-4 w-4" />
+                          Author A-Z
+                        </button>
+                      </PopoverContent>
+                    </Popover>
+
+                    {canBulkScan && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={startOrResumeBulk}
+                        disabled={bulkScan.running}
+                      >
+                        <Download className="h-4 w-4" />
+                        {bulkScan.running ? "Scanning..." : "Download All"}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {showSearchPrompt ? (
+                  <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 py-12 text-center">
+                    <Search className="mx-auto h-10 w-10 text-muted-foreground/40" />
+                    <h3 className="mt-3 font-medium text-foreground">Search the catalog</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Enter a search term to browse over 70,000 free ebooks
+                    </p>
+                  </div>
+                ) : catalogQ.isLoading ? (
+                  <div className="flex h-48 items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+                  </div>
+                ) : catalogQ.isError ? (
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/5 py-8 text-center">
+                    <p className="text-sm text-destructive">Failed to load catalog. Please try again.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-4 flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">
+                        {filteredCatalogResults.length} of {catalogQ.data?.count ?? 0} results
+                      </p>
+                    </div>
+
+                    {filteredCatalogResults.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 py-12 text-center">
+                        <BookOpen className="mx-auto h-10 w-10 text-muted-foreground/40" />
+                        <h3 className="mt-3 font-medium text-foreground">No results found</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">Try a different search or category</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredCatalogResults.map((b) => {
+                          const mobiUrl = bestMobiUrl(b);
+                          const already = localGutenbergIds.has(b.id);
+                          const queued = queue.some((t) => t.gutenbergId === b.id);
+                          const cover = coverUrl(b);
+                          const popular = isPopular(b.download_count);
+                          const downloadStr = formatDownloadCount(b.download_count);
+                          const resultType = classifyResult(b, catalogSearch);
+
+                          return (
+                            <div
+                              key={b.id}
+                              className={`group flex gap-4 rounded-xl border bg-background p-4 transition-all hover:shadow-md ${resultType === "primary" && popular
+                                ? "border-amber-200/60 dark:border-amber-800/40"
+                                : resultType === "tangential"
+                                  ? "border-border/30 opacity-75"
+                                  : "border-border/40"
+                                }`}
+                            >
+                              {/* Cover Image */}
+                              <div className="relative h-24 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-stone-100 to-stone-200 shadow-sm dark:from-stone-800 dark:to-stone-900">
+                                {cover ? (
+                                  <img src={cover} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="flex h-full items-center justify-center">
+                                    <BookOpen className="h-6 w-6 text-stone-400" />
+                                  </div>
+                                )}
+                                {popular && resultType === "primary" && (
+                                  <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] shadow-sm">
+                                    ⭐
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Content */}
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <div className="flex items-start gap-2">
+                                  <h4 className="font-medium leading-tight text-foreground line-clamp-2 group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                                    {b.title}
+                                  </h4>
+                                </div>
+
+                                <p className="text-sm text-muted-foreground">{authorsString(b)}</p>
+
+                                <div className="flex flex-wrap items-center gap-2 pt-1">
+                                  {resultType === "primary" && catalogSearch && (
+                                    <Badge variant="secondary" className="gap-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                      <BookMarked className="h-3 w-3" />
+                                      Primary work
+                                    </Badge>
+                                  )}
+                                  {resultType === "related" && catalogSearch && (
+                                    <Badge variant="outline" className="gap-1 text-xs">
+                                      <FileText className="h-3 w-3" />
+                                      Related
+                                    </Badge>
+                                  )}
+                                  {resultType === "tangential" && catalogSearch && (
+                                    <Badge variant="outline" className="gap-1 text-xs opacity-60">
+                                      Mentions "{catalogSearch}"
+                                    </Badge>
+                                  )}
+                                  {popular && resultType === "primary" && (
+                                    <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                      <Sparkles className="h-3 w-3" />
+                                      Popular
+                                    </Badge>
+                                  )}
+                                  {downloadStr && (
+                                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <Download className="h-3 w-3" />
+                                      {downloadStr} downloads
+                                    </span>
+                                  )}
+                                  <span className="text-xs text-muted-foreground">#{b.id}</span>
+                                  {already && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      In Library
+                                    </Badge>
+                                  )}
+                                  {queued && (
+                                    <Badge variant="outline" className="text-xs">
+                                      Queued
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Action */}
+                              <div className="flex flex-shrink-0 flex-col items-end justify-center gap-2">
+                                {mobiUrl ? (
+                                  <Button
+                                    size="sm"
+                                    variant={already ? "secondary" : "default"}
+                                    disabled={already || queued}
+                                    onClick={() => {
+                                      enqueue({
+                                        gutenbergId: b.id,
+                                        title: b.title,
+                                        authors: authorsString(b),
+                                        publicationYear: null,
+                                        coverUrl: cover,
+                                        mobiUrl,
+                                      });
+                                      setPaused(false);
+                                      void runQueue();
+                                    }}
+                                    className="min-w-[80px]"
+                                  >
+                                    {already ? "Added" : queued ? "Queued" : "Add"}
+                                  </Button>
+                                ) : (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        disabled
+                                        className="min-w-[80px] cursor-not-allowed opacity-50"
+                                      >
+                                        Unavailable
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>No MOBI format available for this book</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {(catalogQ.data?.previous || catalogQ.data?.next) && (
+                      <div className="mt-6 flex items-center justify-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!catalogQ.data?.previous}
+                          onClick={() => setCatalogPageUrl(catalogQ.data?.previous ?? null)}
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!catalogQ.data?.next}
+                          onClick={() => setCatalogPageUrl(catalogQ.data?.next ?? null)}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </section>
+            </>
+          )}
 
           {/* Queue Details (collapsible) */}
           {queue.length > 0 && (

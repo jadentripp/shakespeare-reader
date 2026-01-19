@@ -51,14 +51,14 @@ function parseKindleIndex(s: string): number {
   return parseInt(s, 32);
 }
 
-export function processGutenbergContent(html: string, bookId?: number): ProcessedGutenberg {
+export function processGutenbergContent(html: string, bookId?: number, baseUrl?: string): ProcessedGutenberg {
   const metadata: GutenbergMetadata = {};
-  
+
   const titleMatch = html.match(/Title:\s*([^\n<]+)/i);
   const authorMatch = html.match(/Author:\s*([^\n<]+)/i);
   const translatorMatch = html.match(/Translator:\s*([^\n<]+)/i);
   const annotatorMatch = html.match(/Annotator:\s*([^\n<]+)/i);
-  
+
   if (titleMatch) metadata.title = titleMatch[1].trim();
   if (authorMatch) metadata.author = authorMatch[1].trim();
   if (translatorMatch) metadata.translator = translatorMatch[1].trim();
@@ -68,11 +68,11 @@ export function processGutenbergContent(html: string, bookId?: number): Processe
   if (typeof DOMParser !== "undefined") {
     try {
       const parser = new DOMParser();
-      const fid = 1; 
+      const fid = 1;
       const normalized = normalizeHtmlFragment(html);
       if (normalized) {
         const doc = parser.parseFromString(normalized, "text/html");
-        
+
         // Rewrite image sources
         const images = doc.querySelectorAll("img");
         images.forEach(img => {
@@ -98,6 +98,9 @@ export function processGutenbergContent(html: string, bookId?: number): Processe
               img.removeAttribute("src");
               img.classList.add("mobi-inline-image");
             }
+          } else if (baseUrl && src && !src.startsWith("http") && !src.startsWith("data:")) {
+            // Rewrite relative paths for web fallback
+            img.setAttribute("src", `${baseUrl.endsWith("/") ? baseUrl : baseUrl + "/"}${src}`);
           }
         });
 
