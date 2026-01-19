@@ -15,11 +15,25 @@ const CameraController: React.FC<{ targetBook: any; isZooming: boolean }> = ({ t
   useFrame((state) => {
     if (isZooming && targetBook) {
       const targetPos = new THREE.Vector3(...targetBook.position);
+      // Adjust target to look at the center of the book
       targetPos.y += 0.3;
-      const zoomPos = targetPos.clone().add(new THREE.Vector3(0, 0.2, 2.5));
+      
+      const zoomPos = targetPos.clone().add(new THREE.Vector3(0, 0.1, 1.8));
 
       state.camera.position.lerp(zoomPos, 0.04);
       state.camera.lookAt(targetPos);
+      
+      // Cinematic FOV narrowing
+      if (state.camera instanceof THREE.PerspectiveCamera) {
+        state.camera.fov = THREE.MathUtils.lerp(state.camera.fov, 35, 0.04);
+        state.camera.updateProjectionMatrix();
+      }
+    } else {
+        // Return to default FOV
+        if (state.camera instanceof THREE.PerspectiveCamera) {
+            state.camera.fov = THREE.MathUtils.lerp(state.camera.fov, 50, 0.04);
+            state.camera.updateProjectionMatrix();
+        }
     }
   });
 

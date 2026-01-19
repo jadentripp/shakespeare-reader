@@ -146,18 +146,22 @@ const BookMesh: React.FC<BookMeshProps> = ({
         });
     }, [coverUrl]);
 
-    // Hover animation - Slide out slightly (5-10cm)
+    // Hover animation - Slide out slightly (5-10cm) and lift
     useFrame(() => {
         if (!groupRef.current) return;
 
-        // Slide out on Z axis when hovered
-        const targetZ = hovered ? 0.4 : 0;
-        const targetRotY = hovered ? -0.1 : 0;
+        // Slide out on Z axis and lift on Y when hovered
+        const targetZ = hovered ? 0.5 : 0;
+        const targetY = hovered ? 0.05 : 0;
+        const targetRotY = hovered ? -0.12 : 0;
+        const targetRotZ = hovered ? 0.02 : 0;
 
         groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, targetZ, 0.1);
-        groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRotY, 0.1);
+        groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, targetY, 0.1);
+        groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRotY, 0.08);
+        groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, targetRotZ, 0.08);
 
-        const targetScale = hovered ? 1.02 : 1;
+        const targetScale = hovered ? 1.03 : 1;
         const s = THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, 0.1);
         groupRef.current.scale.setScalar(s);
     });

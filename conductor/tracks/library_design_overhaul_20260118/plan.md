@@ -36,7 +36,7 @@ Transform the 3D void into a curated "Reading Room" using WebGPU.
 ## Phase 3: Reactive Interaction & cinematic Polish
 Add micro-interactions and cinematic transitions to complete the premium feel.
 
-- [ ] Task: Implement "Tactile Hover" animations in 3D.
+- [~] Task: Implement "Tactile Hover" animations in 3D.
     - [ ] Consult `deepwiki` for performant hover detection and animation interpolation in WebGPU.
     - [ ] Write Tests: Verify book translation state on pointer hover.
     - [ ] Implement: Use `useFrame` or `lerp` to slide books out slightly when focused.

@@ -90,7 +90,7 @@ export function BookCard({
 
   if (effectiveVariant === "grid") {
     return (
-      <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border/40 bg-card transition-all duration-300 hover:border-border/80 hover:shadow-xl">
+      <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border/40 bg-card transition-all duration-500 hover:-translate-y-1 hover:border-border/80 hover:shadow-2xl">
         <Link to="/book/$bookId" params={{ bookId: String(id) }} className="block flex-1">
           <CoverImage className="aspect-[2/3] w-full" />
           <div className="p-4">
