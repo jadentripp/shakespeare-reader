@@ -21,7 +21,7 @@ Build the logic for fetching audio, playing it, and managing the queue.
         - Fetching audio streams for a given text chunk.
         - Buffering (playing one chunk while fetching the next).
         - Handling Play/Pause/Stop states.
-- [ ] Task: Integrate with Reader Content
+- [x] Task: Integrate with Reader Content 2e5a376
     - [ ] Connect the `AudioPlayer` to the `ReaderLayout` or `useMobiReader` context.
     - [ ] Implement a function `getPageText(pageIndex)` to extract clean, narrative text from the current page's HTML.
 - [ ] Task: Conductor - User Manual Verification 'Core Playback Engine (Streaming)' (Protocol in workflow.md)
