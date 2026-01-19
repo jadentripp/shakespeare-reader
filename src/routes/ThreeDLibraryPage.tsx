@@ -157,7 +157,7 @@ const ThreeDLibraryPage: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div className="w-full h-screen bg-[#0a0908] overflow-hidden">
+    <div className="w-full h-[calc(100vh-3rem)] bg-[#0a0908] overflow-hidden">
       <WebGPUScene>
         <CameraController targetBook={selectedBook} isZooming={isZooming} />
         <LibraryLighting />
@@ -206,20 +206,20 @@ const ThreeDLibraryPage: React.FC = () => {
 
       {/* UI Overlay */}
       <div className={`absolute inset-0 pointer-events-none transition-all duration-1000 ${isZooming ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="absolute top-0 left-0 right-0 p-8 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+        <div className="absolute top-0 left-0 right-0 p-8 pt-12">
           <div className="flex items-center justify-between max-w-6xl mx-auto">
-            <div>
+            <div className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               <h1 className="text-4xl font-serif font-bold text-white tracking-tight">
                 The Reading Room
               </h1>
-              <p className="text-white/50 text-sm mt-1.5 font-medium tracking-wide uppercase">
+              <p className="text-white/60 text-sm mt-1.5 font-medium tracking-wide uppercase">
                 {books.length || "No"} local volumes • Ambient Library
               </p>
             </div>
 
             <button
               onClick={() => navigate({ to: '/library' })}
-              className="pointer-events-auto px-6 py-2.5 bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 rounded-full text-white/90 text-sm font-semibold transition-all hover:scale-105 active:scale-95"
+              className="pointer-events-auto px-6 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 rounded-full text-white/90 text-sm font-semibold transition-all hover:scale-105 active:scale-95 shadow-xl"
             >
               Back to Library
             </button>
