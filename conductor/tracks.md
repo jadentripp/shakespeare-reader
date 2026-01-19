@@ -32,3 +32,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Integrate ElevenLabs Text-to-Speech (TTS) for audiobook-style narration.**
 *Link: [./archive/elevenlabs_tts_20260118/](./archive/elevenlabs_tts_20260118/)*
+
+---
+
+- [x] **Track: improve the design of the settings**
+*Link: [./tracks/settings_design_overhaul_20260118/](./tracks/settings_design_overhaul_20260118/)*
