@@ -1,10 +1,10 @@
 # Implementation Plan - Test Suite Robustness & Bun Migration
 
 ## Phase 1: Environment & Tooling Cleanup
-- [x] Task: Remove Vitest dependencies (`vitest`, `@vitest/ui`, plugins) from `package.json` and `node_modules`.
-- [x] Task: Update `package.json` scripts to strictly use `bun test` (e.g., `"test": "bun test"`).
-- [x] Task: Audit and remove any `vite.config.ts` or `vitest.config.ts` files if they are solely for testing configuration.
-- [x] Task: Update `src/tests/setup.ts` imports to replace any lingering Vitest globals if present (though `bun:test` should be compatible).
+- [x] Task: Remove Vitest dependencies (`vitest`, `@vitest/ui`, plugins) from `package.json` and `node_modules`. [5050021]
+- [x] Task: Update `package.json` scripts to strictly use `bun test` (e.g., `"test": "bun test"`). [5050021]
+- [x] Task: Audit and remove any `vite.config.ts` or `vitest.config.ts` files if they are solely for testing configuration. [5050021]
+- [x] Task: Update `src/tests/setup.ts` imports to replace any lingering Vitest globals if present (though `bun:test` should be compatible). [5050021]
 - [ ] Task: Conductor - User Manual Verification 'Environment & Tooling Cleanup' (Protocol in workflow.md)
 
 ## Phase 2: Global State Isolation & Pollution Fixes
