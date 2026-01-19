@@ -97,6 +97,7 @@ function StatusBadge({ status, type }: { status: string; type: "success" | "info
 
 export default function SettingsPage() {
   const [apiKey, setApiKey] = useState("");
+  const [elevenLabsApiKey, setElevenLabsApiKey] = useState("");
   const [model, setModel] = useState("gpt-4.1-mini");
   const [status, setStatus] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [models, setModels] = useState<string[]>([]);
@@ -104,14 +105,17 @@ export default function SettingsPage() {
   const [keyStatus, setKeyStatus] = useState<{ has_env_key: boolean; has_saved_key: boolean } | null>(null);
   const [customModel, setCustomModel] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showElevenLabsApiKey, setShowElevenLabsApiKey] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
       const savedKey = await getSetting("openai_api_key");
+      const savedElevenLabsKey = await getSetting("elevenlabs_api_key");
       const savedModel = await getSetting("openai_model");
       const savedKeyStatus = await openAiKeyStatus();
       if (savedKey) setApiKey(savedKey);
+      if (savedElevenLabsKey) setElevenLabsApiKey(savedElevenLabsKey);
       if (savedModel) setModel(savedModel);
       setKeyStatus(savedKeyStatus);
       if (savedKeyStatus.has_env_key || savedKeyStatus.has_saved_key || savedKey) {
@@ -131,6 +135,7 @@ export default function SettingsPage() {
     setLoading(true);
     try {
       await setSetting({ key: "openai_api_key", value: apiKey.trim() });
+      await setSetting({ key: "elevenlabs_api_key", value: elevenLabsApiKey.trim() });
       await setSetting({ key: "openai_model", value: model });
       const savedKeyStatus = await openAiKeyStatus();
       setKeyStatus(savedKeyStatus);
@@ -158,6 +163,20 @@ export default function SettingsPage() {
     }
   }
 
+  async function onClearElevenLabsKey() {
+    setStatus(null);
+    setLoading(true);
+    try {
+      await setSetting({ key: "elevenlabs_api_key", value: "" });
+      setElevenLabsApiKey("");
+      setStatus({ message: "ElevenLabs API key cleared", type: "success" });
+    } catch {
+      setStatus({ message: "Failed to clear ElevenLabs API key", type: "error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function loadModels() {
     setModelsStatus(null);
     try {
@@ -174,6 +193,7 @@ export default function SettingsPage() {
   }
 
   const keyConfigured = keyStatus?.has_env_key || keyStatus?.has_saved_key || apiKey.trim();
+  const elevenLabsKeyConfigured = elevenLabsApiKey.trim();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -318,6 +338,66 @@ export default function SettingsPage() {
 
                   {modelsStatus && (
                     <p className="text-xs text-muted-foreground">{modelsStatus}</p>
+                  )}
+                </div>
+              </SettingsRow>
+            </div>
+          </SettingsSection>
+
+          {/* Text-to-Speech Configuration */}
+          <SettingsSection
+            icon={
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+              </svg>
+            }
+            title="Text-to-Speech"
+            description="Configure ElevenLabs for audiobook narration"
+          >
+            <div className="space-y-6">
+              {/* API Key Status */}
+              <div className="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
+                <span className="text-sm text-muted-foreground">Connection Status</span>
+                {elevenLabsKeyConfigured ? (
+                  <StatusBadge status="Connected" type="success" />
+                ) : (
+                  <StatusBadge status="Not configured" type="info" />
+                )}
+              </div>
+
+              {/* API Key Input */}
+              <SettingsRow
+                label="ElevenLabs API Key"
+                description="Enter your ElevenLabs API key to enable text-to-speech features"
+                vertical
+              >
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type={showElevenLabsApiKey ? "text" : "password"}
+                      value={elevenLabsApiKey}
+                      onChange={(e) => setElevenLabsApiKey(e.currentTarget.value)}
+                      placeholder="Enter your API key"
+                      className="h-11 rounded-lg border-border/50 bg-background/50 pr-20 font-mono text-sm transition-colors focus:bg-background"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowElevenLabsApiKey(!showElevenLabsApiKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      {showElevenLabsApiKey ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                  {elevenLabsKeyConfigured && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onClearElevenLabsKey}
+                      disabled={loading}
+                      className="h-11 whitespace-nowrap"
+                    >
+                      Clear
+                    </Button>
                   )}
                 </div>
               </SettingsRow>
