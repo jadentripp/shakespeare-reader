@@ -2,14 +2,14 @@
 
 This plan outlines the migration of AI logic from the Rust backend to the React frontend using the `openai` JS SDK.
 
-## Phase 1: Foundation & Research
+## Phase 1: Foundation & Research [checkpoint: 3442538]
 - [x] Task: Research OpenAI JS SDK Responses API implementation via `deepwiki`. aabea8e
     - [ ] Use `deepwiki` to find the exact syntax for the Responses API in `openai-node`.
     - [ ] Research best practices for handling OpenAI API keys in a Tauri/React frontend.
 - [x] Task: Install `openai` npm package and configure environment variables. 86be48d
     - [ ] Run `bun add openai`.
     - [ ] Ensure `VITE_OPENAI_API_KEY` or similar is supported in `.env`.
-- [ ] Task: Conductor - User Manual Verification 'Foundation & Research' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Foundation & Research' (Protocol in workflow.md) 3442538
 
 ## Phase 2: AI Service Implementation
 - [ ] Task: Create `src/lib/openai.ts` service.
