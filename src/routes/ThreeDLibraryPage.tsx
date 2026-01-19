@@ -95,7 +95,6 @@ const ThreeDLibraryPage: React.FC = () => {
   // Generate book positions - FILL THE SHELVES
   const booksWithPositions = useMemo(() => {
     const rowHeight = bookcaseHeight / bookcaseRows;
-    const bookWidth = 0.45; // Larger books
     const bookSpacing = 0.55; // More spacing
     const booksPerRow = Math.floor((bookcaseWidth - 1) / bookSpacing);
 
@@ -257,7 +256,7 @@ const ThreeDLibraryPage: React.FC = () => {
             </div>
 
             <button
-              onClick={() => navigate({ to: '/library' })}
+              onClick={() => navigate({ to: '/' })}
               className="pointer-events-auto px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white/90 text-sm font-medium transition-all"
             >
               ← Back

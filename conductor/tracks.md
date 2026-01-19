@@ -20,5 +20,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Implement a high-fidelity 3D bookshelf experience using Three.js and WebGPU for browsing the local library.**
-*Link: [./tracks/three_d_library_20260118/](./tracks/three_d_library_20260118/)*
+- [x] **Track: Implement a high-fidelity 3D bookshelf experience using Three.js and WebGPU for browsing the local library.**
+*Link: [./archive/three_d_library_20260118/](./archive/three_d_library_20260118/)*
+
+---
+
+- [~] **Track: refactor /src/routes/LibraryPage.tsx to be fewer than 600 lines and split it into easier to manage components**
+*Link: [./tracks/library_page_refactor_20260118/](./tracks/library_page_refactor_20260118/)*

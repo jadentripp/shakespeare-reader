@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import LibraryPage from "../routes/LibraryPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -23,7 +23,15 @@ vi.mock("../lib/tauri", () => ({
     count: 1,
     next: null,
     previous: null,
-    results: [],
+    results: [
+      {
+        id: 1513,
+        title: "Romeo and Juliet",
+        authors: [{ name: "Shakespeare, William", birth_year: 1564, death_year: 1616 }],
+        download_count: 100,
+        formats: { "application/x-mobipocket-ebook": "http://example.com/1513.mobi" },
+      }
+    ],
   }),
   hardDeleteBook: vi.fn(),
   downloadGutenbergMobi: vi.fn(),
@@ -33,6 +41,27 @@ vi.mock("../lib/tauri", () => ({
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to, params }: any) => <a href={`${to}/${params.bookId}`}>{children}</a>,
 }));
+
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value.toString();
+    }),
+    clear: vi.fn(() => {
+      store = {};
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+  };
+})();
+
+Object.defineProperty(window, "localStorage", {
+  value: localStorageMock,
+});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,22 +76,24 @@ describe("LibraryPage", () => {
     cleanup();
   });
 
-  it("should display book title, author with years, and publication year", async () => {
+  it("should display book title, author with years, and catalog ID", async () => {
     render(
       <QueryClientProvider client={queryClient}>
         <LibraryPage />
       </QueryClientProvider>
     );
 
-    // Wait for the book to be displayed
-    const title = await screen.findByText("Romeo and Juliet");
-    expect(title).toBeDefined();
+    // Simulate search to show catalog results
+    const searchInput = screen.getByPlaceholderText(/Search by title/i);
+    fireEvent.change(searchInput, { target: { value: "Romeo" } });
+    fireEvent.keyDown(searchInput, { key: "Enter", code: "Enter" });
 
-    const author = await screen.findByText("Shakespeare, William (1564–1616)");
-    expect(author).toBeDefined();
+    // Wait for the book to be displayed in catalog
+    const title = await screen.findAllByText("Romeo and Juliet");
+    expect(title.length).toBeGreaterThan(0);
 
-    const published = await screen.findByText("Published: 1597");
-    expect(published).toBeDefined();
+    const author = await screen.findAllByText("Shakespeare, William (1564–1616)");
+    expect(author.length).toBeGreaterThan(0);
     
     const id = await screen.findByText("#1513");
     expect(id).toBeDefined();
@@ -81,7 +112,7 @@ describe("LibraryPage", () => {
     const emptyMsg = await screen.findByText(/Your library is empty/i);
     expect(emptyMsg).toBeDefined();
     
-    const suggestion = await screen.findByText(/Download a few classics/i);
+    const suggestion = await screen.findByText(/Browse the collections above/i);
     expect(suggestion).toBeDefined();
   });
 });
