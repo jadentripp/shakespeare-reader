@@ -10,6 +10,7 @@ expect.extend(matchers);
 vi.mock('../lib/tauri', () => ({
   getSetting: vi.fn().mockImplementation((key) => {
       if (key === 'elevenlabs_api_key') return Promise.resolve('fake-key');
+      if (key === 'elevenlabs_voice_id') return Promise.resolve('v1');
       return Promise.resolve(null);
   }),
   setSetting: vi.fn().mockResolvedValue(undefined),
@@ -21,7 +22,7 @@ vi.mock('@/lib/elevenlabs', () => ({
   elevenLabsService: {
     testSpeech: vi.fn().mockResolvedValue(undefined),
     getVoices: vi.fn().mockResolvedValue([
-        { voice_id: 'v1', name: 'Rachel' },
+        { voice_id: 'v1', name: 'Rachel', preview_url: 'https://example.com/preview.mp3' },
         { voice_id: 'v2', name: 'Clyde' }
     ]),
   },
@@ -35,6 +36,12 @@ describe('SettingsPage Voice Selection', () => {
       unobserve() {}
       disconnect() {}
     };
+    // Mock Audio
+    // @ts-ignore
+    global.Audio = vi.fn().mockImplementation(() => ({
+      play: vi.fn(),
+      pause: vi.fn(),
+    }));
   });
 
   beforeEach(() => {
@@ -46,5 +53,13 @@ describe('SettingsPage Voice Selection', () => {
     render(<SettingsPage />);
     // @ts-ignore
     expect(await screen.findByText(/Narrator Voice/i)).toBeInTheDocument();
+  });
+
+  it('shows preview button when a voice with preview is selected', async () => {
+    render(<SettingsPage />);
+    // Since v1 is mocked as default or found, it might show up.
+    // We might need to wait for voices to load.
+    const previewButton = await screen.findByTitle(/Preview voice/i);
+    expect(previewButton).toBeInTheDocument();
   });
 });

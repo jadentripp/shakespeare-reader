@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,19 @@ import { Switch } from "@/components/ui/switch";
 import { getSetting, openAiKeyStatus, setSetting } from "../lib/tauri";
 import { listModels } from "@/lib/openai";
 import { cn } from "@/lib/utils";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Settings2,
+  Columns2,
+  BookOpen,
+  Play,
+  Pause,
+  Square,
+  Loader2,
+  Headphones,
+  Volume2,
+} from "lucide-react";
 import { elevenLabsService, Voice } from "@/lib/elevenlabs";
 
 function SettingsSection({
@@ -116,6 +129,43 @@ export default function SettingsPage() {
   const [showElevenLabsApiKey, setShowElevenLabsApiKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [testLoading, setTestLoading] = useState(false);
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  async function onPreviewVoice(voice: Voice) {
+    if (!voice.preview_url) return;
+    
+    if (previewingId === voice.voice_id) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setPreviewingId(null);
+      }
+      return;
+    }
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+
+    const audio = new Audio(voice.preview_url);
+    audioRef.current = audio;
+    setPreviewingId(voice.voice_id);
+    
+    audio.play().catch(e => {
+      console.error("Failed to play preview:", e);
+      setPreviewingId(null);
+    });
+    audio.onended = () => setPreviewingId(null);
+  }
 
   useEffect(() => {
     (async () => {
@@ -264,6 +314,7 @@ export default function SettingsPage() {
   }
   const keyConfigured = keyStatus?.has_env_key || keyStatus?.has_saved_key || apiKey.trim();
   const elevenLabsKeyConfigured = elevenLabsApiKey.trim();
+  const selectedVoice = voices.find(v => v.voice_id === voiceId);
 
   // Combine fetched models with current model if not present, to avoid empty selection
   const allModels = useMemo(() => {
@@ -475,11 +526,33 @@ export default function SettingsPage() {
                       <SelectContent className="rounded-lg">
                         {voices.map((v) => (
                           <SelectItem key={v.voice_id} value={v.voice_id} className="rounded-md">
-                            {v.name}
+                            <div className="flex items-center justify-between w-full gap-2">
+                              <span>{v.name}</span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    
+                    {selectedVoice?.preview_url && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => onPreviewVoice(selectedVoice)}
+                        className={cn(
+                          "h-11 w-11 shrink-0",
+                          previewingId === voiceId && "text-primary border-primary bg-primary/5"
+                        )}
+                        title="Preview voice"
+                      >
+                        {previewingId === voiceId ? (
+                          <Volume2 className="h-4 w-4 animate-pulse" />
+                        ) : (
+                          <Play className="h-4 w-4 fill-current" />
+                        )}
+                      </Button>
+                    )}
+
                     <Button
                       variant="outline"
                       onClick={loadVoices}
