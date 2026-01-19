@@ -31,14 +31,14 @@ Decompose the primary reader route.
 ## Phase 3: ChatSidebar Refactor
 Decompose the AI assistant sidebar.
 
-- [~] Task: Create `src/lib/reader/hooks/useChatSidebar.ts`.
-    - [ ] Write tests for `useChatSidebar`.
-    - [ ] Migrate sidebar-specific state and logic.
-- [ ] Task: Extract UI components to `src/components/reader/`.
-    - [ ] Implement `ChatMessageList.tsx`.
-    - [ ] Implement `ChatInputArea.tsx`.
-- [ ] Task: Update `ChatSidebar.tsx` to use new hook and components.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
+- [x] Task: Create `src/lib/reader/hooks/useChatSidebar.ts`. (91ebc49)
+    - [x] Write tests for `useChatSidebar`.
+    - [x] Migrate sidebar-specific state and logic.
+- [x] Task: Extract UI components to `src/components/reader/`. (91ebc49)
+    - [x] Implement `ChatMessageList.tsx`.
+    - [x] Implement `ChatInputArea.tsx`.
+- [x] Task: Update `ChatSidebar.tsx` to use new hook and components. (91ebc49)
+- [~] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
 
 ## Phase 4: Utilities & Cleanup
 Address remaining offenders and ensure project-wide compliance.
