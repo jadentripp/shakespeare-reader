@@ -24,11 +24,11 @@ This plan outlines the migration of AI logic from the Rust backend to the React 
 - [ ] Task: Conductor - User Manual Verification 'AI Service Implementation' (Protocol in workflow.md)
 
 ## Phase 3: Integration & UI Update
-- [~] Task: Update Chat components to use the new JS service.
+- [x] Task: Update Chat components to use the new JS service. e74fe31
     - [ ] Research with `deepwiki` the best pattern for replacing Tauri `invoke` calls with local JS service calls in React components.
     - [ ] Update `useChat` hook (or equivalent) to call the new JS `chat` and `listModels` functions.
     - [ ] Ensure `ChatModelSelector.tsx` and `ChatPanel.tsx` function correctly with the new logic.
-- [ ] Task: Verify end-to-end functionality.
+- [x] Task: Verify end-to-end functionality. e74fe31
     - [ ] Test chat with a valid API key from settings.
     - [ ] Test chat with an environment variable.
     - [ ] Verify reasoning traces still appear correctly.
