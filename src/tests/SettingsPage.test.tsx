@@ -18,6 +18,13 @@ vi.mock('@/lib/openai', () => ({
   listModels: vi.fn().mockResolvedValue(['gpt-4', 'gpt-3.5-turbo']),
 }));
 
+// Mock elevenlabs functions
+vi.mock('@/lib/elevenlabs', () => ({
+  elevenLabsService: {
+    testSpeech: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 describe('SettingsPage', () => {
   beforeEach(() => {
     cleanup();
@@ -28,5 +35,11 @@ describe('SettingsPage', () => {
     render(<SettingsPage />);
     // @ts-ignore
     expect(screen.getAllByText(/ElevenLabs API Key/i)[0]).toBeInTheDocument();
+  });
+
+  it('renders the Test Connection button', () => {
+    render(<SettingsPage />);
+    // @ts-ignore
+    expect(screen.getByText(/Test Connection/i)).toBeInTheDocument();
   });
 });

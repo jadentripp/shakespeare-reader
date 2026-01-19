@@ -13,6 +13,7 @@ import {
 import { getSetting, openAiKeyStatus, setSetting } from "../lib/tauri";
 import { listModels } from "@/lib/openai";
 import { cn } from "@/lib/utils";
+import { elevenLabsService } from "@/lib/elevenlabs";
 
 function SettingsSection({
   icon,
@@ -107,6 +108,7 @@ export default function SettingsPage() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [showElevenLabsApiKey, setShowElevenLabsApiKey] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -177,6 +179,19 @@ export default function SettingsPage() {
     }
   }
 
+  async function onTestElevenLabs() {
+    setTestLoading(true);
+    setStatus(null);
+    try {
+      await elevenLabsService.testSpeech();
+      setStatus({ message: "ElevenLabs connection successful!", type: "success" });
+    } catch (e: any) {
+      setStatus({ message: `Connection failed: ${e.message}`, type: "error" });
+    } finally {
+      setTestLoading(false);
+    }
+  }
+
   async function loadModels() {
     setModelsStatus(null);
     try {
@@ -191,7 +206,6 @@ export default function SettingsPage() {
       setModelsStatus(message);
     }
   }
-
   const keyConfigured = keyStatus?.has_env_key || keyStatus?.has_saved_key || apiKey.trim();
   const elevenLabsKeyConfigured = elevenLabsApiKey.trim();
 
@@ -401,6 +415,29 @@ export default function SettingsPage() {
                   )}
                 </div>
               </SettingsRow>
+
+              {/* Test Button */}
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onTestElevenLabs}
+                  disabled={testLoading || !elevenLabsKeyConfigured}
+                  className="h-9 gap-2"
+                >
+                  {testLoading ? (
+                    <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  ) : (
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  )}
+                  Test Connection
+                </Button>
+              </div>
             </div>
           </SettingsSection>
 
