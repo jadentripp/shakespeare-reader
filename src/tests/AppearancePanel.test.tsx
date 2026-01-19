@@ -41,13 +41,13 @@ describe('AppearancePanel', () => {
   it('renders correctly with default props', () => {
     render(<AppearancePanel {...defaultProps} />);
     // @ts-ignore
-    expect(screen.getByText(/Appearance/i)).toBeInTheDocument();
+    expect(screen.getByText(/Reader Appearance/i)).toBeInTheDocument();
     // @ts-ignore
-    expect(screen.getByText(/Font Family/i)).toBeInTheDocument();
+    expect(screen.getByText(/Typeface/i)).toBeInTheDocument();
     // @ts-ignore
-    expect(screen.getByText(/Line Height/i)).toBeInTheDocument();
+    expect(screen.getByText(/Line Spacing/i)).toBeInTheDocument();
     // @ts-ignore
-    expect(screen.getByText(/Horizontal Margin/i)).toBeInTheDocument();
+    expect(screen.getByText(/Page Margins/i)).toBeInTheDocument();
   });
 
 
@@ -55,7 +55,7 @@ describe('AppearancePanel', () => {
     render(<AppearancePanel {...defaultProps} />);
     const trigger = screen.getByRole('combobox');
     fireEvent.click(trigger);
-    const option = await screen.findByText('System Sans-Serif');
+    const option = await screen.findByText('System Sans');
     fireEvent.click(option);
     expect(defaultProps.onFontFamilyChange).toHaveBeenCalledWith('sans-serif');
   });

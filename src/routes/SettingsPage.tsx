@@ -353,8 +353,8 @@ export default function SettingsPage() {
     <div className="flex h-screen bg-background overflow-hidden">
       <SettingsSidebar activeTab={activeTab} onTabChange={setActiveTab} />
       
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-8 py-10 space-y-8">
+      <main className="flex-1 overflow-y-auto" key={activeTab}>
+        <div className="max-w-3xl mx-auto px-4 md:px-8 py-10 space-y-8 animate-in fade-in duration-300">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
@@ -636,6 +636,7 @@ export default function SettingsPage() {
                             size="icon"
                             onClick={() => onPreviewVoice(selectedVoice)}
                             className={cn(previewingId === voiceId && "text-primary")}
+                            title="Preview voice"
                           >
                             {previewingId === voiceId ? <Volume2 className="h-4 w-4 animate-pulse" /> : <Play className="h-4 w-4" />}
                           </Button>

@@ -80,6 +80,15 @@ vi.mock('@/lib/reader/hooks', () => ({
     threads: [],
     handleSelectThread: vi.fn(),
   })),
+  useTTS: vi.fn(() => ({
+    state: 'idle',
+    autoNext: false,
+    setAutoNext: vi.fn(),
+    play: vi.fn(),
+    pause: vi.fn(),
+    stop: vi.fn(),
+    voiceId: 'v1',
+  })),
 }));
 
 vi.mock('../lib/tauri', () => ({

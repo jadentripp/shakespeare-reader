@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import SettingsPage from '../routes/SettingsPage';
 
@@ -49,14 +49,20 @@ describe('SettingsPage Voice Selection', () => {
     vi.clearAllMocks();
   });
 
+  const navigateToTab = (tabName: string) => {
+    fireEvent.click(screen.getByText(new RegExp(tabName, 'i')));
+  };
+
   it('renders the Voice selection dropdown', async () => {
     render(<SettingsPage />);
+    navigateToTab('Audio & TTS');
     // @ts-ignore
     expect(await screen.findByText(/Narrator Voice/i)).toBeInTheDocument();
   });
 
   it('shows preview button when a voice with preview is selected', async () => {
     render(<SettingsPage />);
+    navigateToTab('Audio & TTS');
     // Since v1 is mocked as default or found, it might show up.
     // We might need to wait for voices to load.
     const previewButton = await screen.findByTitle(/Preview voice/i);
