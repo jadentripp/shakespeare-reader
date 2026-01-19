@@ -2,10 +2,10 @@ import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import WebGPUScene from '../components/three/WebGPUScene';
 import { OrbitControls } from '@react-three/drei';
 import Bookcase from '../components/three/Bookcase';
+import ReadingDesk from '../components/three/ReadingDesk';
 import BookMesh from '../components/three/BookMesh';
 import { ReadingRoom } from '../components/three/ReadingRoom';
-import { useQuery } from '@tanstack/react-query';
-import { listBooks } from '../lib/tauri';
+import { useLibrary } from '../hooks/useLibrary';
 import { useNavigate } from '@tanstack/react-router';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -97,7 +97,7 @@ const LibraryLighting: React.FC = () => {
 
 const ThreeDLibraryPage: React.FC = () => {
   const navigate = useNavigate();
-  const { data: books = [] } = useQuery({ queryKey: ["books"], queryFn: listBooks });
+  const { filteredBooks, booksInProgress } = useLibrary();
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [isZooming, setIsZooming] = useState(false);
 
@@ -112,24 +112,18 @@ const ThreeDLibraryPage: React.FC = () => {
     const bookSpacing = 0.55;
     const booksPerRow = Math.floor((bookcaseWidth - 1) / bookSpacing);
 
-    // Rich sample library if empty
-    const sampleBooks = [
-      { id: 64317, title: "The Great Gatsby", cover_url: "https://www.gutenberg.org/cache/epub/64317/pg64317.cover.medium.jpg" },
-      { id: 1984, title: "1984", cover_url: "https://www.gutenberg.org/cache/epub/1984/pg1984.cover.medium.jpg" },
-      { id: 1342, title: "Pride and Prejudice", cover_url: "https://www.gutenberg.org/cache/epub/1342/pg1342.cover.medium.jpg" },
-      { id: 84, title: "Frankenstein", cover_url: "https://www.gutenberg.org/cache/epub/84/pg84.cover.medium.jpg" },
-      { id: 1661, title: "Sherlock Holmes", cover_url: "https://www.gutenberg.org/cache/epub/1661/pg1661.cover.medium.jpg" },
-    ];
+    // Filter out books that are on the desk
+    const deskBookIds = new Set(booksInProgress.slice(0, 3).map(b => b.id));
+    const shelfBooks = filteredBooks.filter(b => !deskBookIds.has(b.id));
 
-    const displayBooks = books.length > 0 ? books : sampleBooks;
     const result: any[] = [];
 
     for (let row = 0; row < bookcaseRows; row++) {
       for (let col = 0; col < booksPerRow; col++) {
         const bookIndex = row * booksPerRow + col;
-        if (bookIndex >= displayBooks.length) break;
+        if (bookIndex >= shelfBooks.length) break;
 
-        const book = displayBooks[bookIndex];
+        const book = shelfBooks[bookIndex];
         const heightVariation = 0.85 + (bookIndex % 5) * 0.05;
 
         const x = -bookcaseWidth / 2 + 0.6 + col * bookSpacing;
@@ -145,7 +139,27 @@ const ThreeDLibraryPage: React.FC = () => {
     }
 
     return result;
-  }, [books, bookcaseWidth, bookcaseHeight, bookcaseRows]);
+  }, [filteredBooks, booksInProgress, bookcaseWidth, bookcaseHeight, bookcaseRows]);
+
+  const deskBooksWithPositions = useMemo(() => {
+    const recentBooks = booksInProgress.slice(0, 3);
+    const deskY = 1.8 + 0.075; // Surface height + half book thickness (if lying flat) or base
+    const deskZ = 5; // Desk position Z
+    
+    return recentBooks.map((book, i) => {
+        // Lay them flat or stand them up? 
+        // Let's stand them up slightly angled for visibility
+        const spacing = 0.8;
+        const x = (i - (recentBooks.length - 1) / 2) * spacing;
+        
+        return {
+            ...book,
+            position: [x, deskY + 0.5, deskZ] as [number, number, number],
+            rotation: [0, -0.2 + (i * 0.2), 0] as [number, number, number],
+            heightScale: 1.0,
+        };
+    });
+  }, [booksInProgress]);
 
   const handleBookClick = useCallback((book: any) => {
     setSelectedBook(book);
@@ -188,6 +202,25 @@ const ThreeDLibraryPage: React.FC = () => {
                 />
               ))}
           </group>
+
+          <group position={[0, 0, 5]}>
+             <ReadingDesk />
+             {deskBooksWithPositions.map((book: any, index: number) => (
+                <BookMesh
+                  key={book.id}
+                  title={book.title}
+                  coverUrl={book.cover_url}
+                  position={[book.position[0], book.position[1], 0]} // Relative to desk group
+                  rotation={book.rotation}
+                  index={index + 100}
+                  isSelected={selectedBook?.id === book.id}
+                  onClick={() => handleBookClick(book)}
+                  height={1.0}
+                  width={0.65}
+                  depth={0.16}
+                />
+              ))}
+          </group>
         </group>
 
         {!isZooming && (
@@ -213,7 +246,7 @@ const ThreeDLibraryPage: React.FC = () => {
                 The Reading Room
               </h1>
               <p className="text-white/60 text-sm mt-1.5 font-medium tracking-wide uppercase">
-                {books.length || "No"} local volumes • Ambient Library
+                {filteredBooks.length || "No"} local volumes • Ambient Library
               </p>
             </div>
 

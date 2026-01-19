@@ -3,10 +3,13 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import ThreeDLibraryPage from "../routes/ThreeDLibraryPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { LibraryProvider } from "../hooks/LibraryProvider";
+import React from "react";
 
 // Mock tauri
 vi.mock("../lib/tauri", () => ({
   listBooks: vi.fn().mockResolvedValue([]),
+  gutendexCatalogPage: vi.fn().mockResolvedValue({ results: [], count: 0 }),
 }));
 
 // Mock @tanstack/react-router
@@ -23,16 +26,8 @@ vi.mock("../components/three/WebGPUScene", () => ({
 vi.mock("@react-three/drei", () => ({
   OrbitControls: () => <div data-testid="orbit-controls" />,
   Box: ({ children }: any) => <div data-testid="drei-box">{children}</div>,
+  Cylinder: ({ children }: any) => <div data-testid="drei-cylinder">{children}</div>,
 }));
-
-// Mock ThreeDLibraryPage internal components that use R3F hooks
-vi.mock("../routes/ThreeDLibraryPage", async () => {
-  const actual = await vi.importActual("../routes/ThreeDLibraryPage") as any;
-  // We need to keep the default export but mock the internal parts that use hooks
-  // Since they are not exported, we might need to mock them by proxy or mock the whole file 
-  // and re-implement the structure for testing.
-  return actual;
-});
 
 // Alternative: Mock @react-three/fiber hooks globally for this test
 vi.mock("@react-three/fiber", async () => {
@@ -44,18 +39,27 @@ vi.mock("@react-three/fiber", async () => {
   };
 });
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            retry: false,
+        }
+    }
+});
 
 describe("ThreeDLibraryPage", () => {
-  it("should render the 3D scene with ReadingRoom and Bookcase", async () => {
+  it("should render the 3D scene with ReadingRoom, Bookcase and ReadingDesk", async () => {
     render(
       <QueryClientProvider client={queryClient}>
-        <ThreeDLibraryPage />
+        <LibraryProvider>
+            <ThreeDLibraryPage />
+        </LibraryProvider>
       </QueryClientProvider>
     );
     
     expect(screen.getByTestId("webgpu-scene")).toBeDefined();
     expect(screen.getByTestId("reading-room")).toBeDefined();
     expect(screen.getByTestId("bookcase")).toBeDefined();
+    expect(screen.getByTestId("reading-desk")).toBeDefined();
   });
 });
