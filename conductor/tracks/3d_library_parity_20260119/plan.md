@@ -5,10 +5,10 @@ This plan outlines the steps to bring the 3D Library ("The Reading Room") to fea
 ## Phase 1: Foundations & Shared Logic
 - [x] Task: Refactor `useLibrary` hook for better 3D compatibility 46194a2
     - [x] Extract core catalog/library logic into reusable utilities if necessary to ensure 3D page can access the same state.
-- [ ] Task: Implement "The Reading Desk" Geometry
-    - [ ] Create a `ReadingDesk` component in `src/components/three/`.
-    - [ ] Add the desk to `ThreeDLibraryPage`.
-    - [ ] Position recently read books on the desk surface.
+- [x] Task: Implement "The Reading Desk" Geometry bf529f1
+    - [x] Create a `ReadingDesk` component in `src/components/three/`.
+    - [x] Add the desk to `ThreeDLibraryPage`.
+    - [x] Position recently read books on the desk surface.
 - [ ] Task: Conductor - User Manual Verification 'Foundations' (Protocol in workflow.md)
 
 ## Phase 2: Search & Collections UI
