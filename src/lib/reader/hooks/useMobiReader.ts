@@ -137,6 +137,7 @@ export function useMobiReader(bookId: number) {
     },
     navigation,
     scrollToQuote,
+    highlightsHook.activeAiQuote,
     highlightsHook.setActiveAiQuote,
     highlightsHook.setActiveAiBlockIndex,
     highlightsHook.setSelectedHighlightId
