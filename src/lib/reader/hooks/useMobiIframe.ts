@@ -168,6 +168,11 @@ export function useMobiIframe(params: {
       const highlightId = highlightEl?.dataset?.highlightId;
       if (highlightId) {
         highlightsHook.setSelectedHighlightId(Number(highlightId));
+      } else {
+        // Clear selection if clicking elsewhere
+        highlightsHook.setSelectedHighlightId(null);
+        highlightsHook.setActiveAiQuote(null);
+        highlightsHook.setActiveAiBlockIndex(null);
       }
     };
     highlightClickRef.current = handleHighlightClick;

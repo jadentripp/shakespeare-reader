@@ -61,6 +61,7 @@ export function useChat(
   options: UseChatOptions,
   navigation: { scrollToCfi: (cfi: string) => boolean },
   scrollToQuote: (text: string, blockIndex?: number) => void,
+  activeAiQuote: string | null,
   setActiveAiQuote: (q: string | null) => void,
   setActiveAiBlockIndex: (i: number | null) => void,
   setSelectedHighlightId: (id: number | null) => void
@@ -319,24 +320,23 @@ export function useChat(
       }
     }
 
-    if (snippet) {
-      scrollToQuote(snippet, value?.blockIndex);
-      setActiveAiQuote(snippet);
+    const textToUse = snippet || (value && typeof value === "object" ? value.text : null);
+
+    // Toggle off if clicking the same citation
+    if (activeAiQuote === textToUse && textToUse !== null) {
+      setActiveAiQuote(null);
+      setActiveAiBlockIndex(null);
+      return;
+    }
+
+    if (textToUse) {
+      scrollToQuote(textToUse, value?.blockIndex);
+      setActiveAiQuote(textToUse);
       setActiveAiBlockIndex(value?.blockIndex ?? null);
       setSelectedHighlightId(null);
       return;
     }
-
-    if (value && typeof value === "object") {
-      const text = value.text;
-      if (text) {
-        scrollToQuote(text, value.blockIndex);
-        setActiveAiQuote(text);
-        setActiveAiBlockIndex(value.blockIndex ?? null);
-        setSelectedHighlightId(null);
-      }
-    }
-  }, [contextMap, bookMessagesQ.data, scrollToQuote, setActiveAiQuote, setActiveAiBlockIndex, setSelectedHighlightId]);
+  }, [contextMap, bookMessagesQ.data, scrollToQuote, activeAiQuote, setActiveAiQuote, setActiveAiBlockIndex, setSelectedHighlightId]);
 
   const chatMessages: ChatMessage[] = (bookMessagesQ.data ?? []).map((message: any) => {
     let content = message.content;
@@ -355,32 +355,29 @@ export function useChat(
       content,
       onCitationClick: (localId: number, snippet?: string) => {
         const value = mapping[localId];
+        const textToUse = snippet || (value && typeof value === "object" ? value.text : null);
+
+        // Toggle off if clicking the same citation
+        if (activeAiQuote === textToUse && textToUse !== null) {
+          setActiveAiQuote(null);
+          setActiveAiBlockIndex(null);
+          return;
+        }
 
         if (value?.cfi) {
           navigation.scrollToCfi(value.cfi);
-          if (snippet) setActiveAiQuote(snippet);
-          else if (value.text) setActiveAiQuote(value.text);
+          if (textToUse) setActiveAiQuote(textToUse);
           setActiveAiBlockIndex(value.blockIndex ?? null);
           setSelectedHighlightId(null);
           return;
         }
 
-        if (snippet) {
-          scrollToQuote(snippet, value?.blockIndex);
-          setActiveAiQuote(snippet);
+        if (textToUse) {
+          scrollToQuote(textToUse, value?.blockIndex);
+          setActiveAiQuote(textToUse);
           setActiveAiBlockIndex(value?.blockIndex ?? null);
           setSelectedHighlightId(null);
           return;
-        }
-
-        if (value && typeof value === "object") {
-          const text = value.text;
-          if (text) {
-            scrollToQuote(text, value.blockIndex);
-            setActiveAiQuote(text);
-            setActiveAiBlockIndex(value.blockIndex ?? null);
-            setSelectedHighlightId(null);
-          }
         }
       },
     };
