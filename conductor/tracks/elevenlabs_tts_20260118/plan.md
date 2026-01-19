@@ -37,7 +37,7 @@ Connect the playback engine to the user interface and implement the auto-page tu
     - [ ] Logic: When the audio for `Page N` finishes:
         - Trigger `goToNextPage()`.
         - Automatically fetch and start playing audio for `Page N+1`.
-- [ ] Task: Voice Selection UI
+- [x] Task: Voice Selection UI f59f026
     - [ ] Fetch the list of available voices from ElevenLabs API.
     - [ ] Add a dropdown to the `AppearancePanel` or `SettingsPage` to select the preferred voice ID.
 - [ ] Task: Conductor - User Manual Verification 'UI Integration & Page Turning' (Protocol in workflow.md)
