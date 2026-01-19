@@ -9,6 +9,8 @@
 ## Styling & UI
 - **Styling:** Tailwind CSS 4
 - **Components:** Radix UI Primitives
+- **3D Graphics:** Three.js (with WebGPU support)
+- **3D Hooks:** @react-three/fiber, @react-three/drei
 - **Icons:** Lucide React
 
 ## Desktop Shell
