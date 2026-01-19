@@ -33,7 +33,7 @@ Connect the playback engine to the user interface and implement the auto-page tu
     - [ ] Add a "Play/Pause" button to the `ReaderHeader` component.
     - [ ] Wire the button to the `AudioPlayer` states.
     - [ ] Add a visual indicator (spinner) for buffering states.
-- [ ] Task: Implement Auto-Page Turn
+- [x] Task: Implement Auto-Page Turn 37e8222
     - [ ] Logic: When the audio for `Page N` finishes:
         - Trigger `goToNextPage()`.
         - Automatically fetch and start playing audio for `Page N+1`.
