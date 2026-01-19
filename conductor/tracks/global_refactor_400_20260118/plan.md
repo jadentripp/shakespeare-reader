@@ -28,7 +28,7 @@ Decompose the primary reader route.
 - [x] Task: Update `MobiBookPage.tsx` to use new hook and components. (268c068)
 - [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) (4eb1194)
 
-## Phase 3: ChatSidebar Refactor
+## Phase 3: ChatSidebar Refactor [checkpoint: ef43de9]
 Decompose the AI assistant sidebar.
 
 - [x] Task: Create `src/lib/reader/hooks/useChatSidebar.ts`. (91ebc49)
@@ -38,12 +38,12 @@ Decompose the AI assistant sidebar.
     - [x] Implement `ChatMessageList.tsx`.
     - [x] Implement `ChatInputArea.tsx`.
 - [x] Task: Update `ChatSidebar.tsx` to use new hook and components. (91ebc49)
-- [~] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) (ef43de9)
 
 ## Phase 4: Utilities & Cleanup
 Address remaining offenders and ensure project-wide compliance.
 
-- [ ] Task: Refactor `src/components/ui/loader.tsx`.
+- [~] Task: Refactor `src/components/ui/loader.tsx`.
     - [ ] Split into smaller component modules if necessary.
 - [ ] Task: Refactor `src/hooks/useLibrary.ts`.
     - [ ] Split into sub-hooks or smaller logic units.
