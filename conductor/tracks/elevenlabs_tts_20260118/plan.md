@@ -45,10 +45,8 @@ Connect the playback engine to the user interface and implement the auto-page tu
 ## Phase 4: Highlight-to-Speech
 Allow users to select specific text for targeted narration.
 
-- [ ] Task: Add Context Menu Action
-    - [ ] Update the text selection handler (likely in `ReaderLayout` or a custom hook) to detect selections.
-    - [ ] Add a "Read Aloud" button/icon near the selection popover (or existing highlight menu).
-- [ ] Task: Implement Selection Playback
+- [x] Task: Add Context Menu Action 693ab82
+- [x] Task: Implement Selection Playback 693ab82
     - [ ] Create a separate flow in `AudioPlayer` to handle "one-off" text chunks.
     - [ ] Ensure "Selection Playback" pauses/interrupts any active "Continuous Playback".
 - [ ] Task: Conductor - User Manual Verification 'Highlight-to-Speech' (Protocol in workflow.md)
