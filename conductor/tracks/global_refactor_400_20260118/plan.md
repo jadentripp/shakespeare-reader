@@ -2,7 +2,7 @@
 
 This plan outlines the steps to refactor the codebase to ensure no source file exceeds 400 lines, focusing on modularity and domain-driven structure.
 
-## Phase 1: Tauri Bridge Decomposition
+## Phase 1: Tauri Bridge Decomposition [checkpoint: 6a4c99c]
 Transition `src/lib/tauri.ts` into a modular directory structure.
 
 - [x] Task: Create `src/lib/tauri/` directory. (d211ea0)
@@ -14,7 +14,7 @@ Transition `src/lib/tauri.ts` into a modular directory structure.
     - [x] Migrate `listBooks` and `hardDeleteBook`.
 - [x] Task: Refactor `src/lib/tauri.ts` as an export hub. (d211ea0)
     - [x] Re-export all functions from the new sub-modules.
-- [~] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) (6a4c99c)
 
 ## Phase 2: MobiBookPage Refactor
 Decompose the primary reader route.
