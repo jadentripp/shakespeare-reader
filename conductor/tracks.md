@@ -25,5 +25,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: refactor /src/routes/LibraryPage.tsx to be fewer than 600 lines and split it into easier to manage components**
+- [x] **Track: refactor /src/routes/LibraryPage.tsx to be fewer than 600 lines and split it into easier to manage components**
 *Link: [./tracks/library_page_refactor_20260118/](./tracks/library_page_refactor_20260118/)*
