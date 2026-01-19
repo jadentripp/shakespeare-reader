@@ -10,9 +10,9 @@ import {
   deleteBookThreadMessages,
   deleteBookMessage,
   clearDefaultBookMessages,
-  openAiChat,
   getThreadMaxCitationIndex,
 } from "@/lib/tauri";
+import { chat } from "@/lib/openai";
 import { getPageContent, type PageMetrics } from "@/lib/readerUtils";
 import { buildChatSystemPrompt, processCitationsInResponse, parseContextMapFromMessage, type CitationMapping } from "../citations";
 
@@ -160,7 +160,7 @@ export function useChat(
       const systemContent = contextBlocks.join("\n");
       const messages = bookMessagesQ.data ?? [];
 
-      const response = await openAiChat([
+      const response = await chat([
         { role: "system", content: systemContent },
         ...messages.map((message: any) => ({ role: message.role, content: message.content })),
         { role: "user", content: input },

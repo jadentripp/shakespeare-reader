@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { openAiListModels, getSetting, setSetting } from "@/lib/tauri";
+import { getSetting, setSetting } from "@/lib/tauri";
+import { listModels } from "@/lib/openai";
 import { DEFAULT_MODEL } from "../constants";
 
 export interface UseModelsResult {
@@ -18,33 +19,11 @@ export function useModels(): UseModelsResult {
     const loadModels = async () => {
       setModelsLoading(true);
       try {
-        const [allModels, savedModel] = await Promise.all([
-          openAiListModels().catch(() => [] as string[]),
+        const [sortedModels, savedModel] = await Promise.all([
+          listModels().catch(() => [] as string[]),
           getSetting("openai_model").catch(() => null),
         ]);
-        const chatModels = allModels.filter((model) => {
-          const m = model.toLowerCase();
-          if (m.includes("audio") || m.includes("transcribe") || m.includes("realtime") || m.includes("tts") || m.includes("whisper") || m.includes("embedding") || m.includes("moderation") || m.includes("dall-e") || m.includes("image")) {
-            return false;
-          }
-          if (m.includes("gpt-") || m.includes("o1") || m.includes("o3") || m.includes("o4")) {
-            return true;
-          }
-          return false;
-        });
-        const sortedModels = chatModels.sort((a, b) => {
-          const aLower = a.toLowerCase();
-          const bLower = b.toLowerCase();
-          const aIsLatest = aLower.includes("latest");
-          const bIsLatest = bLower.includes("latest");
-          if (aIsLatest && !bIsLatest) return -1;
-          if (!aIsLatest && bIsLatest) return 1;
-          const extractVersion = (s: string) => {
-            const match = s.match(/(\d+)\.(\d+)/);
-            return match ? parseFloat(`${match[1]}.${match[2]}`) : 0;
-          };
-          return extractVersion(bLower) - extractVersion(aLower);
-        });
+        
         setAvailableModels(sortedModels);
         if (savedModel && sortedModels.includes(savedModel)) {
           setCurrentModel(savedModel);

@@ -10,7 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getSetting, openAiKeyStatus, openAiListModels, setSetting } from "../lib/tauri";
+import { getSetting, openAiKeyStatus, setSetting } from "../lib/tauri";
+import { listModels } from "@/lib/openai";
 import { cn } from "@/lib/utils";
 
 function SettingsSection({
@@ -160,7 +161,7 @@ export default function SettingsPage() {
   async function loadModels() {
     setModelsStatus(null);
     try {
-      const list = await openAiListModels();
+      const list = await listModels();
       setModels(list);
       if (list.length && !list.includes(model)) {
         setCustomModel(model);
