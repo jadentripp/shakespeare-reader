@@ -34,11 +34,10 @@ const getBookColors = (index: number) => {
     return palettes[index % palettes.length];
 };
 
-// Global texture cache to persist across re-renders
+// Global texture cache
 const textureCache = new Map<string, THREE.Texture>();
 const loadingUrls = new Set<string>();
 
-// Helper to load image with CORS proxy
 const loadImageWithProxy = async (url: string): Promise<string | null> => {
     const proxies = [
         (u: string) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
@@ -50,32 +49,25 @@ const loadImageWithProxy = async (url: string): Promise<string | null> => {
         try {
             const response = await fetch(proxyUrl);
             if (!response.ok) continue;
-
             const blob = await response.blob();
             if (blob.size < 100) continue;
 
-            const dataUrl = await new Promise<string>((resolve, reject) => {
+            return await new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onloadend = () => resolve(reader.result as string);
                 reader.onerror = () => reject(new Error('FileReader failed'));
                 reader.readAsDataURL(blob);
             });
-
-            return dataUrl;
-        } catch {
-            continue;
-        }
+        } catch { continue; }
     }
     return null;
 };
 
-// Load texture and cache it
 const loadTextureForUrl = async (url: string, onLoaded: (texture: THREE.Texture) => void) => {
     if (textureCache.has(url)) {
         onLoaded(textureCache.get(url)!);
         return;
     }
-
     if (loadingUrls.has(url)) {
         const checkInterval = setInterval(() => {
             if (textureCache.has(url)) {
@@ -95,23 +87,14 @@ const loadTextureForUrl = async (url: string, onLoaded: (texture: THREE.Texture)
         }
 
         const loader = new THREE.TextureLoader();
-        loader.load(
-            dataUrl,
-            (texture) => {
-                texture.colorSpace = THREE.SRGBColorSpace;
-                texture.flipY = true;
-                textureCache.set(url, texture);
-                loadingUrls.delete(url);
-                onLoaded(texture);
-            },
-            undefined,
-            () => {
-                loadingUrls.delete(url);
-            }
-        );
-    } catch (e) {
-        loadingUrls.delete(url);
-    }
+        loader.load(dataUrl, (texture) => {
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.flipY = true;
+            textureCache.set(url, texture);
+            loadingUrls.delete(url);
+            onLoaded(texture);
+        }, undefined, () => loadingUrls.delete(url));
+    } catch (e) { loadingUrls.delete(url); }
 };
 
 const BookMesh: React.FC<BookMeshProps> = ({
@@ -127,9 +110,7 @@ const BookMesh: React.FC<BookMeshProps> = ({
     const groupRef = useRef<THREE.Group>(null);
     const [hovered, setHovered] = useState(false);
     const [coverTexture, setCoverTexture] = useState<THREE.Texture | null>(() => {
-        if (coverUrl && textureCache.has(coverUrl)) {
-            return textureCache.get(coverUrl)!;
-        }
+        if (coverUrl && textureCache.has(coverUrl)) return textureCache.get(coverUrl)!;
         return null;
     });
 
@@ -141,16 +122,11 @@ const BookMesh: React.FC<BookMeshProps> = ({
             setCoverTexture(textureCache.get(coverUrl)!);
             return;
         }
-        loadTextureForUrl(coverUrl, (texture) => {
-            setCoverTexture(texture);
-        });
+        loadTextureForUrl(coverUrl, (texture) => setCoverTexture(texture));
     }, [coverUrl]);
 
-    // Hover animation - Slide out slightly (5-10cm) and lift
     useFrame(() => {
         if (!groupRef.current) return;
-
-        // Slide out on Z axis and lift on Y when hovered
         const targetZ = hovered ? 0.5 : 0;
         const targetY = hovered ? 0.05 : 0;
         const targetRotY = hovered ? -0.12 : 0;
@@ -166,46 +142,17 @@ const BookMesh: React.FC<BookMeshProps> = ({
         groupRef.current.scale.setScalar(s);
     });
 
-    // Create a curved book geometry
-    const bookCoverGeometry = useMemo(() => {
-        const shape = new THREE.Shape();
-        const r = depth / 2; // Spine radius
-        
-        // Start from back cover corner
-        shape.moveTo(width, -depth / 2);
-        // Line to spine start
-        shape.lineTo(r, -depth / 2);
-        // Curve for spine
-        shape.absarc(r, 0, r, -Math.PI / 2, Math.PI / 2, false);
-        // Line to front cover corner
-        shape.lineTo(width, depth / 2);
-        // Close shape (simplified as a single extruded piece for the "wrap")
-        shape.lineTo(width, -depth / 2);
-
-        return new THREE.ExtrudeGeometry(shape, {
-            depth: height,
-            bevelEnabled: true,
-            bevelThickness: 0.01,
-            bevelSize: 0.01,
-            bevelSegments: 3
-        });
-    }, [width, height, depth]);
-
     const hasCover = coverTexture !== null;
 
     return (
         <group position={position} rotation={rotation} data-testid="book-mesh-group">
             <group ref={groupRef}>
-                {/* Hover light */}
                 {hovered && (
                     <pointLight position={[0, height / 2, 0.5]} color={colors.accent} intensity={5} distance={2} />
                 )}
 
-                {/* Cover & Spine */}
+                {/* Main Book Body with standard BoxGeometry for reliable UV mapping */}
                 <mesh 
-                    geometry={bookCoverGeometry} 
-                    rotation={[Math.PI / 2, 0, -Math.PI / 2]} 
-                    position={[-width / 2, -height / 2, 0]}
                     castShadow 
                     receiveShadow
                     onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer'; }}
@@ -213,30 +160,39 @@ const BookMesh: React.FC<BookMeshProps> = ({
                     onClick={(e) => { e.stopPropagation(); onClick?.(); }}
                     data-testid="book-cover-mesh"
                 >
+                    <boxGeometry args={[width, height, depth]} />
+                    
+                    {/* Multi-material array: right, left, top, bottom, front, back */}
+                    <meshStandardMaterial attach="material-0" color={colors.cover} roughness={0.8} />
+                    <meshStandardMaterial attach="material-1" color={colors.spine} roughness={0.4} />
+                    <meshStandardMaterial attach="material-2" color="#fdfcf0" roughness={0.9} />
+                    <meshStandardMaterial attach="material-3" color="#fdfcf0" roughness={0.9} />
                     {hasCover ? (
-                        <meshBasicMaterial map={coverTexture} toneMapped={false} />
+                        <meshBasicMaterial attach="material-4" map={coverTexture} />
                     ) : (
-                        <meshStandardMaterial 
-                            color={colors.cover} 
-                            roughness={colors.material === 'leather' ? 0.4 : 0.8} 
-                            metalness={0.05} 
-                        />
+                        <meshStandardMaterial attach="material-4" color={colors.cover} roughness={0.8} />
                     )}
+                    <meshStandardMaterial attach="material-5" color={colors.cover} roughness={0.8} />
                 </mesh>
 
-                {/* Page Block (the paper part) */}
-                <mesh position={[0.01, 0, 0]} receiveShadow data-testid="page-block-mesh">
-                    <boxGeometry args={[width * 0.92, height * 0.95, depth * 0.85]} />
+                {/* Curved Spine Decoration */}
+                <mesh position={[-width / 2, 0, 0]} rotation={[0, 0, 0]}>
+                    <cylinderGeometry args={[depth / 2, depth / 2, height, 12, 1, false, Math.PI / 2, Math.PI]} />
                     <meshStandardMaterial 
-                        color="#fdfcf0" 
-                        roughness={0.9} 
-                        metalness={0} 
+                        color={colors.spine} 
+                        roughness={colors.material === 'leather' ? 0.3 : 0.7} 
+                        metalness={0.1} 
                     />
                 </mesh>
 
-                {/* Decorative spine lines if no cover */}
+                {/* Page Block (internal visual) */}
+                <mesh position={[0.02, 0, 0]} receiveShadow data-testid="page-block-mesh">
+                    <boxGeometry args={[width * 0.95, height * 0.96, depth * 0.9]} />
+                    <meshStandardMaterial color="#fdfcf0" roughness={1} metalness={0} />
+                </mesh>
+
                 {!hasCover && (
-                    <group position={[-width / 2 - 0.01, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+                    <group position={[-width / 2 - 0.05, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
                         <mesh position={[0, height * 0.3, 0]}>
                             <planeGeometry args={[depth * 0.8, 0.02]} />
                             <meshStandardMaterial color={colors.accent} metalness={0.8} roughness={0.2} />
