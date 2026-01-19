@@ -35,3 +35,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: improve the design of the settings**
 *Link: [./archive/settings_design_overhaul_20260118/](./archive/settings_design_overhaul_20260118/)*
+---
+
+- [~] **Track: improve the library pages (2d/3d)**
+*Link: [./tracks/library_design_overhaul_20260118/](./tracks/library_design_overhaul_20260118/)*

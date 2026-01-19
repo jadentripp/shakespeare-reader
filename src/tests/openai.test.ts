@@ -67,10 +67,8 @@ describe('OpenAI Service', () => {
   });
 
   describe('listModels', () => {
-    it('should filter and sort models correctly', async () => {
+    it('should filter and sort gpt models correctly', async () => {
       vi.mocked(getSetting).mockResolvedValue('key');
-      // Mock Date.now to 1700000000000 (around Nov 2023)
-      vi.setSystemTime(new Date(1700000000 * 1000));
 
       mockListModels.mockResolvedValue({
         data: [
@@ -79,6 +77,13 @@ describe('OpenAI Service', () => {
           { id: 'gpt-4', created: 1680000000 },
           { id: 'claude-3', created: 1700000000 },
           { id: 'gpt-5.2', created: 1800000000 },
+          { id: 'gpt-4o-realtime-preview', created: 1750000000 },
+          { id: 'gpt-5-search-api', created: 1760000000 },
+          { id: 'gpt-4o-mini-tts', created: 1770000000 },
+          { id: 'gpt-5-codex', created: 1780000000 },
+          { id: 'gpt-4o-audio-preview', created: 1790000000 },
+          { id: 'gpt-image-1-mini', created: 1800000000 },
+          { id: 'gpt-4o-mini-transcribe', created: 1810000000 },
         ],
       });
 
@@ -87,12 +92,18 @@ describe('OpenAI Service', () => {
       expect(models).toContain('gpt-4o');
       expect(models).toContain('gpt-4');
       expect(models).toContain('gpt-5.2');
-      expect(models).not.toContain('gpt-3.5-turbo');
+      expect(models).toContain('gpt-3.5-turbo');
+      
       expect(models).not.toContain('claude-3');
+      expect(models).not.toContain('gpt-4o-realtime-preview');
+      expect(models).not.toContain('gpt-5-search-api');
+      expect(models).not.toContain('gpt-4o-mini-tts');
+      expect(models).not.toContain('gpt-5-codex');
+      expect(models).not.toContain('gpt-4o-audio-preview');
+      expect(models).not.toContain('gpt-image-1-mini');
+      expect(models).not.toContain('gpt-4o-mini-transcribe');
       
       expect(models[0]).toBe('gpt-5.2');
-
-      vi.useRealTimers();
     });
   });
 
@@ -100,7 +111,7 @@ describe('OpenAI Service', () => {
     it('should call openai.responses.create and format result', async () => {
       vi.mocked(getSetting).mockImplementation(async (key) => {
         if (key === 'openai_api_key') return 'api-key';
-        if (key === 'openai_model') return 'gpt-4o';
+        if (key === 'openai_model') return 'gpt-5.2';
         return null;
       });
 
@@ -121,7 +132,7 @@ describe('OpenAI Service', () => {
 
       expect(result.content).toBe('Hello world');
       expect(mockCreateResponse).toHaveBeenCalledWith(expect.objectContaining({
-        model: 'gpt-4o',
+        model: 'gpt-5.2',
         input: [{ role: 'user', content: 'Hi' }],
       }));
     });
