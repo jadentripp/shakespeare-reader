@@ -26,7 +26,7 @@ Build the logic for fetching audio, playing it, and managing the queue.
     - [ ] Implement a function `getPageText(pageIndex)` to extract clean, narrative text from the current page's HTML.
 - [x] Task: Conductor - User Manual Verification 'Core Playback Engine (Streaming)' (Protocol in workflow.md) 90f8071
 
-## Phase 3: UI Integration & Page Turning
+## Phase 3: UI Integration & Page Turning [checkpoint: a68a1b9]
 Connect the playback engine to the user interface and implement the auto-page turn logic.
 
 - [x] Task: Add Playback Controls 9c37eb7
@@ -40,7 +40,7 @@ Connect the playback engine to the user interface and implement the auto-page tu
 - [x] Task: Voice Selection UI f59f026
     - [ ] Fetch the list of available voices from ElevenLabs API.
     - [ ] Add a dropdown to the `AppearancePanel` or `SettingsPage` to select the preferred voice ID.
-- [ ] Task: Conductor - User Manual Verification 'UI Integration & Page Turning' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'UI Integration & Page Turning' (Protocol in workflow.md) a68a1b9
 
 ## Phase 4: Highlight-to-Speech
 Allow users to select specific text for targeted narration.
