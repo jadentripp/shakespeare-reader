@@ -43,7 +43,7 @@ const CHAT_PROMPTS: ChatPrompt[] = [
 function findTextRange(root: HTMLElement, targetText: string, blockIndex?: number): Range | null {
   const doc = root.ownerDocument;
   let searchRoot: HTMLElement = root;
-  
+
   if (blockIndex !== undefined) {
     const block = root.querySelector(`[data-block-index="${blockIndex}"]`);
     if (block instanceof HTMLElement) {
@@ -75,16 +75,16 @@ function findTextRange(root: HTMLElement, targetText: string, blockIndex?: numbe
   }
 
   const fullText = fullTextParts.join("");
-  
+
   // Ultra-fuzzy normalization: Keep only alphanumeric characters for the initial match
   const ultraNormalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
   const normalizedTarget = ultraNormalize(targetText);
-  
+
   if (!normalizedTarget) return null;
 
   let searchableStream = "";
   const searchableToFullMap: number[] = [];
-  
+
   for (let i = 0; i < fullText.length; i++) {
     const char = fullText[i].toLowerCase();
     if (/[a-z0-9]/.test(char)) {
@@ -94,7 +94,7 @@ function findTextRange(root: HTMLElement, targetText: string, blockIndex?: numbe
   }
 
   const matchIndex = searchableStream.indexOf(normalizedTarget);
-  
+
   if (matchIndex === -1) {
     if (searchRoot !== root) {
       return findTextRange(root, targetText);
@@ -122,17 +122,17 @@ export function cleanFootnoteContent(html: string): string {
   if (typeof document === "undefined") return html;
   const div = document.createElement("div");
   div.innerHTML = html;
-  
+
   // Remove links that look like return links
   const links = div.querySelectorAll("a");
   links.forEach(a => {
     const text = a.textContent?.trim().toLowerCase() || "";
     // Common back-link patterns
     if (
-      text.includes("back") || 
-      text.includes("return") || 
-      text === "↩" || 
-      text === "↑" || 
+      text.includes("back") ||
+      text.includes("return") ||
+      text === "↩" ||
+      text === "↑" ||
       text === "top" ||
       text.includes("jump up") ||
       /^\[?\d+\]?$/.test(text)
@@ -140,13 +140,13 @@ export function cleanFootnoteContent(html: string): string {
       a.remove();
     }
   });
-  
+
   // Also common in Gutenberg: [1] at the start of footnote
   const firstChild = div.firstChild;
   if (firstChild && firstChild.nodeType === 3) { // Text node
-     firstChild.nodeValue = firstChild.nodeValue?.replace(/^\[\d+\]\s*/, "") || "";
+    firstChild.nodeValue = firstChild.nodeValue?.replace(/^\[\d+\]\s*/, "") || "";
   }
-  
+
   return div.innerHTML.trim();
 }
 
@@ -182,18 +182,18 @@ function getPageContent(
   const blocks = Array.from(doc.querySelectorAll("[data-block-index]")) as HTMLElement[];
   const result: PageContentResult = { text: "", blocks: [] };
   const textParts: string[] = [];
-  
+
   // Calculate the absolute x-coordinate range for the target page
   // Page 1: 0 to stride, Page 2: stride to 2*stride, etc.
   // (stride = pageWidth + gap)
   const pageStartX = (pageNumber - 1) * stride;
   const pageEndX = pageStartX + pageWidth; // Don't include the gap
-  
+
   blocks.forEach((block) => {
     const indexAttr = block.getAttribute("data-block-index");
     if (!indexAttr) return;
     const blockIndex = parseInt(indexAttr, 10);
-    
+
     // Quick check: does this block have any rects that could be on the target page?
     const blockRects = Array.from(block.getClientRects());
     const blockMightBeOnPage = blockRects.some(rect => {
@@ -202,35 +202,35 @@ function getPageContent(
       const absRight = rect.right - rootRect.left + scrollLeft;
       return absRight > pageStartX && absLeft < pageEndX;
     });
-    
+
     if (!blockMightBeOnPage) return;
-    
+
     // Walk through text nodes and extract only characters on this page
     const visibleTextParts: string[] = [];
     const walker = doc.createTreeWalker(block, NodeFilter.SHOW_TEXT, null);
     let node: Node | null;
-    
+
     while ((node = walker.nextNode())) {
       const textContent = node.textContent || "";
       if (!textContent.trim()) continue;
-      
+
       // Check each character to find the portion on this page
       let visibleStart = -1;
       let visibleEnd = -1;
-      
+
       for (let i = 0; i < textContent.length; i++) {
         const range = doc.createRange();
         range.setStart(node, i);
         range.setEnd(node, Math.min(i + 1, textContent.length));
         const rect = range.getBoundingClientRect();
-        
+
         // Convert viewport-relative to absolute document coordinates
         const absCharLeft = rect.left - rootRect.left + scrollLeft;
         const absCharRight = rect.right - rootRect.left + scrollLeft;
-        
+
         // Character is on this page if it falls within the page's x-range
         const isOnPage = absCharRight > pageStartX && absCharLeft < pageEndX;
-        
+
         if (isOnPage) {
           if (visibleStart === -1) visibleStart = i;
           visibleEnd = i + 1;
@@ -239,19 +239,19 @@ function getPageContent(
           break;
         }
       }
-      
+
       if (visibleStart !== -1 && visibleEnd !== -1) {
         visibleTextParts.push(textContent.slice(visibleStart, visibleEnd));
       }
     }
-    
+
     const blockText = visibleTextParts.join(" ").replace(/\s+/g, " ").trim();
     if (blockText) {
       result.blocks.push({ text: blockText, blockIndex, pageNumber });
       textParts.push(blockText);
     }
   });
-  
+
   result.text = textParts.join("\n\n");
   return result;
 }
@@ -344,7 +344,11 @@ export default function MobiBookPage(props: { bookId: number }) {
 
   const srcDoc = useMemo(() => {
     if (!htmlQ.data) return "";
-    const { html: processedHtml } = processGutenbergContent(htmlQ.data, id);
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined;
+    const baseUrl = !isTauri && bookQ.data?.gutenberg_id
+      ? `https://www.gutenberg.org/cache/epub/${bookQ.data.gutenberg_id}/`
+      : undefined;
+    const { html: processedHtml } = processGutenbergContent(htmlQ.data, id, baseUrl);
     const gap = pageGap;
     let css = `
       :root {
@@ -668,9 +672,9 @@ export default function MobiBookPage(props: { bookId: number }) {
     const doc = iframeRef.current?.contentDocument;
     const root = getScrollRoot();
     if (!doc || !root || !highlightsQ.data) return;
-    
+
     console.log("[Highlight] Rendering highlights. ActiveQuote:", activeQuote, "BlockIndex:", activeBlockIndex);
-    
+
     clearExistingHighlights(doc);
     for (const highlight of highlightsQ.data as any[]) {
       let startPath: number[];
@@ -695,7 +699,7 @@ export default function MobiBookPage(props: { bookId: number }) {
         `span.readerHighlight[data-highlight-id="${activeId}"]`
       );
       activeEls.forEach((el: any) => (el as HTMLElement).classList.add("readerHighlightActive"));
-      
+
       // Clear AI quote state when a real highlight is selected
       if (activeAiQuote || activeAiBlockIndex) {
         console.log("[Highlight] Clearing AI quote because a user highlight was selected.");
@@ -809,10 +813,10 @@ export default function MobiBookPage(props: { bookId: number }) {
     isNavigatingRef.current = true;
     const oldSmooth = root.style.scrollBehavior;
     root.style.scrollBehavior = "auto";
-    
+
     pageLockRef.current = page;
     root.scrollLeft = targetLeft;
-    
+
     // Force immediate pagination update while locked
     updatePagination();
 
@@ -874,9 +878,9 @@ export default function MobiBookPage(props: { bookId: number }) {
         return { el: entry.el, offsetLeft };
       })
       .filter((entry: { el: HTMLElement; offsetLeft: number | null }) => entry.offsetLeft !== null) as Array<{
-      el: HTMLElement;
-      offsetLeft: number;
-    }>;
+        el: HTMLElement;
+        offsetLeft: number;
+      }>;
     if (!scored.length) return candidates[0].el;
     if (refOffset !== null) {
       const after = scored
@@ -902,7 +906,7 @@ export default function MobiBookPage(props: { bookId: number }) {
         return true;
       }
     }
-    
+
     // Fallback for highlight CFIs (which are JSON paths in this app currently)
     try {
       const path = JSON.parse(cfi);
@@ -927,14 +931,14 @@ export default function MobiBookPage(props: { bookId: number }) {
   const getElementRect = (element: HTMLElement) => {
     const rects = Array.from(element.getClientRects());
     let directRect = rects.find((rect) => rect.width || rect.height) ?? rects[0];
-    
+
     if (!directRect || (directRect.width === 0 && directRect.height === 0)) {
       const bcr = element.getBoundingClientRect();
       if (bcr.width || bcr.height) directRect = bcr;
     }
 
     if (directRect && (directRect.width || directRect.height)) return directRect;
-    
+
     const doc = element.ownerDocument;
     if (doc) {
       const range = doc.createRange();
@@ -1010,14 +1014,14 @@ export default function MobiBookPage(props: { bookId: number }) {
   const scheduleSaveThreadProgress = () => {
     if (threadSaveTimeoutRef.current !== null) return;
     if (currentThreadId === null) return;
-    
+
     threadSaveTimeoutRef.current = window.setTimeout(async () => {
       threadSaveTimeoutRef.current = null;
       const root = getScrollRoot();
       if (!root) return;
-      
+
       const currentScroll = root.scrollLeft;
-      
+
       // Find the first visible block
       const blocks = Array.from(root.querySelectorAll("[data-block-index]")) as HTMLElement[];
       const firstVisible = blocks.find(block => {
@@ -1050,7 +1054,7 @@ export default function MobiBookPage(props: { bookId: number }) {
     if (!pageWidth) return;
     const stride = pageWidth + gap;
     const target = Math.max(0, (page - 1) * stride);
-    
+
     if (Math.abs(root.scrollLeft - target) > 1) {
       console.log("[Navigation] lockToPage: Snapping to", { page, target, current: root.scrollLeft });
       root.scrollLeft = target;
@@ -1064,9 +1068,9 @@ export default function MobiBookPage(props: { bookId: number }) {
     if (!pageWidth) return;
     const stride = pageWidth + gap;
     const target = Math.max(0, (page - 1) * stride);
-    
+
     console.log("[Navigation] scrollToPage:", { page, target });
-    
+
     pageLockRef.current = page;
     root.scrollTo({ left: target, behavior: "smooth" });
   };
@@ -1080,12 +1084,12 @@ export default function MobiBookPage(props: { bookId: number }) {
     const stride = pageWidth + gap;
     const total = Math.max(1, Math.ceil((usableWidth + gap) / stride));
     setTotalPages(total);
-    
+
     // Derive page from actual scroll position
     const currentScroll = root.scrollLeft;
     const calculatedPage = Math.round(currentScroll / (stride || 1)) + 1;
     const lockedPage = Math.min(total, Math.max(1, calculatedPage));
-    
+
     if (lockedPage !== currentPage) {
       setCurrentPage(lockedPage);
     }
@@ -1286,7 +1290,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   const stripGutenbergBoilerplate = (doc: Document) => {
     const header = doc.getElementById("pg-header");
     if (header) header.remove();
-    
+
     const footer = doc.getElementById("pg-footer");
     if (footer) footer.remove();
   };
@@ -1298,7 +1302,7 @@ export default function MobiBookPage(props: { bookId: number }) {
 
     docRef.current = doc;
     rootRef.current = root;
-    
+
     stripGutenbergBoilerplate(doc);
     syncPageMetrics();
 
@@ -1327,24 +1331,24 @@ export default function MobiBookPage(props: { bookId: number }) {
     const anchors = Array.from(doc.querySelectorAll('a[href^="#"]')) as HTMLAnchorElement[];
     const tocFromAnchors: Array<{ id: string; level: number; text: string; element: HTMLElement }> = [];
     const seenHrefs = new Set<string>();
-    
+
     for (const anchor of anchors) {
       const href = anchor.getAttribute("href") ?? "";
       const text = (anchor.textContent ?? "").trim().replace(/\s+/g, " ");
       if (!href || href === "#" || !text || seenHrefs.has(href)) continue;
-      
+
       // Find the target element this anchor points to
       const targetId = href.slice(1);
       const target = doc.getElementById(targetId) || doc.querySelector(`[name="${targetId}"]`);
       if (!target || !(target instanceof HTMLElement)) continue;
-      
+
       // Determine level based on text pattern
       let level = 3;
       const upper = text.toUpperCase();
       if (upper.match(/^BOOK\s+/)) level = 1;
       else if (upper.match(/^(CHAPTER|PART|ACT)\s+/)) level = 2;
       else if (upper.match(/^(SCENE|SECTION)\s+/)) level = 3;
-      
+
       seenHrefs.add(href);
       tocFromAnchors.push({
         id: `toc-${tocFromAnchors.length}`,
@@ -1353,7 +1357,7 @@ export default function MobiBookPage(props: { bookId: number }) {
         element: target,
       });
     }
-    
+
     // If we found TOC entries from anchors, use those; otherwise fall back to headings
     if (tocFromAnchors.length >= 3) {
       setTocEntries(tocFromAnchors);
@@ -1453,9 +1457,9 @@ export default function MobiBookPage(props: { bookId: number }) {
     const handleHighlightClick = (event: Event) => {
       const target = getEventTargetElement(event.target);
       if (target && target.tagName === "IMG") {
-        setLightboxImage({ 
-          src: (target as HTMLImageElement).src, 
-          alt: (target as HTMLImageElement).alt 
+        setLightboxImage({
+          src: (target as HTMLImageElement).src,
+          alt: (target as HTMLImageElement).alt
         });
         return;
       }
@@ -1474,18 +1478,18 @@ export default function MobiBookPage(props: { bookId: number }) {
       const eventTargetEl = getEventTargetElement(event.target);
       const anchor = (eventTargetEl?.closest?.("a") as HTMLAnchorElement | null) ?? null;
       if (!anchor) return;
-      
+
       const hrefAttr = anchor.getAttribute("href") ?? "";
       const lowerHref = hrefAttr.toLowerCase();
       const anchorId = anchor.id ?? "";
-      
+
       console.log("[Link] Clicked:", { href: hrefAttr, id: anchorId });
 
       // Check if it's a footnote/citation
-      const isFootnote = lowerHref.includes("#fn") || 
-                         anchorId.startsWith("fnref") || 
-                         anchor.className.includes("footnote") ||
-                         anchor.className.includes("noteref");
+      const isFootnote = lowerHref.includes("#fn") ||
+        anchorId.startsWith("fnref") ||
+        anchor.className.includes("footnote") ||
+        anchor.className.includes("noteref");
 
       const anchorHash = anchor.hash ?? "";
       let rawHash = "";
@@ -1514,10 +1518,10 @@ export default function MobiBookPage(props: { bookId: number }) {
         event.preventDefault();
         const ownerDoc = anchor.ownerDocument;
         const targetId = decodeURIComponent(rawHash);
-        
-        let targetEl = ownerDoc.getElementById(targetId) || 
-                       ownerDoc.getElementsByName(targetId)[0] ||
-                       ownerDoc.querySelector(`[id="${targetId}"]`);
+
+        let targetEl = ownerDoc.getElementById(targetId) ||
+          ownerDoc.getElementsByName(targetId)[0] ||
+          ownerDoc.querySelector(`[id="${targetId}"]`);
 
         // Robust fallback: if "fn40" fails, try common patterns
         if (!targetEl && targetId) {
@@ -1525,7 +1529,7 @@ export default function MobiBookPage(props: { bookId: number }) {
           if (numMatch) {
             const num = numMatch[0];
             console.log("[Link] Searching for fallback patterns for number:", num);
-            
+
             // Try common ID patterns
             const patterns = [
               `footnote${num}`, `footnote-${num}`, `footnote_${num}`,
@@ -1534,11 +1538,11 @@ export default function MobiBookPage(props: { bookId: number }) {
               `f${num}`, `n${num}`, `ref${num}`,
               `id${num}`, `${num}`
             ];
-            
+
             for (const p of patterns) {
-              const found = ownerDoc.getElementById(p) || 
-                         ownerDoc.querySelector(`[id="${p}"]`) ||
-                         ownerDoc.querySelector(`[name="${p}"]`);
+              const found = ownerDoc.getElementById(p) ||
+                ownerDoc.querySelector(`[id="${p}"]`) ||
+                ownerDoc.querySelector(`[name="${p}"]`);
               if (found) {
                 targetEl = found as HTMLElement;
                 console.log("[Link] Found target with pattern:", p);
@@ -1549,8 +1553,8 @@ export default function MobiBookPage(props: { bookId: number }) {
             // Try searching for any element containing "footnote" and the number in its ID
             if (!targetEl) {
               const found = ownerDoc.querySelector(`[id*="footnote"][id*="${num}"]`) ||
-                         ownerDoc.querySelector(`[id*="note"][id*="${num}"]`) ||
-                         ownerDoc.querySelector(`[id*="fn"][id*="${num}"]`);
+                ownerDoc.querySelector(`[id*="note"][id*="${num}"]`) ||
+                ownerDoc.querySelector(`[id*="fn"][id*="${num}"]`);
               if (found) {
                 targetEl = found as HTMLElement;
                 console.log("[Link] Found target with fuzzy ID search");
@@ -1567,10 +1571,10 @@ export default function MobiBookPage(props: { bookId: number }) {
             }
           }
         }
-        
+
         if (targetEl && targetEl instanceof HTMLElement) {
           console.log("[Link] Footnote target found:", targetId);
-          
+
           let content = targetEl.innerHTML;
           // If the target is an empty anchor (common in some formats), 
           // use the parent element's content instead
@@ -1582,7 +1586,7 @@ export default function MobiBookPage(props: { bookId: number }) {
           const rect = anchor.getBoundingClientRect();
           const iframeRect = iframeRef.current?.getBoundingClientRect();
           const containerRect = containerRef.current?.getBoundingClientRect();
-          
+
           if (iframeRect && containerRect) {
             setActiveCitation({
               content: cleanFootnoteContent(targetEl.innerHTML),
@@ -1602,7 +1606,7 @@ export default function MobiBookPage(props: { bookId: number }) {
 
       if (lowerHref.startsWith("kindle:pos:")) {
         const linkText = anchor.textContent ?? "";
-        
+
         // Try to extract fid/off to find aid
         // kindle:pos:fid:000Q:off:000000001K
         const parts = lowerHref.split(":");
@@ -1614,16 +1618,16 @@ export default function MobiBookPage(props: { bookId: number }) {
           // Kindle fid is base32 (0-9, A-V)
           const fidNum = parseInt(fidStr, 32);
           console.log("[Link] kindle:pos fid:", fidStr, "->", fidNum);
-          
+
           // Use the data-fid attribute we injected in readerHtml.ts
           const targetEl = ownerDoc.querySelector(`[data-fid="${fidNum}"]`);
           if (targetEl && targetEl instanceof HTMLElement) {
-             console.log("[Link] Found target by data-fid:", fidNum);
-             event.preventDefault();
-             jumpToElement(targetEl);
-             return;
+            console.log("[Link] Found target by data-fid:", fidNum);
+            event.preventDefault();
+            jumpToElement(targetEl);
+            return;
           } else {
-             console.log("[Link] Target NOT found by data-fid:", fidNum);
+            console.log("[Link] Target NOT found by data-fid:", fidNum);
           }
         }
 
@@ -1656,7 +1660,7 @@ export default function MobiBookPage(props: { bookId: number }) {
         (ownerDoc.getElementsByName(targetId)[0] as HTMLElement | undefined) ??
         ownerDoc.querySelector(`[id="${targetId}"]`) ??
         ownerDoc.querySelector(`[name="${targetId}"]`);
-      
+
       event.preventDefault();
       if (!anchorTargetEl) {
         console.log("[Link] Internal target NOT found for ID/name:", targetId);
@@ -1796,7 +1800,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   const scrollToQuote = (text: string, index?: number) => {
     const root = getScrollRoot();
     if (!root) return;
-    
+
     // First, try to find it on the current page/view
     const range = findTextRange(root, text, index);
     if (range) {
@@ -1817,7 +1821,7 @@ export default function MobiBookPage(props: { bookId: number }) {
 
   const handleCitationClick = (citationId: number, snippet?: string) => {
     let value = contextMap[citationId];
-    
+
     // Fallback: If not in current state, search message history for the mapping
     if (!value) {
       console.log(`[Chat:Citation] ID ${citationId} not in current contextMap. Searching message history...`);
@@ -1895,7 +1899,7 @@ export default function MobiBookPage(props: { bookId: number }) {
     const input = chatInput.trim();
     setChatSending(true);
     setChatInput("");
-    
+
     let threadId = currentThreadId;
 
     try {
@@ -1918,7 +1922,7 @@ export default function MobiBookPage(props: { bookId: number }) {
       queryClient.setQueryData(["bookMessages", id, threadId], (old: any) => {
         return [...(old || []), optimisticUserMsg];
       });
-      
+
       // Persist the user message to DB
       await addBookMessage({
         bookId: id,
@@ -1961,13 +1965,13 @@ export default function MobiBookPage(props: { bookId: number }) {
 
       // Build block index lookup for finding citations in the book
       const blockIndexLookup: Array<{ text: string; blockIndex: number; pageNumber: number }> = [];
-      
+
       console.log("[Citation Debug] sendChat called with:\n" + JSON.stringify({
         currentPage,
         pageLockRef: pageLockRef.current,
         totalPages,
       }, null, 2));
-      
+
       if (selectedHighlight) {
         contextBlocks.push(`Currently Focused Highlight: "${selectedHighlight.text}"`);
         if (selectedHighlight.note) {
@@ -1993,7 +1997,7 @@ export default function MobiBookPage(props: { bookId: number }) {
         const stride = pageWidth + gap;
         const rootRect = root.getBoundingClientRect();
         const scrollLeft = root.scrollLeft;
-        
+
         const metrics: PageMetrics = {
           pageWidth,
           gap,
@@ -2001,7 +2005,7 @@ export default function MobiBookPage(props: { bookId: number }) {
           scrollLeft,
           rootRect,
         };
-        
+
         console.log("[Citation Debug] Getting content for page:\n" + JSON.stringify({
           currentPage,
           pageLockRef: pageLockRef.current,
@@ -2010,10 +2014,10 @@ export default function MobiBookPage(props: { bookId: number }) {
           stride,
           scrollLeft,
         }, null, 2));
-        
+
         // Use the robust getPageContent function
         const pageContent = getPageContent(doc, currentPage, metrics);
-        
+
         contextBlocks.push("Current View Content:");
         pageContent.blocks.forEach(block => {
           blockIndexLookup.push(block);
@@ -2021,7 +2025,7 @@ export default function MobiBookPage(props: { bookId: number }) {
           contextBlocks.push(""); // blank line between paragraphs
         });
         contextBlocks.push("```");
-        
+
         console.log("[Citation Debug] Block lookup built:\n" + JSON.stringify({
           totalBlocks: blockIndexLookup.length,
           pageNumbers: [...new Set(blockIndexLookup.map(b => b.pageNumber))],
@@ -2032,7 +2036,7 @@ export default function MobiBookPage(props: { bookId: number }) {
           }))
         }, null, 2));
       }
-      
+
       console.log("[Citation Debug] Full context being sent to model:\n" + JSON.stringify({
         currentPage,
         pageLockRef: pageLockRef.current,
@@ -2052,20 +2056,20 @@ export default function MobiBookPage(props: { bookId: number }) {
       // Post-process: assign incrementing indices to each <cite> tag in order
       const mapping: Record<number, { text: string; blockIndex?: number; pageNumber?: number }> = {};
       let citeIndex = localId;
-      
+
       const processedContent = response.content.replace(
         /<cite\s+snippet="([^"]*)"\s*\/?>/g,
         (_match: string, snippet: string) => {
           // Try to find the block that contains this snippet
-          const matchingBlock = blockIndexLookup.find(b => 
+          const matchingBlock = blockIndexLookup.find(b =>
             b.text.toLowerCase().includes(snippet.toLowerCase())
           );
-          
+
           // Since we only include text from the current page in the context,
           // all citations should be on currentPage
           const pageNum = matchingBlock?.pageNumber ?? currentPage;
           const foundBlockIndex = matchingBlock?.blockIndex;
-          
+
           console.log("[Citation Debug] Processing citation:\n" + JSON.stringify({
             snippet: snippet.slice(0, 40),
             matchingBlockFound: !!matchingBlock,
@@ -2073,13 +2077,13 @@ export default function MobiBookPage(props: { bookId: number }) {
             finalPageNum: pageNum,
             citeIndex,
           }, null, 2));
-          
+
           mapping[citeIndex] = {
             text: snippet,
             blockIndex: foundBlockIndex,
             pageNumber: pageNum,
           };
-          
+
           const result = `<cite snippet="${snippet}" index="${citeIndex}" page="${pageNum}"/>`;
           citeIndex++;
           return result;
@@ -2149,7 +2153,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   const chatMessages = (bookMessagesQ.data ?? []).map((message: any) => {
     let content = message.content;
     let mapping: Record<number, any> = {};
-    
+
     // Prioritize database context_map
     if (message.context_map) {
       try {
@@ -2176,7 +2180,7 @@ export default function MobiBookPage(props: { bookId: number }) {
       content: content,
       onCitationClick: (localId: number, snippet?: string) => {
         const value = mapping[localId];
-        
+
         if (value?.cfi) {
           scrollToCfi(value.cfi);
           if (snippet) setActiveAiQuote(snippet);
@@ -2218,7 +2222,7 @@ export default function MobiBookPage(props: { bookId: number }) {
     try {
       const { save } = await import("@tauri-apps/plugin-dialog");
       const { writeFile } = await import("@tauri-apps/plugin-fs");
-      
+
       const filePath = await save({
         filters: [{
           name: 'Image',
@@ -2398,9 +2402,9 @@ export default function MobiBookPage(props: { bookId: number }) {
       {lightboxImage && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative max-h-full max-w-full">
-            <img 
-              src={lightboxImage.src} 
-              alt={lightboxImage.alt} 
+            <img
+              src={lightboxImage.src}
+              alt={lightboxImage.alt}
               className="max-h-[90vh] max-w-full rounded-md shadow-2xl object-contain"
             />
             <div className="absolute -top-12 right-0 flex gap-2">
