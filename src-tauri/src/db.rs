@@ -1,7 +1,23 @@
+//! Database module for AI Reader
+//!
+//! This module provides all database operations for the application, organized by domain:
+//!
+//! ## Domains
+//! - **Core**: Connection handling and initialization (`db_path`, `open`, `init`)
+//! - **Books**: CRUD operations for books (`upsert_book`, `list_books`, `get_book`, `hard_delete_book`)
+//! - **Settings**: Key-value settings storage (`get_setting`, `set_setting`)
+//! - **Highlights**: User highlights and notes (`create_highlight`, `list_highlights`, etc.)
+//! - **Threads**: Chat thread management (`create_book_chat_thread`, `list_book_chat_threads`, etc.)
+//! - **Messages**: Chat messages (`add_book_message`, `list_book_messages`, etc.)
+
 use anyhow::Context;
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use tauri::{path::BaseDirectory, Manager};
+
+// ============================================================================
+// DATA STRUCTURES
+// ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Book {
@@ -68,13 +84,22 @@ pub struct BookChatThread {
     pub updated_at: String,
 }
 
-fn db_path<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<std::path::PathBuf, anyhow::Error> {
+// ============================================================================
+// CORE: Database Connection & Initialization
+// ============================================================================
+
+fn db_path<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+) -> Result<std::path::PathBuf, anyhow::Error> {
     #[cfg(test)]
     if let Ok(override_path) = std::env::var("SHAKESPEARE_DB_PATH") {
         return Ok(std::path::PathBuf::from(override_path));
     }
-    let mut base = std::env::current_dir()
-        .unwrap_or(app_handle.path().resolve(".", BaseDirectory::AppLocalData)?);
+    let mut base = std::env::current_dir().unwrap_or(
+        app_handle
+            .path()
+            .resolve(".", BaseDirectory::AppLocalData)?,
+    );
     if base.file_name().and_then(|s| s.to_str()) == Some("src-tauri") {
         if let Some(parent) = base.parent() {
             base = parent.to_path_buf();
@@ -183,13 +208,23 @@ CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN html_path TEXT", []);
     let _ = conn.execute("ALTER TABLE book ADD COLUMN first_image_index INTEGER", []);
     let _ = conn.execute("ALTER TABLE book_message ADD COLUMN thread_id INTEGER", []);
-    let _ = conn.execute("ALTER TABLE book_message ADD COLUMN reasoning_summary TEXT", []);
+    let _ = conn.execute(
+        "ALTER TABLE book_message ADD COLUMN reasoning_summary TEXT",
+        [],
+    );
     let _ = conn.execute("ALTER TABLE book_message ADD COLUMN context_map TEXT", []);
     let _ = conn.execute("ALTER TABLE book_chat_thread ADD COLUMN last_cfi TEXT", []);
-    let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id)", []);
+    let _ = conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id)",
+        [],
+    );
 
     Ok(())
 }
+
+// ============================================================================
+// BOOKS: CRUD Operations
+// ============================================================================
 
 pub fn upsert_book<R: tauri::Runtime>(
     app_handle: &tauri::AppHandle<R>,
@@ -224,7 +259,9 @@ pub fn upsert_book<R: tauri::Runtime>(
     Ok(id)
 }
 
-pub fn list_books<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<Vec<Book>, anyhow::Error> {
+pub fn list_books<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+) -> Result<Vec<Book>, anyhow::Error> {
     let conn = open(app_handle)?;
     let mut stmt = conn.prepare(
         "SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, first_image_index, created_at FROM book ORDER BY title ASC",
@@ -250,7 +287,10 @@ pub fn list_books<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result
     Ok(rows)
 }
 
-pub fn get_book<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i64) -> Result<Book, anyhow::Error> {
+pub fn get_book<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    book_id: i64,
+) -> Result<Book, anyhow::Error> {
     let conn = open(app_handle)?;
     conn.query_row(
         "SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, first_image_index, created_at FROM book WHERE id = ?1",
@@ -273,15 +313,24 @@ pub fn get_book<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i6
     .context("failed to get book")
 }
 
-pub fn hard_delete_book<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i64) -> Result<(), anyhow::Error> {
+pub fn hard_delete_book<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    book_id: i64,
+) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
     conn.execute(
         "DELETE FROM highlight_message WHERE highlight_id IN (SELECT id FROM highlight WHERE book_id = ?1)",
         params![book_id],
     )?;
     conn.execute("DELETE FROM highlight WHERE book_id = ?1", params![book_id])?;
-    conn.execute("DELETE FROM book_position WHERE book_id = ?1", params![book_id])?;
-    conn.execute("DELETE FROM book_message WHERE book_id = ?1", params![book_id])?;
+    conn.execute(
+        "DELETE FROM book_position WHERE book_id = ?1",
+        params![book_id],
+    )?;
+    conn.execute(
+        "DELETE FROM book_message WHERE book_id = ?1",
+        params![book_id],
+    )?;
     conn.execute(
         "DELETE FROM book_chat_thread WHERE book_id = ?1",
         params![book_id],
@@ -293,7 +342,11 @@ pub fn hard_delete_book<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, boo
     Ok(())
 }
 
-pub fn set_book_position<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i64, cfi: String) -> Result<(), anyhow::Error> {
+pub fn set_book_position<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    book_id: i64,
+    cfi: String,
+) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
     conn.execute(
         "INSERT INTO book_position(book_id, cfi) VALUES (?1, ?2)
@@ -303,7 +356,10 @@ pub fn set_book_position<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, bo
     Ok(())
 }
 
-pub fn get_book_position<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i64) -> Result<Option<BookPosition>, anyhow::Error> {
+pub fn get_book_position<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    book_id: i64,
+) -> Result<Option<BookPosition>, anyhow::Error> {
     let conn = open(app_handle)?;
     conn.query_row(
         "SELECT cfi, updated_at FROM book_position WHERE book_id = ?1",
@@ -319,7 +375,15 @@ pub fn get_book_position<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, bo
     .context("failed to read book position")
 }
 
-pub fn set_setting<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, key: String, value: String) -> Result<(), anyhow::Error> {
+// ============================================================================
+// SETTINGS: Key-Value Storage
+// ============================================================================
+
+pub fn set_setting<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    key: String,
+    value: String,
+) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
     conn.execute(
         "INSERT INTO settings(key, value) VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
@@ -329,7 +393,10 @@ pub fn set_setting<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, key: Str
     Ok(())
 }
 
-pub fn get_setting<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, key: String) -> Result<Option<String>, anyhow::Error> {
+pub fn get_setting<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    key: String,
+) -> Result<Option<String>, anyhow::Error> {
     let conn = open(app_handle)?;
     conn.query_row(
         "SELECT value FROM settings WHERE key = ?1",
@@ -340,7 +407,14 @@ pub fn get_setting<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, key: Str
     .context("failed to read setting")
 }
 
-pub fn list_highlights<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>, book_id: i64) -> Result<Vec<Highlight>, anyhow::Error> {
+// ============================================================================
+// HIGHLIGHTS: User Annotations
+// ============================================================================
+
+pub fn list_highlights<R: tauri::Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    book_id: i64,
+) -> Result<Vec<Highlight>, anyhow::Error> {
     let conn = open(app_handle)?;
     let mut stmt = conn.prepare(
         "SELECT id, book_id, start_path, start_offset, end_path, end_offset, text, note, created_at, updated_at
@@ -449,7 +523,10 @@ pub fn delete_highlight<R: tauri::Runtime>(
     highlight_id: i64,
 ) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
-    conn.execute("DELETE FROM highlight_message WHERE highlight_id = ?1", params![highlight_id])?;
+    conn.execute(
+        "DELETE FROM highlight_message WHERE highlight_id = ?1",
+        params![highlight_id],
+    )?;
     conn.execute("DELETE FROM highlight WHERE id = ?1", params![highlight_id])?;
     Ok(())
 }
@@ -504,6 +581,10 @@ pub fn add_highlight_message<R: tauri::Runtime>(
     )
     .context("failed to add highlight message")
 }
+
+// ============================================================================
+// THREADS: Chat Thread Management
+// ============================================================================
 
 pub fn list_book_chat_threads<R: tauri::Runtime>(
     app_handle: &tauri::AppHandle<R>,
@@ -588,10 +669,20 @@ pub fn delete_book_chat_thread<R: tauri::Runtime>(
     thread_id: i64,
 ) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
-    conn.execute("DELETE FROM book_message WHERE thread_id = ?1", params![thread_id])?;
-    conn.execute("DELETE FROM book_chat_thread WHERE id = ?1", params![thread_id])?;
+    conn.execute(
+        "DELETE FROM book_message WHERE thread_id = ?1",
+        params![thread_id],
+    )?;
+    conn.execute(
+        "DELETE FROM book_chat_thread WHERE id = ?1",
+        params![thread_id],
+    )?;
     Ok(())
 }
+
+// ============================================================================
+// MESSAGES: Book Chat Messages
+// ============================================================================
 
 pub fn list_book_messages<R: tauri::Runtime>(
     app_handle: &tauri::AppHandle<R>,
@@ -599,7 +690,7 @@ pub fn list_book_messages<R: tauri::Runtime>(
     thread_id: Option<i64>,
 ) -> Result<Vec<BookMessage>, anyhow::Error> {
     let conn = open(app_handle)?;
-    
+
     let mut stmt = conn.prepare(
         "SELECT id, book_id, thread_id, role, content, reasoning_summary, context_map, created_at
          FROM book_message WHERE book_id = ?1 AND thread_id IS ?2 ORDER BY created_at ASC",
@@ -632,7 +723,7 @@ pub fn add_book_message<R: tauri::Runtime>(
     context_map: Option<String>,
 ) -> Result<BookMessage, anyhow::Error> {
     let conn = open(app_handle)?;
-    
+
     conn.execute(
         "INSERT INTO book_message(book_id, thread_id, role, content, reasoning_summary, context_map) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         params![book_id, thread_id, role, content, reasoning_summary, context_map],
@@ -670,7 +761,10 @@ pub fn delete_book_messages<R: tauri::Runtime>(
     book_id: i64,
 ) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
-    conn.execute("DELETE FROM book_message WHERE book_id = ?1", params![book_id])?;
+    conn.execute(
+        "DELETE FROM book_message WHERE book_id = ?1",
+        params![book_id],
+    )?;
     Ok(())
 }
 
@@ -679,7 +773,10 @@ pub fn delete_book_message<R: tauri::Runtime>(
     message_id: i64,
 ) -> Result<(), anyhow::Error> {
     let conn = open(app_handle)?;
-    conn.execute("DELETE FROM book_message WHERE id = ?1", params![message_id])?;
+    conn.execute(
+        "DELETE FROM book_message WHERE id = ?1",
+        params![message_id],
+    )?;
     Ok(())
 }
 
@@ -701,7 +798,7 @@ pub fn get_thread_max_citation_index<R: tauri::Runtime>(
     thread_id: Option<i64>,
 ) -> Result<i32, anyhow::Error> {
     let conn = open(app_handle)?;
-    
+
     // Collect context_map JSON strings from the appropriate messages
     let json_strings: Vec<String> = match thread_id {
         Some(tid) => {
@@ -772,14 +869,16 @@ mod tests {
     fn test_book_message_table_exists() {
         let (handle, db_path) = setup("table_exists");
         init(&handle).expect("Failed to init DB");
-        
+
         let conn = Connection::open(&db_path).unwrap();
-        let count: i32 = conn.query_row(
-            "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='book_message'",
-            [],
-            |row| row.get(0),
-        ).unwrap();
-        
+        let count: i32 = conn
+            .query_row(
+                "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='book_message'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+
         assert_eq!(count, 1, "book_message table should exist");
         std::fs::remove_file(db_path).ok();
     }
@@ -800,9 +899,19 @@ mod tests {
             "mobi".to_string(),
             "html".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
-        let msg = add_book_message(&handle, book_id, None, "user".to_string(), "Hello".to_string(), None, None).unwrap();
+        let msg = add_book_message(
+            &handle,
+            book_id,
+            None,
+            "user".to_string(),
+            "Hello".to_string(),
+            None,
+            None,
+        )
+        .unwrap();
         assert_eq!(msg.content, "Hello");
         assert_eq!(msg.role, "user");
 
@@ -832,11 +941,30 @@ mod tests {
             "mobi".to_string(),
             "html".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         let thread = create_book_chat_thread(&handle, book_id, "Thread".to_string()).unwrap();
-        add_book_message(&handle, book_id, Some(thread.id), "user".to_string(), "Msg 1".to_string(), None, None).unwrap();
-        add_book_message(&handle, book_id, Some(thread.id), "assistant".to_string(), "Msg 2".to_string(), None, None).unwrap();
+        add_book_message(
+            &handle,
+            book_id,
+            Some(thread.id),
+            "user".to_string(),
+            "Msg 1".to_string(),
+            None,
+            None,
+        )
+        .unwrap();
+        add_book_message(
+            &handle,
+            book_id,
+            Some(thread.id),
+            "assistant".to_string(),
+            "Msg 2".to_string(),
+            None,
+            None,
+        )
+        .unwrap();
 
         let messages = list_book_messages(&handle, book_id, Some(thread.id)).unwrap();
         assert_eq!(messages.len(), 2);
@@ -844,7 +972,11 @@ mod tests {
         delete_book_chat_thread(&handle, thread.id).unwrap();
 
         let messages_after = list_book_messages(&handle, book_id, Some(thread.id)).unwrap();
-        assert_eq!(messages_after.len(), 0, "Messages should be deleted when thread is deleted");
+        assert_eq!(
+            messages_after.len(),
+            0,
+            "Messages should be deleted when thread is deleted"
+        );
 
         std::fs::remove_file(db_path).ok();
     }
@@ -864,7 +996,8 @@ mod tests {
             "mobi".to_string(),
             "html".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         let thread = create_book_chat_thread(&handle, book_id, "Old Title".to_string()).unwrap();
         assert_eq!(thread.title, "Old Title");
@@ -893,9 +1026,19 @@ mod tests {
             "mobi".to_string(),
             "html".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
-        let msg = add_book_message(&handle, book_id, None, "user".to_string(), "Msg".to_string(), None, None).unwrap();
+        let msg = add_book_message(
+            &handle,
+            book_id,
+            None,
+            "user".to_string(),
+            "Msg".to_string(),
+            None,
+            None,
+        )
+        .unwrap();
         assert_eq!(list_book_messages(&handle, book_id, None).unwrap().len(), 1);
 
         delete_book_message(&handle, msg.id).unwrap();
@@ -919,24 +1062,67 @@ mod tests {
             "mobi".to_string(),
             "html".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         let thread = create_book_chat_thread(&handle, book_id, "Thread".to_string()).unwrap();
 
         // Default chat messages (thread_id IS NULL)
-        add_book_message(&handle, book_id, None, "user".to_string(), "Default 1".to_string(), None, None).unwrap();
-        add_book_message(&handle, book_id, None, "assistant".to_string(), "Default 2".to_string(), None, None).unwrap();
+        add_book_message(
+            &handle,
+            book_id,
+            None,
+            "user".to_string(),
+            "Default 1".to_string(),
+            None,
+            None,
+        )
+        .unwrap();
+        add_book_message(
+            &handle,
+            book_id,
+            None,
+            "assistant".to_string(),
+            "Default 2".to_string(),
+            None,
+            None,
+        )
+        .unwrap();
 
         // Threaded messages
-        add_book_message(&handle, book_id, Some(thread.id), "user".to_string(), "Threaded 1".to_string(), None, None).unwrap();
+        add_book_message(
+            &handle,
+            book_id,
+            Some(thread.id),
+            "user".to_string(),
+            "Threaded 1".to_string(),
+            None,
+            None,
+        )
+        .unwrap();
 
         assert_eq!(list_book_messages(&handle, book_id, None).unwrap().len(), 2);
-        assert_eq!(list_book_messages(&handle, book_id, Some(thread.id)).unwrap().len(), 1);
+        assert_eq!(
+            list_book_messages(&handle, book_id, Some(thread.id))
+                .unwrap()
+                .len(),
+            1
+        );
 
         clear_default_book_messages(&handle, book_id).unwrap();
 
-        assert_eq!(list_book_messages(&handle, book_id, None).unwrap().len(), 0, "Default messages should be cleared");
-        assert_eq!(list_book_messages(&handle, book_id, Some(thread.id)).unwrap().len(), 1, "Threaded messages should remain");
+        assert_eq!(
+            list_book_messages(&handle, book_id, None).unwrap().len(),
+            0,
+            "Default messages should be cleared"
+        );
+        assert_eq!(
+            list_book_messages(&handle, book_id, Some(thread.id))
+                .unwrap()
+                .len(),
+            1,
+            "Threaded messages should remain"
+        );
 
         std::fs::remove_file(db_path).ok();
     }
@@ -956,21 +1142,60 @@ mod tests {
             "mobi".to_string(),
             "html".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         let thread1 = create_book_chat_thread(&handle, book_id, "Thread 1".to_string()).unwrap();
         let thread2 = create_book_chat_thread(&handle, book_id, "Thread 2".to_string()).unwrap();
 
-        add_book_message(&handle, book_id, Some(thread1.id), "user".to_string(), "T1 Msg".to_string(), None, None).unwrap();
-        add_book_message(&handle, book_id, Some(thread2.id), "user".to_string(), "T2 Msg".to_string(), None, None).unwrap();
+        add_book_message(
+            &handle,
+            book_id,
+            Some(thread1.id),
+            "user".to_string(),
+            "T1 Msg".to_string(),
+            None,
+            None,
+        )
+        .unwrap();
+        add_book_message(
+            &handle,
+            book_id,
+            Some(thread2.id),
+            "user".to_string(),
+            "T2 Msg".to_string(),
+            None,
+            None,
+        )
+        .unwrap();
 
-        assert_eq!(list_book_messages(&handle, book_id, Some(thread1.id)).unwrap().len(), 1);
-        assert_eq!(list_book_messages(&handle, book_id, Some(thread2.id)).unwrap().len(), 1);
+        assert_eq!(
+            list_book_messages(&handle, book_id, Some(thread1.id))
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            list_book_messages(&handle, book_id, Some(thread2.id))
+                .unwrap()
+                .len(),
+            1
+        );
 
         delete_book_thread_messages(&handle, thread1.id).unwrap();
 
-        assert_eq!(list_book_messages(&handle, book_id, Some(thread1.id)).unwrap().len(), 0);
-        assert_eq!(list_book_messages(&handle, book_id, Some(thread2.id)).unwrap().len(), 1);
+        assert_eq!(
+            list_book_messages(&handle, book_id, Some(thread1.id))
+                .unwrap()
+                .len(),
+            0
+        );
+        assert_eq!(
+            list_book_messages(&handle, book_id, Some(thread2.id))
+                .unwrap()
+                .len(),
+            1
+        );
 
         std::fs::remove_file(db_path).ok();
     }
@@ -990,48 +1215,65 @@ mod tests {
             "mobi".to_string(),
             "html".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         // Test last_cfi in thread
         let thread = create_book_chat_thread(&handle, book_id, "Thread".to_string()).unwrap();
         assert_eq!(thread.last_cfi, None);
 
-        set_thread_last_cfi(&handle, thread.id, "epubcfi(/6/4[chap01]!/4/2/10/1:0)".to_string()).unwrap();
-        
+        set_thread_last_cfi(
+            &handle,
+            thread.id,
+            "epubcfi(/6/4[chap01]!/4/2/10/1:0)".to_string(),
+        )
+        .unwrap();
+
         let threads = list_book_chat_threads(&handle, book_id).unwrap();
-        assert_eq!(threads[0].last_cfi, Some("epubcfi(/6/4[chap01]!/4/2/10/1:0)".to_string()));
+        assert_eq!(
+            threads[0].last_cfi,
+            Some("epubcfi(/6/4[chap01]!/4/2/10/1:0)".to_string())
+        );
 
         // Test reasoning_summary and context_map in book_message
         let msg = add_book_message(
-            &handle, 
-            book_id, 
-            Some(thread.id), 
-            "assistant".to_string(), 
+            &handle,
+            book_id,
+            Some(thread.id),
+            "assistant".to_string(),
             "Content".to_string(),
             Some("Reasoning...".to_string()),
-            Some("{\"sources\": []}".to_string())
-        ).unwrap();
+            Some("{\"sources\": []}".to_string()),
+        )
+        .unwrap();
 
         assert_eq!(msg.reasoning_summary, Some("Reasoning...".to_string()));
         assert_eq!(msg.context_map, Some("{\"sources\": []}".to_string()));
 
         let messages = list_book_messages(&handle, book_id, Some(thread.id)).unwrap();
-        assert_eq!(messages[0].reasoning_summary, Some("Reasoning...".to_string()));
-        assert_eq!(messages[0].context_map, Some("{\"sources\": []}".to_string()));
+        assert_eq!(
+            messages[0].reasoning_summary,
+            Some("Reasoning...".to_string())
+        );
+        assert_eq!(
+            messages[0].context_map,
+            Some("{\"sources\": []}".to_string())
+        );
 
         // Test max citation index
         let max_idx = get_thread_max_citation_index(&handle, thread.id).unwrap();
         assert_eq!(max_idx, 0);
 
         add_book_message(
-            &handle, 
-            book_id, 
-            Some(thread.id), 
-            "assistant".to_string(), 
+            &handle,
+            book_id,
+            Some(thread.id),
+            "assistant".to_string(),
             "More content".to_string(),
             None,
-            Some("{\"sources\": [{\"index\": 5}, {\"index\": 12}]}".to_string())
-        ).unwrap();
+            Some("{\"sources\": [{\"index\": 5}, {\"index\": 12}]}".to_string()),
+        )
+        .unwrap();
 
         let max_idx = get_thread_max_citation_index(&handle, thread.id).unwrap();
         assert_eq!(max_idx, 12);

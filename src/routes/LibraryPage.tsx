@@ -34,141 +34,21 @@ import {
   downloadGutenbergMobi,
   gutendexCatalogPage,
   listBooks,
-  type GutendexBook,
 } from "../lib/tauri";
+import {
+  bestMobiUrl,
+  coverUrl,
+  authorsString,
+  formatDownloadCount,
+  isPopular,
+  classifyResult,
+  sortResults,
+  getRecentSearches,
+  addRecentSearch,
+  clearRecentSearches as clearRecentSearchesUtil,
+  type SortOption,
+} from "../lib/gutenbergUtils";
 
-function bestMobiUrl(book: GutendexBook): string | null {
-  for (const [k, v] of Object.entries(book.formats)) {
-    const kk = k.toLowerCase();
-    if (kk.includes("mobipocket") || kk.includes("mobi")) return v;
-    if (typeof v === "string" && v.toLowerCase().endsWith(".mobi")) return v;
-  }
-  return null;
-}
-
-function coverUrl(book: GutendexBook): string | null {
-  return book.formats["image/jpeg"] ?? book.formats["image/png"] ?? null;
-}
-
-function formatYear(year: number | null | undefined): string {
-  if (year == null) return "?";
-  if (year < 0) {
-    return `${Math.abs(year)} BCE`;
-  }
-  return String(year);
-}
-
-function formatAuthorDates(birth: number | null | undefined, death: number | null | undefined): string {
-  if (birth == null && death == null) return "";
-
-  const birthStr = formatYear(birth);
-  const deathStr = formatYear(death);
-
-  if (birth != null && birth < 0 && death != null && death < 0) {
-    return `c. ${birthStr}`;
-  }
-
-  return `${birthStr}–${deathStr}`;
-}
-
-function authorsString(book: GutendexBook): string {
-  return (book.authors ?? []).map((a) => {
-    const dates = formatAuthorDates(a.birth_year, a.death_year);
-    if (dates) {
-      return `${a.name} (${dates})`;
-    }
-    return a.name;
-  }).join(", ") || "";
-}
-
-function formatDownloadCount(count: number | undefined): string {
-  if (!count) return "";
-  if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
-  if (count >= 1000) return `${(count / 1000).toFixed(0)}K`;
-  return String(count);
-}
-
-function isPopular(count: number | undefined): boolean {
-  return (count ?? 0) >= 10000;
-}
-
-type ResultType = "primary" | "related" | "tangential";
-
-function classifyResult(book: GutendexBook, searchQuery: string): ResultType {
-  if (!searchQuery.trim()) return "primary";
-
-  const query = searchQuery.toLowerCase().trim();
-  const title = book.title.toLowerCase();
-  const authorNames = (book.authors ?? []).map(a => a.name.toLowerCase());
-
-  const queryWords = query.split(/\s+/).filter(w => w.length > 2);
-
-  const titleStartsWithQuery = title.startsWith(query) ||
-    title.startsWith("the " + query) ||
-    title === query;
-
-  const authorMatchesQuery = authorNames.some(name =>
-    name.includes(query) || queryWords.some(w => name.includes(w))
-  );
-
-  const isByClassicAuthor = authorNames.some(name =>
-    queryWords.some(w => name.includes(w))
-  );
-
-  if (titleStartsWithQuery && (authorMatchesQuery || book.authors?.length === 1)) {
-    return "primary";
-  }
-
-  if (title.includes(query) && isByClassicAuthor) {
-    return "primary";
-  }
-
-  if (title.includes(query)) {
-    const titleWords = title.split(/\s+/);
-    const isSubstantialMatch = queryWords.every(qw =>
-      titleWords.some(tw => tw.includes(qw))
-    );
-    if (isSubstantialMatch && authorMatchesQuery) {
-      return "related";
-    }
-    return "tangential";
-  }
-
-  if (authorMatchesQuery) {
-    return "related";
-  }
-
-  return "tangential";
-}
-
-type SortOption = "relevance" | "popular" | "title" | "author";
-
-function sortResults(results: GutendexBook[], sortBy: SortOption, searchQuery: string): GutendexBook[] {
-  const sorted = [...results];
-
-  switch (sortBy) {
-    case "popular":
-      return sorted.sort((a, b) => (b.download_count ?? 0) - (a.download_count ?? 0));
-    case "title":
-      return sorted.sort((a, b) => a.title.localeCompare(b.title));
-    case "author":
-      return sorted.sort((a, b) => {
-        const aAuthor = a.authors?.[0]?.name ?? "";
-        const bAuthor = b.authors?.[0]?.name ?? "";
-        return aAuthor.localeCompare(bAuthor);
-      });
-    case "relevance":
-    default:
-      return sorted.sort((a, b) => {
-        const aType = classifyResult(a, searchQuery);
-        const bType = classifyResult(b, searchQuery);
-        const typeOrder = { primary: 0, related: 1, tangential: 2 };
-        const typeDiff = typeOrder[aType] - typeOrder[bType];
-        if (typeDiff !== 0) return typeDiff;
-        return (b.download_count ?? 0) - (a.download_count ?? 0);
-      });
-  }
-}
 
 type DownloadStatus = "queued" | "downloading" | "done" | "failed";
 type DownloadTask = {
@@ -213,27 +93,6 @@ const POPULAR_SEARCHES = [
   "Arthur Conan Doyle",
 ];
 
-const RECENT_SEARCHES_KEY = "reader-recent-searches";
-const MAX_RECENT_SEARCHES = 8;
-
-function getRecentSearches(): string[] {
-  try {
-    const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as string[];
-  } catch {
-    return [];
-  }
-}
-
-function addRecentSearch(query: string) {
-  const trimmed = query.trim();
-  if (!trimmed || trimmed.length < 2) return;
-  const existing = getRecentSearches().filter((s) => s.toLowerCase() !== trimmed.toLowerCase());
-  const updated = [trimmed, ...existing].slice(0, MAX_RECENT_SEARCHES);
-  localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
-}
-
 export default function LibraryPage() {
   const qc = useQueryClient();
   const booksQ = useQuery({ queryKey: ["books"], queryFn: listBooks });
@@ -260,9 +119,10 @@ export default function LibraryPage() {
   };
 
   const clearRecentSearches = () => {
-    localStorage.removeItem(RECENT_SEARCHES_KEY);
+    clearRecentSearchesUtil();
     setRecentSearches([]);
   };
+
   const activeCatalog = useMemo<CatalogEntry>(() => {
     return CATALOG_BY_KEY.get(catalogKey) ?? CATALOG_GROUPS[0].items[0]!;
   }, [catalogKey]);
@@ -644,8 +504,8 @@ export default function LibraryPage() {
         <button
           onClick={() => setCatalogKey("collection-all")}
           className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all duration-300 ${catalogKey === "collection-all"
-              ? "border-amber-400 bg-gradient-to-br from-amber-50 via-orange-50/50 to-yellow-50/30 shadow-lg shadow-amber-500/10 dark:border-amber-500 dark:from-amber-950/60 dark:via-orange-950/40 dark:to-yellow-950/20"
-              : "border-border/40 bg-gradient-to-br from-card to-muted/20 hover:border-amber-300/60 hover:shadow-md dark:hover:border-amber-600/40"
+            ? "border-amber-400 bg-gradient-to-br from-amber-50 via-orange-50/50 to-yellow-50/30 shadow-lg shadow-amber-500/10 dark:border-amber-500 dark:from-amber-950/60 dark:via-orange-950/40 dark:to-yellow-950/20"
+            : "border-border/40 bg-gradient-to-br from-card to-muted/20 hover:border-amber-300/60 hover:shadow-md dark:hover:border-amber-600/40"
             }`}
         >
           <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-300/10 blur-2xl transition-opacity group-hover:opacity-100 dark:from-amber-500/10 dark:to-orange-400/5" />
@@ -667,8 +527,8 @@ export default function LibraryPage() {
               key={fc.key}
               onClick={() => setCatalogKey(isActive ? "collection-all" : fc.key)}
               className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all duration-300 ${isActive
-                  ? "border-amber-400 bg-gradient-to-br from-amber-50 via-orange-50/50 to-yellow-50/30 shadow-lg shadow-amber-500/10 dark:border-amber-500 dark:from-amber-950/60 dark:via-orange-950/40 dark:to-yellow-950/20"
-                  : "border-border/40 bg-gradient-to-br from-card to-muted/20 hover:border-amber-300/60 hover:shadow-md dark:hover:border-amber-600/40"
+                ? "border-amber-400 bg-gradient-to-br from-amber-50 via-orange-50/50 to-yellow-50/30 shadow-lg shadow-amber-500/10 dark:border-amber-500 dark:from-amber-950/60 dark:via-orange-950/40 dark:to-yellow-950/20"
+                : "border-border/40 bg-gradient-to-br from-card to-muted/20 hover:border-amber-300/60 hover:shadow-md dark:hover:border-amber-600/40"
                 }`}
             >
               <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-300/10 opacity-0 blur-2xl transition-opacity group-hover:opacity-100 dark:from-amber-500/10 dark:to-orange-400/5" />
@@ -708,8 +568,8 @@ export default function LibraryPage() {
                             setShowAllCategories(false);
                           }}
                           className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${isActive
-                              ? "bg-amber-500 text-white shadow-md shadow-amber-500/25 dark:bg-amber-600"
-                              : "bg-muted/60 text-muted-foreground hover:bg-amber-100 hover:text-amber-800 dark:hover:bg-amber-900/30 dark:hover:text-amber-300"
+                            ? "bg-amber-500 text-white shadow-md shadow-amber-500/25 dark:bg-amber-600"
+                            : "bg-muted/60 text-muted-foreground hover:bg-amber-100 hover:text-amber-800 dark:hover:bg-amber-900/30 dark:hover:text-amber-300"
                             }`}
                         >
                           {cat.label}
