@@ -16,7 +16,7 @@ Transition `src/lib/tauri.ts` into a modular directory structure.
     - [x] Re-export all functions from the new sub-modules.
 - [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) (6a4c99c)
 
-## Phase 2: MobiBookPage Refactor
+## Phase 2: MobiBookPage Refactor [checkpoint: 4eb1194]
 Decompose the primary reader route.
 
 - [x] Task: Create `src/lib/reader/hooks/useMobiReader.ts` and migrate logic. (268c068)
@@ -26,12 +26,12 @@ Decompose the primary reader route.
     - [x] Implement `ReaderToolbar.tsx`.
     - [x] Implement `ReaderContent.tsx`.
 - [x] Task: Update `MobiBookPage.tsx` to use new hook and components. (268c068)
-- [~] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) (4eb1194)
 
 ## Phase 3: ChatSidebar Refactor
 Decompose the AI assistant sidebar.
 
-- [ ] Task: Create `src/lib/reader/hooks/useChatSidebar.ts`.
+- [~] Task: Create `src/lib/reader/hooks/useChatSidebar.ts`.
     - [ ] Write tests for `useChatSidebar`.
     - [ ] Migrate sidebar-specific state and logic.
 - [ ] Task: Extract UI components to `src/components/reader/`.
