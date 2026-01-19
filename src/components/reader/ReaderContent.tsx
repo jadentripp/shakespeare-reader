@@ -30,6 +30,7 @@ export function ReaderContent({ reader }: ReaderContentProps) {
     models,
     activeCitation,
     setActiveCitation,
+    tts,
   } = reader;
 
   const [highlightLibraryExpanded, setHighlightLibraryExpanded] = useState(false);
@@ -101,6 +102,10 @@ export function ReaderContent({ reader }: ReaderContentProps) {
         onCreateHighlight={highlights.handleCreate}
         onCancelHighlight={() => highlights.setPendingHighlight(null)}
         onAddToChat={highlights.handleAddToChat}
+        onReadAloud={(text) => {
+          tts.playText(text);
+          highlights.setPendingHighlight(null);
+        }}
         activeCitation={activeCitation}
         onActiveCitationChange={setActiveCitation}
       />

@@ -61,6 +61,13 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
     }
   }, [currentPage, getPageText, voiceId]);
 
+  const playText = useCallback(async (text: string) => {
+    if (text) {
+      setAutoNext(false); // One-off playback should not auto-advance
+      await audioPlayer.play(text, voiceId);
+    }
+  }, [voiceId]);
+
   const pause = useCallback(() => {
     audioPlayer.pause();
   }, []);
@@ -77,6 +84,7 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
   return {
     state,
     playCurrentPage,
+    playText,
     pause,
     resume,
     stop,

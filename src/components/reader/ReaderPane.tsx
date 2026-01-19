@@ -3,6 +3,7 @@ import ReaderLayout from "@/components/ReaderLayout";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import type { RefObject } from "react";
 import type { PendingHighlight } from "@/lib/readerTypes";
+import { Headphones } from "lucide-react";
 
 type ReaderPaneProps = {
   columns: 1 | 2;
@@ -15,6 +16,7 @@ type ReaderPaneProps = {
   onCreateHighlight: () => void;
   onCancelHighlight: () => void;
   onAddToChat?: () => void;
+  onReadAloud?: (text: string) => void;
   activeCitation: { content: string; rect: { top: number; left: number; width: number; height: number } } | null;
   onActiveCitationChange: (val: any) => void;
 };
@@ -30,6 +32,7 @@ export default function ReaderPane({
   onCreateHighlight,
   onCancelHighlight,
   onAddToChat,
+  onReadAloud,
   activeCitation,
   onActiveCitationChange,
 }: ReaderPaneProps) {
@@ -75,19 +78,31 @@ export default function ReaderPane({
 
       {pendingHighlight ? (
         <div
-          className="absolute z-20 flex -translate-x-1/2 items-center gap-2 rounded-lg border bg-popover p-2 shadow-lg"
+          className="absolute z-20 flex -translate-x-1/2 items-center gap-2 rounded-lg border bg-popover p-2 shadow-lg animate-in fade-in zoom-in-95 duration-200"
           style={{
             top: Math.max(16, pendingHighlight.rect.top - 44),
             left: pendingHighlight.rect.left + pendingHighlight.rect.width / 2,
           }}
         >
-          <Button size="sm" onClick={onCreateHighlight}>
-            Highlight &amp; Note
+          <Button size="sm" onClick={onCreateHighlight} className="h-8">
+            Highlight
           </Button>
-          <Button variant="secondary" size="sm" onClick={onAddToChat}>
-            Add to Chat
+          <Button variant="secondary" size="sm" onClick={onAddToChat} className="h-8">
+            Chat
           </Button>
-          <Button variant="outline" size="sm" onClick={onCancelHighlight}>
+          {onReadAloud && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onReadAloud(pendingHighlight.text)}
+              className="h-8 gap-1.5"
+            >
+              <Headphones className="h-3.5 w-3.5" />
+              <span>Read</span>
+            </Button>
+          )}
+          <div className="w-px h-4 bg-border/60 mx-0.5" />
+          <Button variant="ghost" size="sm" onClick={onCancelHighlight} className="h-8 px-2 text-muted-foreground hover:text-foreground">
             Cancel
           </Button>
         </div>
