@@ -42,11 +42,9 @@ Connect the playback engine to the user interface and implement the auto-page tu
     - [ ] Add a dropdown to the `AppearancePanel` or `SettingsPage` to select the preferred voice ID.
 - [x] Task: Conductor - User Manual Verification 'UI Integration & Page Turning' (Protocol in workflow.md) a68a1b9
 
-## Phase 4: Highlight-to-Speech
+## Phase 4: Highlight-to-Speech [checkpoint: d277624]
 Allow users to select specific text for targeted narration.
 
 - [x] Task: Add Context Menu Action 693ab82
 - [x] Task: Implement Selection Playback 693ab82
-    - [ ] Create a separate flow in `AudioPlayer` to handle "one-off" text chunks.
-    - [ ] Ensure "Selection Playback" pauses/interrupts any active "Continuous Playback".
-- [ ] Task: Conductor - User Manual Verification 'Highlight-to-Speech' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Highlight-to-Speech' (Protocol in workflow.md) d277624
