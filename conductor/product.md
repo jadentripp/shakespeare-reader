@@ -14,6 +14,8 @@ AI Reader transforms the experience of reading public domain literature from a p
 ## Key Features
 - **Seamless Discovery:** Integrated search for Project Gutenberg via Gutendex with curated collections.
 - **Local Library Management:** Efficient download and storage of books for offline reading.
+- **Premium Library Discovery:** A magazine-style 2D library interface with standardized covers, serif typography, and integrated reading progress indicators.
+- **The Reading Room:** An immersive 3D bookshelf experience using Three.js and WebGPU, featuring tactile book meshes, reactive animations, and theme-synced ambient lighting for a premium "private library" feel.
 - **Premium Reading Experience:** A paginated, customizable reader supporting single or two-column layouts.
 - **Rich Media Support:** Integrated inline illustration and image extraction from MOBI files, providing a more faithful and visually engaging reading experience for classic literature.
 - **Audiobook Narration:** High-quality AI-powered text-to-speech using ElevenLabs, allowing users to listen to books seamlessly with automatic page-turning or hear specific selections read aloud.
