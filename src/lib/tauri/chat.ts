@@ -82,7 +82,17 @@ export async function deleteBookMessages(bookId: number): Promise<void> {
 }
 
 export async function openAiKeyStatus(): Promise<OpenAiKeyStatus> {
-  return await invoke("openai_key_status");
+  try {
+    return await invoke("openai_key_status");
+  } catch (e) {
+    console.warn("openai_key_status command failed or missing:", e);
+    // Fallback to manual check of settings
+    const savedKey = await invoke<string | null>("get_setting", { key: "openai_api_key" }).catch(() => null);
+    return {
+      has_env_key: false,
+      has_saved_key: !!savedKey && savedKey.trim().length > 0,
+    };
+  }
 }
 
 export async function openAiChat(messages: ChatMessage[], model?: string): Promise<ChatResult> {

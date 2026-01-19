@@ -37,9 +37,8 @@ export function ChatModelSelector({
   const [open, setOpen] = useState(false);
   const [showMore, setShowMore] = useState(false);
 
-  const filteredModels = availableModels.filter((m) => !m.includes("search"));
-  const hasRecommended = filteredModels.includes(RECOMMENDED_MODEL);
-  const otherModels = filteredModels.filter((m) => m !== RECOMMENDED_MODEL);
+  const hasRecommended = availableModels.includes(RECOMMENDED_MODEL);
+  const otherModels = availableModels.filter((m) => m !== RECOMMENDED_MODEL);
 
   const handleSelect = (model: string) => {
     onModelChange(model);

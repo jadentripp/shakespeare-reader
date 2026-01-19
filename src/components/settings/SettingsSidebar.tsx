@@ -17,7 +17,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ activeTab, onTabChang
   ] as const;
 
   return (
-    <div className="w-64 border-r border-border bg-card h-full flex flex-col">
+    <div className="w-64 border-r border-border bg-card h-full flex-col hidden md:flex">
       <div className="p-6">
         <h2 className="text-xl font-semibold tracking-tight">Settings</h2>
       </div>

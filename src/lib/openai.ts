@@ -39,29 +39,39 @@ class OpenAIService {
   }
 
   async listModels(): Promise<string[]> {
+    console.log("[OpenAI] listModels started");
     const client = this.getClient();
-    const response = await client.models.list();
-    
-    const now = Math.floor(Date.now() / 1000);
-    const cutoff = now - 60 * 60 * 24 * 540;
-
-    return response.data
-      .filter((model: any) => {
-        const id = model.id;
-        if (!id.startsWith('gpt-')) return false;
-        if (id.startsWith('gpt-3.5')) return false;
-        if (id.startsWith('gpt-5')) return true;
+    try {
+      const response = await client.models.list();
+      console.log("[OpenAI] listModels raw response count:", response.data.length);
+      
+      const filtered = response.data
+        .filter((model: any) => {
+          const id = model.id;
+          // Only show GPT models
+          if (!id.startsWith('gpt-')) return false;
+          
+          // Filter out specialized models
+          const excludeTerms = ['realtime', 'search', 'tts', 'codex', 'image', 'audio', 'transcribe'];
+          if (excludeTerms.some(term => id.includes(term))) return false;
+          
+          return true;
+        })
+        .sort((a: any, b: any) => (b.created || 0) - (a.created || 0))
+        .map((model: any) => model.id);
         
-        return model.created ? model.created >= cutoff : true;
-      })
-      .sort((a: any, b: any) => (b.created || 0) - (a.created || 0))
-      .map((model: any) => model.id);
+      console.log("[OpenAI] listModels filtered count:", filtered.length);
+      return filtered;
+    } catch (e) {
+      console.error("[OpenAI] listModels failed:", e);
+      throw e;
+    }
   }
 
   async chat(messages: ChatMessage[], model_override?: string): Promise<ChatResult> {
     const client = this.getClient();
     
-    const model = model_override || (await getSetting('openai_model')) || 'gpt-4o';
+    const model = model_override || (await getSetting('openai_model')) || 'gpt-5.2';
 
     const response = await client.responses.create({
       model,
