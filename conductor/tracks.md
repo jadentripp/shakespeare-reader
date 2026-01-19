@@ -31,4 +31,4 @@ This file tracks all major tracks for the project. Each track has its own detail
 ---
 
 - [x] **Track: Integrate ElevenLabs Text-to-Speech (TTS) for audiobook-style narration.**
-*Link: [./tracks/elevenlabs_tts_20260118/](./tracks/elevenlabs_tts_20260118/)*
+*Link: [./archive/elevenlabs_tts_20260118/](./archive/elevenlabs_tts_20260118/)*
