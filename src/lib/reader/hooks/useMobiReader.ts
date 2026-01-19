@@ -16,6 +16,7 @@ import {
   useModels,
   useHighlights,
   useChat,
+  useTTS,
 } from "@/lib/reader/hooks";
 import { useMobiIframe } from "./useMobiIframe";
 
@@ -140,6 +141,15 @@ export function useMobiReader(bookId: number) {
     highlightsHook.setActiveAiBlockIndex,
     highlightsHook.setSelectedHighlightId
   );
+
+  const tts = useTTS({
+    getDoc,
+    getPageMetrics: pagination.getPageMetrics,
+    currentPage: pagination.currentPage,
+    onPageTurnNeeded: () => {
+      // Auto-page turn logic could go here later
+    }
+  });
 
   const { handleIframeLoad } = useMobiIframe({
     iframeRef,
@@ -349,6 +359,7 @@ export function useMobiReader(bookId: number) {
     models,
     highlights: highlightsHook,
     chat: chatHook,
+    tts,
 
     // Derived
     readerWidth,
