@@ -2,6 +2,8 @@
 
 AI Reader is an AI-powered desktop reader for public-domain books and long-form literature. Browse Project Gutenberg via Gutendex, download .mobi files locally, and read with a focused, paginated layout. Highlights, notes, and AI chat help you study and explore the text.
 
+[DeepWiki](https://deepwiki.com/jadentripp/ai-reader)
+
 ## Quickstart (non-technical)
 
 1) Download the latest macOS build from the GitHub Releases page.  
