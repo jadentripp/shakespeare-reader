@@ -13,7 +13,7 @@ Establish the foundation for using the ElevenLabs API within the application.
     - [ ] Implement a basic "test voice" function to verify the key and connection in the Settings panel.
 - [x] Task: Conductor - User Manual Verification 'Configuration & Infrastructure' (Protocol in workflow.md) 04a081e
 
-## Phase 2: Core Playback Engine (Streaming)
+## Phase 2: Core Playback Engine (Streaming) [checkpoint: 90f8071]
 Build the logic for fetching audio, playing it, and managing the queue.
 
 - [x] Task: Implement Audio Stream Manager 5db8136
@@ -24,7 +24,7 @@ Build the logic for fetching audio, playing it, and managing the queue.
 - [x] Task: Integrate with Reader Content 2e5a376
     - [ ] Connect the `AudioPlayer` to the `ReaderLayout` or `useMobiReader` context.
     - [ ] Implement a function `getPageText(pageIndex)` to extract clean, narrative text from the current page's HTML.
-- [ ] Task: Conductor - User Manual Verification 'Core Playback Engine (Streaming)' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Core Playback Engine (Streaming)' (Protocol in workflow.md) 90f8071
 
 ## Phase 3: UI Integration & Page Turning
 Connect the playback engine to the user interface and implement the auto-page turn logic.
