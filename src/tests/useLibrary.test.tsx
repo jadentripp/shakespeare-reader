@@ -2,8 +2,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useLibrary } from "../hooks/useLibrary";
+import { LibraryProvider } from "../hooks/LibraryProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as tauri from "../lib/tauri";
+import React from "react";
 
 // Mock tauri
 vi.mock("../lib/tauri", () => ({
@@ -11,6 +13,7 @@ vi.mock("../lib/tauri", () => ({
   gutendexCatalogPage: vi.fn(),
   hardDeleteBook: vi.fn(),
   downloadGutenbergMobi: vi.fn(),
+  dbInit: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock localStorage
@@ -43,7 +46,11 @@ const queryClient = new QueryClient({
 });
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  <QueryClientProvider client={queryClient}>
+    <LibraryProvider>
+      {children}
+    </LibraryProvider>
+  </QueryClientProvider>
 );
 
 describe("useLibrary hook", () => {
