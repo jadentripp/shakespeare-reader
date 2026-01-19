@@ -29,7 +29,7 @@ Build the logic for fetching audio, playing it, and managing the queue.
 ## Phase 3: UI Integration & Page Turning
 Connect the playback engine to the user interface and implement the auto-page turn logic.
 
-- [ ] Task: Add Playback Controls
+- [x] Task: Add Playback Controls 9c37eb7
     - [ ] Add a "Play/Pause" button to the `ReaderHeader` component.
     - [ ] Wire the button to the `AudioPlayer` states.
     - [ ] Add a visual indicator (spinner) for buffering states.
