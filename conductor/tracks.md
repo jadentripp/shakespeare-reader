@@ -30,5 +30,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Migrate AI logic from Rust to JS using the openai responses api sdk**
+- [x] **Track: Migrate AI logic from Rust to JS using the openai responses api sdk**
 *Link: [./tracks/openai_js_migration_20260118/](./tracks/openai_js_migration_20260118/)*
