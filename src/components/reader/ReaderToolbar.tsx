@@ -16,6 +16,7 @@ export function ReaderToolbar({ reader }: ReaderToolbarProps) {
     pagination,
     jumpPage,
     setJumpPage,
+    tts,
   } = reader;
 
   return (
@@ -44,6 +45,16 @@ export function ReaderToolbar({ reader }: ReaderToolbarProps) {
         }
       }}
       onBack={() => window.history.back()}
+      ttsState={tts.state}
+      onTtsPlay={() => {
+        if (tts.state === 'paused') {
+          tts.resume();
+        } else {
+          tts.playCurrentPage();
+        }
+      }}
+      onTtsPause={tts.pause}
+      onTtsStop={tts.stop}
     />
   );
 }

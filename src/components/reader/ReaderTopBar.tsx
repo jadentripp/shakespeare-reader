@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import AppearancePanel from "@/components/AppearancePanel";
-import { ChevronLeft, ChevronRight, Settings2, Columns2, BookOpen } from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings2, Columns2, BookOpen, Play, Pause, Square, Loader2 } from "lucide-react";
+import { PlaybackState } from "@/lib/elevenlabs";
 
 type ReaderTopBarProps = {
   title?: string;
@@ -24,6 +25,11 @@ type ReaderTopBarProps = {
   onJumpPageChange: (value: string) => void;
   onJumpPageGo: () => void;
   onBack: () => void;
+  // TTS props
+  ttsState: PlaybackState;
+  onTtsPlay: () => void;
+  onTtsPause: () => void;
+  onTtsStop: () => void;
 };
 
 export default function ReaderTopBar({
@@ -46,6 +52,10 @@ export default function ReaderTopBar({
   onJumpPageChange,
   onJumpPageGo,
   onBack,
+  ttsState,
+  onTtsPlay,
+  onTtsPause,
+  onTtsStop,
 }: ReaderTopBarProps) {
   return (
     <div className="shrink-0 flex items-center gap-4 px-2 py-1.5">
@@ -60,6 +70,48 @@ export default function ReaderTopBar({
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <p className="truncate text-sm font-medium text-foreground/90">{title}</p>
+      </div>
+
+      {/* TTS Controls */}
+      <div className="flex items-center gap-1 rounded-full border bg-card/60 backdrop-blur-sm p-1 shadow-sm">
+        {ttsState === 'playing' ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onTtsPause}
+            aria-label="Pause Narration"
+            className="h-8 w-8 p-0 rounded-full hover:bg-muted/60 text-primary"
+          >
+            <Pause className="h-4 w-4 fill-current" />
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onTtsPlay}
+            aria-label="Play Narration"
+            disabled={ttsState === 'buffering'}
+            className="h-8 w-8 p-0 rounded-full hover:bg-muted/60"
+          >
+            {ttsState === 'buffering' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4 fill-current" />
+            )}
+          </Button>
+        )}
+        
+        {ttsState !== 'idle' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onTtsStop}
+            aria-label="Stop Narration"
+            className="h-8 w-8 p-0 rounded-full hover:bg-muted/60"
+          >
+            <Square className="h-3.5 w-3.5 fill-current" />
+          </Button>
+        )}
       </div>
 
       {/* Center: Navigation */}
