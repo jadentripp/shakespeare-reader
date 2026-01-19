@@ -12,9 +12,9 @@ Focus on creating a unified design language for both local library and catalog s
 - [x] Task: Implement integrated progress bars and refined badges. 33c0b33
     - [x] Write Tests: Verify progress bar width/visibility based on reading state.
     - [x] Implement: Embed progress indicators directly into the card UI; restyle Lucide badges.
-- [ ] Task: Refactor `LibraryGrid.tsx` and page sections for reduced noise.
-    - [ ] Write Tests: Ensure responsive breakpoints handle unified cards correctly.
-    - [ ] Implement: Update grid layouts and section headers in `YourLibrary.tsx` and `CatalogResults.tsx`.
+- [x] Task: Refactor `LibraryGrid.tsx` and page sections for reduced noise. d9900f1
+    - [x] Write Tests: Ensure responsive breakpoints handle unified cards correctly.
+    - [x] Implement: Update grid layouts and section headers in `YourLibrary.tsx` and `CatalogResults.tsx`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: 2D Library Harmonization' (Protocol in workflow.md)
 
 ## Phase 2: 3D Environment & Tactile Materials
