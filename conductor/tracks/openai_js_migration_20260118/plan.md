@@ -23,7 +23,7 @@ This plan outlines the migration of AI logic from the Rust backend to the React 
     - [ ] Verify model filtering and chat response parsing.
 - [ ] Task: Conductor - User Manual Verification 'AI Service Implementation' (Protocol in workflow.md)
 
-## Phase 3: Integration & UI Update
+## Phase 3: Integration & UI Update [checkpoint: 9cf12f5]
 - [x] Task: Update Chat components to use the new JS service. e74fe31
     - [ ] Research with `deepwiki` the best pattern for replacing Tauri `invoke` calls with local JS service calls in React components.
     - [ ] Update `useChat` hook (or equivalent) to call the new JS `chat` and `listModels` functions.
@@ -35,7 +35,7 @@ This plan outlines the migration of AI logic from the Rust backend to the React 
 - [ ] Task: Conductor - User Manual Verification 'Integration & UI Update' (Protocol in workflow.md)
 
 ## Phase 4: Backend Cleanup
-- [ ] Task: Remove Rust AI code.
+- [~] Task: Remove Rust AI code.
     - [ ] Research with `deepwiki` the safest way to remove Tauri commands without breaking the build.
     - [ ] Delete `src-tauri/src/openai.rs`.
     - [ ] Remove `openai` module and command registrations from `src-tauri/src/lib.rs` and `src-tauri/src/main.rs`.
