@@ -50,28 +50,33 @@ export function CatalogResults({
   setCatalogPageUrl,
 }: CatalogResultsProps) {
   return (
-    <section className="rounded-2xl border border-border/40 bg-card/50 p-6">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="font-serif text-xl font-medium text-foreground">
+    <section className="rounded-2xl border border-border/20 bg-card/30 p-8 shadow-sm transition-all">
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1.5">
+          <h2 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
             {catalogSearch ? `Results for "${catalogSearch}"` : activeCatalog.label}
           </h2>
-          {!catalogSearch && activeCatalog.kind !== "all" && (
-            <p className="mt-1 text-sm text-muted-foreground">{activeCatalog.description}</p>
+          {!catalogSearch && activeCatalog.kind !== "all" ? (
+            <p className="max-w-2xl text-sm text-muted-foreground leading-relaxed">{activeCatalog.description}</p>
+          ) : (
+             <p className="text-sm text-muted-foreground">
+              {catalogQ.isLoading ? "Searching..." : `${catalogQ.data?.count ?? 0} titles found in Project Gutenberg`}
+            </p>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          {/* Sort dropdown */}
+        <div className="flex items-center gap-3">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <ArrowUpDown className="h-3.5 w-3.5" />
-                {sortBy === "relevance" ? "Best match" :
-                  sortBy === "popular" ? "Most popular" :
-                    sortBy === "title" ? "Title A-Z" : "Author A-Z"}
+              <Button variant="outline" size="sm" className="h-9 gap-2 border-border/40 bg-background/50 hover:bg-background">
+                <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="font-medium">
+                  {sortBy === "relevance" ? "Best match" :
+                    sortBy === "popular" ? "Most popular" :
+                      sortBy === "title" ? "Title A-Z" : "Author A-Z"}
+                </span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-44 p-1.5">
+            <PopoverContent align="end" className="w-48 p-1.5">
               {[
                 { id: "relevance", label: "Best match", icon: Sparkles },
                 { id: "popular", label: "Most popular", icon: Download },
@@ -82,9 +87,9 @@ export function CatalogResults({
                   key={opt.id}
                   type="button"
                   onClick={() => setSortBy(opt.id as SortOption)}
-                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${sortBy === opt.id ? "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" : "hover:bg-muted"}`}
+                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors ${sortBy === opt.id ? "bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:text-amber-100" : "hover:bg-muted"}`}
                 >
-                  <opt.icon className="h-4 w-4" />
+                  <opt.icon className={`h-4 w-4 ${sortBy === opt.id ? "text-amber-600" : "text-muted-foreground"}`} />
                   {opt.label}
                 </button>
               ))}
@@ -95,11 +100,11 @@ export function CatalogResults({
             <Button
               variant="outline"
               size="sm"
-              className="gap-2"
+              className="h-9 gap-2 border-border/40 bg-background/50 hover:bg-background"
               onClick={startOrResumeBulk}
               disabled={bulkScan.running}
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-4 w-4 text-muted-foreground" />
               {bulkScan.running ? "Scanning..." : "Download All"}
             </Button>
           )}
@@ -111,17 +116,11 @@ export function CatalogResults({
       ) : catalogQ.isLoading ? (
         <LibrarySkeleton count={5} variant="list" />
       ) : catalogQ.isError ? (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 py-8 text-center">
-          <p className="text-sm text-destructive">Failed to load catalog. Please try again.</p>
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 py-12 text-center">
+          <p className="text-sm font-medium text-destructive">Failed to load catalog. Please try again.</p>
         </div>
       ) : (
         <>
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {sortedCatalogResults.length} of {catalogQ.data?.count ?? 0} results
-            </p>
-          </div>
-
           {sortedCatalogResults.length === 0 ? (
             <LibraryEmptyState 
               type="search" 
@@ -174,18 +173,21 @@ export function CatalogResults({
           )}
 
           {(catalogQ.data?.previous || catalogQ.data?.next) && (
-            <div className="mt-6 flex items-center justify-center gap-2">
+            <div className="mt-10 flex items-center justify-center gap-3">
               <Button
                 variant="outline"
                 size="sm"
+                className="h-9 min-w-[100px] border-border/40"
                 disabled={!catalogQ.data?.previous}
                 onClick={() => setCatalogPageUrl(catalogQ.data?.previous ?? null)}
               >
                 Previous
               </Button>
+              <div className="h-1 w-1 rounded-full bg-stone-300" />
               <Button
                 variant="outline"
                 size="sm"
+                className="h-9 min-w-[100px] border-border/40"
                 disabled={!catalogQ.data?.next}
                 onClick={() => setCatalogPageUrl(catalogQ.data?.next ?? null)}
               >

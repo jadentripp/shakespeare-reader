@@ -23,40 +23,42 @@ export function YourLibrary({
   progressByBookId,
   deleteBook,
 }: YourLibraryProps) {
+  const totalBooks = (booksQ.data ?? []).length;
+
   return (
-    <section>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h2 className="font-serif text-xl font-medium text-foreground">Your Library</h2>
-          <Badge variant="secondary" className="font-normal">
-            {(booksQ.data ?? []).length} {(booksQ.data ?? []).length === 1 ? "book" : "books"}
-          </Badge>
+    <section className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border/40 pb-4">
+        <div className="space-y-1">
+          <h2 className="font-serif text-2xl font-semibold tracking-tight text-foreground">Your Library</h2>
+          <p className="text-sm text-muted-foreground">
+            {totalBooks} {totalBooks === 1 ? "book" : "books"} in your collection
+          </p>
         </div>
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/40" />
           <Input
             type="search"
-            placeholder="Filter library..."
+            placeholder="Filter by title or author..."
             value={libraryQuery}
             onChange={(e) => setLibraryQuery(e.target.value)}
-            className="h-9 pl-9 pr-9"
+            className="h-10 border-border/40 bg-background/50 pl-9 pr-9 focus:bg-background"
           />
           {libraryQuery && (
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+              className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               onClick={() => setLibraryQuery("")}
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </Button>
           )}
         </div>
       </div>
 
       {booksQ.isLoading ? (
-        <LibrarySkeleton count={4} />
-      ) : (booksQ.data ?? []).length === 0 ? (
+        <LibrarySkeleton count={8} />
+      ) : totalBooks === 0 ? (
         <LibraryEmptyState type="library" />
       ) : filteredBooks.length === 0 ? (
         <LibraryEmptyState type="search" />
