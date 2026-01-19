@@ -36,13 +36,13 @@ Transform the 3D void into a curated "Reading Room" using WebGPU.
 ## Phase 3: Reactive Interaction & cinematic Polish
 Add micro-interactions and cinematic transitions to complete the premium feel.
 
-- [~] Task: Implement "Tactile Hover" animations in 3D.
-    - [ ] Consult `deepwiki` for performant hover detection and animation interpolation in WebGPU.
-    - [ ] Write Tests: Verify book translation state on pointer hover.
-    - [ ] Implement: Use `useFrame` or `lerp` to slide books out slightly when focused.
-- [ ] Task: Refine camera transitions and cinematic effects.
-    - [ ] Write Tests: Ensure camera lerps to correct target on book selection.
-    - [ ] Implement: Polish `CameraController` for a smoother "zooming" feel when opening a book.
-- [ ] Task: Final 2D/3D integration pass.
-    - [ ] Implement: Apply consistent micro-animations (transitions, lifts) across both library modes.
+- [x] Task: Implement "Tactile Hover" animations in 3D. a9b6f21
+    - [x] Consult `deepwiki` for performant hover detection and animation interpolation in WebGPU.
+    - [x] Write Tests: Verify book translation state on pointer hover.
+    - [x] Implement: Use `useFrame` or `lerp` to slide books out slightly when focused.
+- [x] Task: Refine camera transitions and cinematic effects. a9b6f21
+    - [x] Write Tests: Ensure camera lerps to correct target on book selection.
+    - [x] Implement: Polish `CameraController` for a smoother "zooming" feel when opening a book.
+- [x] Task: Final 2D/3D integration pass. a9b6f21
+    - [x] Implement: Apply consistent micro-animations (transitions, lifts) across both library modes.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Reactive Interaction & cinematic Polish' (Protocol in workflow.md)
