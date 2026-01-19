@@ -15,10 +15,10 @@ const CameraController: React.FC<{ targetBook: any; isZooming: boolean }> = ({ t
   useFrame((state) => {
     if (isZooming && targetBook) {
       const targetPos = new THREE.Vector3(...targetBook.position);
-      // Adjust target to look at the center of the book
-      targetPos.y += 0.3;
+      // Adjust target to look at the center of the taller book
+      targetPos.y += 0.45;
       
-      const zoomPos = targetPos.clone().add(new THREE.Vector3(0, 0.1, 1.8));
+      const zoomPos = targetPos.clone().add(new THREE.Vector3(0, 0, 2.0));
 
       state.camera.position.lerp(zoomPos, 0.04);
       state.camera.lookAt(targetPos);
@@ -133,8 +133,8 @@ const ThreeDLibraryPage: React.FC = () => {
         const heightVariation = 0.85 + (bookIndex % 5) * 0.05;
 
         const x = -bookcaseWidth / 2 + 0.6 + col * bookSpacing;
-        const y = row * rowHeight + 0.1; 
-        const z = shelfDepth * 0.2; 
+        const y = row * rowHeight + 0.55; // Sit on shelf correctly
+        const z = shelfDepth * 0.15; 
 
         result.push({
           ...book,
@@ -182,9 +182,9 @@ const ThreeDLibraryPage: React.FC = () => {
                   index={index}
                   isSelected={selectedBook?.id === book.id}
                   onClick={() => handleBookClick(book)}
-                  height={0.75 * book.heightScale}
-                  width={0.45}
-                  depth={0.12}
+                  height={1.0 * book.heightScale}
+                  width={0.65}
+                  depth={0.16}
                 />
               ))}
           </group>
