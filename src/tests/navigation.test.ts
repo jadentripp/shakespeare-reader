@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { cleanFootnoteContent } from '../routes/MobiBookPage';
+import { cleanFootnoteContent } from '../lib/readerUtils';
 
 describe('cleanFootnoteContent', () => {
   it('should remove return links like "back"', () => {
