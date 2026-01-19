@@ -11,7 +11,7 @@ This plan outlines the migration of AI logic from the Rust backend to the React 
     - [ ] Ensure `VITE_OPENAI_API_KEY` or similar is supported in `.env`.
 - [x] Task: Conductor - User Manual Verification 'Foundation & Research' (Protocol in workflow.md) 3442538
 
-## Phase 2: AI Service Implementation
+## Phase 2: AI Service Implementation [checkpoint: 926e824]
 - [x] Task: Create `src/lib/openai.ts` service. 00f93bf
     - [ ] Research with `deepwiki` the most idiomatic way to structure a shared AI service in React/TypeScript.
     - [ ] Implement `resolveApiKey` to check Tauri settings first, then environment variables.
