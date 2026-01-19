@@ -38,4 +38,4 @@ This file tracks all major tracks for the project. Each track has its own detail
 ---
 
 - [x] **Track: improve the library pages (2d/3d)**
-*Link: [./tracks/library_design_overhaul_20260118/](./tracks/library_design_overhaul_20260118/)*
+*Link: [./archive/library_design_overhaul_20260118/](./archive/library_design_overhaul_20260118/)*
