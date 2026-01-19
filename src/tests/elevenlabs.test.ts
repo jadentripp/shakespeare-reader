@@ -1,38 +1,46 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ElevenLabsService, AudioPlayer } from '../lib/elevenlabs';
+import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test';
+import * as tauriSettings from '../lib/tauri/settings';
 
-// Mock tauri functions
-vi.mock('../lib/tauri/settings', () => ({
-  getSetting: vi.fn().mockResolvedValue('fake-api-key'),
-}));
-
-// Use vi- prefix for variables used inside vi.mock factory
-const vi_mockConvert = vi.fn().mockImplementation(() => new ReadableStream({
+// Mock ElevenLabs SDK
+const vi_mockConvert = mock(() => new ReadableStream({
   start(controller) {
     controller.enqueue(new Uint8Array([0, 0, 0, 0]));
     controller.close();
   }
 }));
-const vi_mockGetAll = vi.fn().mockResolvedValue({ voices: [{ voice_id: 'v1', name: 'Rachel' }] });
+const vi_mockGetAll = mock(() => Promise.resolve({ voices: [{ voice_id: 'v1', name: 'Rachel' }] }));
+const mockPlay = mock(() => Promise.resolve(undefined));
 
-// Mock ElevenLabs SDK
-vi.mock('@elevenlabs/elevenlabs-js', () => {
-    return {
-        ElevenLabsClient: class {
-          textToSpeech = {
-            convert: vi_mockConvert,
-          };
-          voices = {
-            getAll: vi_mockGetAll,
-          };
-        },
-        play: vi.fn().mockResolvedValue(undefined),
-    };
+mock.module('@elevenlabs/elevenlabs-js', () => {
+  return {
+    ElevenLabsClient: class {
+      textToSpeech = {
+        convert: vi_mockConvert,
+      };
+      voices = {
+        getAll: vi_mockGetAll,
+      };
+    },
+    play: mockPlay,
+  };
 });
 
+import { ElevenLabsService, AudioPlayer } from '../lib/elevenlabs';
+
 describe('ElevenLabsService', () => {
+  const spies: any[] = [];
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.restore();
+    spies.push(spyOn(tauriSettings, 'getSetting').mockResolvedValue('fake-api-key'));
+    vi_mockConvert.mockClear();
+    vi_mockGetAll.mockClear();
+    mockPlay.mockClear();
+  });
+
+  afterEach(() => {
+    spies.forEach(s => s.mockRestore());
+    spies.length = 0;
   });
 
   it('should be able to convert text to speech', async () => {
@@ -58,38 +66,48 @@ describe('ElevenLabsService', () => {
 
 describe('AudioPlayer', () => {
   let player: AudioPlayer;
-  let mockAudioContext: any;
+  let mockAudioContextInstance: any;
+  const spies: any[] = [];
 
   beforeEach(() => {
-    mockAudioContext = {
-      createBufferSource: vi.fn().mockReturnValue({
+    mock.restore();
+    spies.push(spyOn(tauriSettings, 'getSetting').mockResolvedValue('fake-api-key'));
+
+    mockAudioContextInstance = {
+      createBufferSource: mock(() => ({
         buffer: null,
-        connect: vi.fn(),
-        start: vi.fn(),
-        stop: vi.fn(),
+        connect: mock(() => { }),
+        start: mock(() => { }),
+        stop: mock(() => { }),
         onended: null,
-      }),
-      decodeAudioData: vi.fn().mockResolvedValue({ duration: 10 }),
+      })),
+      decodeAudioData: mock(() => Promise.resolve({ duration: 10 })),
       state: 'suspended',
-      resume: vi.fn().mockResolvedValue(undefined),
-      suspend: vi.fn().mockResolvedValue(undefined),
-      close: vi.fn().mockResolvedValue(undefined),
+      resume: mock(() => Promise.resolve(undefined)),
+      suspend: mock(() => Promise.resolve(undefined)),
+      close: mock(() => Promise.resolve(undefined)),
       destination: {},
     };
 
-    // Class for constructor mocking
     class MockAudioContext {
-      constructor() { return mockAudioContext; }
-      createBufferSource() { return mockAudioContext.createBufferSource(); }
-      decodeAudioData(data: any) { return mockAudioContext.decodeAudioData(data); }
-      resume() { return mockAudioContext.resume(); }
-      suspend() { return mockAudioContext.suspend(); }
-      get state() { return mockAudioContext.state; }
-      get destination() { return mockAudioContext.destination; }
+      constructor() { return mockAudioContextInstance; }
+      createBufferSource() { return mockAudioContextInstance.createBufferSource(); }
+      decodeAudioData(data: any) { return mockAudioContextInstance.decodeAudioData(data); }
+      resume() { return mockAudioContextInstance.resume(); }
+      suspend() { return mockAudioContextInstance.suspend(); }
+      get state() { return mockAudioContextInstance.state; }
+      get destination() { return mockAudioContextInstance.destination; }
     }
-    
-    vi.stubGlobal('AudioContext', MockAudioContext);
+
+    globalThis.AudioContext = MockAudioContext as any;
     player = new AudioPlayer();
+  });
+
+  afterEach(() => {
+    spies.forEach(s => s.mockRestore());
+    spies.length = 0;
+    // @ts-ignore
+    delete globalThis.AudioContext;
   });
 
   it('should initialize with idle state', () => {
@@ -106,7 +124,7 @@ describe('AudioPlayer', () => {
     expect(player.getState()).toBe('playing');
   });
 
-  it('should be able to pause and resume', async () => {
+  it("should be able to pause and resume", async () => {
     await player.play('Test text');
     player.pause();
     expect(player.getState()).toBe('paused');

@@ -1,38 +1,50 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { generateThreadTitle } from '../lib/openai';
+import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 
-// Hoist mocks
-const { mockCreateResponse } = vi.hoisted(() => {
-  return {
-    mockCreateResponse: vi.fn(),
-  };
+// Define mocks
+const mockCreateResponse = mock(() => ({}));
+const mockGetSetting = mock(async (key: string) => {
+  if (key === 'openai_api_key') return 'api-key';
+  return null;
 });
 
-vi.mock('openai', () => {
+// Mock factories
+const mockOpenAIFactory = () => {
   return {
     default: class OpenAI {
+      constructor(opts: any) { }
       responses = {
-        create: mockCreateResponse,
+        create: mockCreateResponse
       };
-    },
-    OpenAI: class OpenAI {
-      responses = {
-        create: mockCreateResponse,
-      };
-    },
+      // Minimal mock for other parts if needed
+      models = { list: mock(() => ({})) } as any
+    }
   };
-});
+};
 
-vi.mock('../lib/tauri/settings', () => ({
-  getSetting: vi.fn(async (key) => {
-    if (key === 'openai_api_key') return 'api-key';
-    return null;
-  }),
-}));
+const mockSettingsFactory = () => {
+  return {
+    getSetting: mockGetSetting
+  };
+};
+
+// Initial application (optional but helps IDE/imports)
+mock.module("openai", mockOpenAIFactory);
+mock.module("@/lib/tauri/settings", mockSettingsFactory);
+
+import { generateThreadTitle } from '../lib/openai';
 
 describe('AI Thread Title Generation', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // Re-apply mocks for this test file
+    mock.module("openai", mockOpenAIFactory);
+    mock.module("@/lib/tauri/settings", mockSettingsFactory);
+
+    mockCreateResponse.mockClear();
+    mockGetSetting.mockClear();
+  });
+
+  afterEach(() => {
+    mock.restore();
   });
 
   it('should generate a concise title from the first interaction', async () => {
@@ -72,6 +84,8 @@ describe('AI Thread Title Generation', () => {
       ],
     });
 
+    // We need to pass at least empty messages to avoid slice error if implementation assumes length
+    // Implementation: messages.slice(0, 2)
     const title = await generateThreadTitle([{ role: 'user', content: '...' }]);
     expect(title).toBe('The Ghost of Hamlet');
   });

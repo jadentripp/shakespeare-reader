@@ -20,7 +20,7 @@ const ReadingDesk: React.FC<ReadingDeskProps> = ({
     const topThickness = 0.15;
 
     return (
-        <group position={position} data-testid="reading-desk">
+        <group position={position}>
             {/* Desktop Surface */}
             <Box args={[width, topThickness, depth]} position={[0, height, 0]} castShadow receiveShadow>
                 <meshStandardMaterial color={surfaceColor} roughness={0.4} metalness={0.1} />
@@ -57,11 +57,11 @@ const ReadingDesk: React.FC<ReadingDeskProps> = ({
             </Box>
 
             {/* Ambient desk light - subtle warm glow under/around desk */}
-            <pointLight 
-                position={[0, height - 0.5, 0]} 
-                intensity={5} 
-                distance={4} 
-                color="#FFE4CC" 
+            <pointLight
+                position={[0, height - 0.5, 0]}
+                intensity={5}
+                distance={4}
+                color="#FFE4CC"
             />
         </group>
     );

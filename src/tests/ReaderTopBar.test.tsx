@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, mock } from "bun:test";
 import { render, screen, cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import ReaderTopBar from '../components/reader/ReaderTopBar';
@@ -9,28 +8,28 @@ expect.extend(matchers);
 describe('ReaderTopBar', () => {
   const defaultProps: any = {
     showAppearance: false,
-    onShowAppearanceChange: vi.fn(),
+    onShowAppearanceChange: mock(),
     fontFamily: 'serif',
     lineHeight: 1.6,
     margin: 40,
-    onFontFamilyChange: vi.fn(),
-    onLineHeightChange: vi.fn(),
-    onMarginChange: vi.fn(),
+    onFontFamilyChange: mock(),
+    onLineHeightChange: mock(),
+    onMarginChange: mock(),
     columns: 1,
-    onToggleColumns: vi.fn(),
-    onPrev: vi.fn(),
-    onNext: vi.fn(),
+    onToggleColumns: mock(),
+    onPrev: mock(),
+    onNext: mock(),
     currentPage: 1,
     totalPages: 10,
     jumpPage: '',
-    onJumpPageChange: vi.fn(),
-    onJumpPageGo: vi.fn(),
-    onBack: vi.fn(),
+    onJumpPageChange: mock(),
+    onJumpPageGo: mock(),
+    onBack: mock(),
     // TTS props
     ttsState: 'idle',
-    onTtsPlay: vi.fn(),
-    onTtsPause: vi.fn(),
-    onTtsStop: vi.fn(),
+    onTtsPlay: mock(),
+    onTtsPause: mock(),
+    onTtsStop: mock(),
   };
 
   beforeEach(() => {

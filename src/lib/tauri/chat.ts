@@ -83,16 +83,18 @@ export async function deleteBookMessages(bookId: number): Promise<void> {
 
 export async function openAiKeyStatus(): Promise<OpenAiKeyStatus> {
   try {
-    return await invoke("openai_key_status");
+    const status = await invoke<OpenAiKeyStatus>("openai_key_status");
+    if (status) return status;
   } catch (e) {
-    console.warn("openai_key_status command failed or missing:", e);
-    // Fallback to manual check of settings
-    const savedKey = await invoke<string | null>("get_setting", { key: "openai_api_key" }).catch(() => null);
-    return {
-      has_env_key: false,
-      has_saved_key: !!savedKey && savedKey.trim().length > 0,
-    };
+    console.warn("openai_key_status command failed:", e);
   }
+
+  // Fallback for web/non-Tauri environment
+  // Browser cannot access server-side env vars, so return safe defaults
+  return {
+    has_env_key: false,
+    has_saved_key: false,
+  };
 }
 
 export async function openAiChat(messages: ChatMessage[], model?: string): Promise<ChatResult> {

@@ -5,16 +5,21 @@ import { Settings, Box } from "lucide-react";
 import { dbInit } from "./lib/tauri";
 import { LibraryProvider } from "./hooks/LibraryProvider";
 
+let didInit = false;
+
 export default function AppLayout() {
   useEffect(() => {
-    void dbInit();
+    if (!didInit) {
+      didInit = true;
+      void dbInit();
+    }
   }, []);
 
   return (
     <LibraryProvider>
-      <div className="min-h-screen bg-background text-foreground">
-        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/40">
-          <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4">
+      <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+        <header className="shrink-0 h-12 z-30 bg-background/80 backdrop-blur-md border-b border-border/40">
+          <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-4">
             <div className="flex items-center gap-6">
               <Link to="/" className="flex items-center gap-2 group">
                 <div className="h-7 w-7 rounded-lg bg-foreground flex items-center justify-center">
@@ -43,7 +48,7 @@ export default function AppLayout() {
             </Link>
           </div>
         </header>
-        <main className="min-h-[calc(100vh-3rem)] bg-muted/20">
+        <main className="flex-1 min-h-0 bg-muted/20 relative overflow-y-auto">
           <Outlet />
         </main>
       </div>

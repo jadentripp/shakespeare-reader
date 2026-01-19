@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { Highlight } from "@/lib/tauri";
 import { Highlighter, Trash2, FileText, Check, X, MessageSquarePlus, MessageSquare } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 type HighlightsListProps = {
   highlights: Highlight[] | undefined;
@@ -43,12 +43,14 @@ export default function HighlightsList({
   attachedHighlightIds = [],
 }: HighlightsListProps) {
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
-
-  useEffect(() => {
+  // Reset editing state when selection changes
+  const [prevSelectedHighlightId, setPrevSelectedHighlightId] = useState(selectedHighlightId);
+  if (selectedHighlightId !== prevSelectedHighlightId) {
+    setPrevSelectedHighlightId(selectedHighlightId);
     if (selectedHighlightId !== editingNoteId) {
       setEditingNoteId(null);
     }
-  }, [selectedHighlightId, editingNoteId]);
+  }
 
   const hasUnsavedChanges = selectedHighlight
     ? noteDraft !== (selectedHighlight.note ?? "")
@@ -157,14 +159,14 @@ export default function HighlightsList({
                         </>
                       )}
                     </div>
-                    
+
                     <button
                       type="button"
                       onClick={() => onToggleContext?.(highlight.id)}
                       className={cn(
                         "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
-                        isAttached 
-                          ? "bg-primary/10 text-primary hover:bg-primary/20" 
+                        isAttached
+                          ? "bg-primary/10 text-primary hover:bg-primary/20"
                           : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
                       )}
                     >
@@ -191,7 +193,7 @@ export default function HighlightsList({
               >
                 {isAttached ? <MessageSquare className="h-3.5 w-3.5" /> : <MessageSquarePlus className="h-3.5 w-3.5" />}
               </button>
-              
+
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <button

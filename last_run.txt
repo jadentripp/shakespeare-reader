@@ -1,0 +1,150 @@
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[ElevenLabs] textToSpeech called for text: "Test text..." with voiceId: v1
+[ElevenLabs] textToSpeech conversion successful
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 1, total length: 4
+[AudioPlayer] Audio data received, size: 4 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 10.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback
+[AudioPlayer] State transition: idle -> playing
+(pass) AudioPlayer > should be able to play text [1.45ms]
+Global beforeEach running
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Resolved voiceId from database: fake-api-key
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: fake-api-key
+[ElevenLabs] textToSpeech called for text: "Test text..." with voiceId: fake-api-key
+[ElevenLabs] textToSpeech conversion successful
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 1, total length: 4
+[AudioPlayer] Audio data received, size: 4 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 10.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Pause requested
+[AudioPlayer] State transition: playing -> paused
+[AudioPlayer] Resume requested
+[AudioPlayer] State transition: paused -> playing
+(pass) AudioPlayer > should be able to pause and resume [0.42ms]
+
+src/tests/toc.test.ts:
+Global beforeEach running
+(pass) parseSceneLinksHierarchical > should group scenes under acts [1.51ms]
+Global beforeEach running
+(pass) parseSceneLinksHierarchical > should handle scenes before any act [0.51ms]
+
+src/tests/libraryStateSharing.test.tsx:
+Global beforeEach running
+(pass) Library State Sharing > shares state between multiple components using the hook under the same provider [4.05ms]
+
+src/tests/SettingsPage.test.tsx:
+Global beforeEach running
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  has_env_key: false,
+  has_saved_key: false,
+}
+[Settings] Loading saved voice ID: null
+[Settings] No saved voice ID, will use default when voices load
+[Settings] No key detected
+(pass) SettingsPage > renders the ElevenLabs API key input [36.04ms]
+Global beforeEach running
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  has_env_key: false,
+  has_saved_key: false,
+}
+[Settings] Loading saved voice ID: null
+[Settings] No saved voice ID, will use default when voices load
+[Settings] No key detected
+(pass) SettingsPage > renders the Connection Status section [38.37ms]
+(skip) SettingsPage > shows the settings page content
+
+src/tests/webGPUScene.test.tsx:
+Global beforeEach running
+(pass) WebGPUScene > should render the Canvas component [3.34ms]
+
+src/tests/ReaderLayout.test.tsx:
+Global beforeEach running
+(pass) ReaderLayout > renders children [3.33ms]
+Global beforeEach running
+(pass) ReaderLayout > stores the column count on the root element [0.53ms]
+Global beforeEach running
+(pass) ReaderLayout > updates the column count when set to 2 [0.77ms]
+
+src/tests/theme.test.ts:
+Global beforeEach running
+(pass) Global Theme Variables > should define shadcn theme tokens in index.css [0.24ms]
+Global beforeEach running
+(pass) Global Theme Variables > should apply the new variables to global selectors [0.16ms]
+
+src/tests/AppearancePanel.test.tsx:
+Global beforeEach running
+(pass) AppearancePanel > renders correctly with default props [18.02ms]
+Global beforeEach running
+(pass) AppearancePanel > calls onFontFamilyChange when font selection changes [40.69ms]
+Global beforeEach running
+(pass) AppearancePanel > renders sliders for line height and margin [22.16ms]
+
+src/tests/pollution.test.ts:
+Global beforeEach running
+(pass) Pollution Check > should set a value in localStorage [2.29ms]
+Global beforeEach running
+(pass) Pollution Check > should find localStorage empty in a fresh test [0.03ms]
+Global beforeEach running
+(pass) Pollution Check > should add an element to the body [0.32ms]
+Global beforeEach running
+(pass) Pollution Check > should find the body empty in a fresh test
+
+src/tests/library.test.tsx:
+Global beforeEach running
+(pass) LibraryPage > should display book title [15.04ms]
+Global beforeEach running
+(pass) LibraryPage > should display empty state when no books are found [8.03ms]
+
+src/tests/SelectionTTS.test.tsx:
+Global beforeEach running
+(pass) ReaderPane Selection TTS > renders the Read button in the selection popover [6.93ms]
+Global beforeEach running
+(pass) ReaderPane Selection TTS > calls onReadAloud when the Read button is clicked [4.54ms]
+
+10 tests skipped:
+(skip) ReadingRoom > should render floor, walls and rug
+(skip) ThreeDLibraryPage > should render the 3D Library placeholder
+(skip) AI Thread Title Generation (TODO: Module mocking not yet supported in bun) > should generate a concise title from the first interaction
+(skip) AI Thread Title Generation (TODO: Module mocking not yet supported in bun) > should clean up quotes from the generated title
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > resolveApiKey > should resolve key from Tauri settings first
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > resolveApiKey > should fallback to environment variables if no saved key
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > resolveApiKey > should throw error if no key found
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > listModels > should filter and sort gpt models correctly
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > chat > should call openai.responses.create and format result
+(skip) SettingsPage > shows the settings page content
+
+
+1 tests failed:
+
+ 64 pass
+ 10 skip
+ 1 fail
+ 3 errors
+ 125 expect() calls
+Ran 75 tests across 32 files. [2.72s]

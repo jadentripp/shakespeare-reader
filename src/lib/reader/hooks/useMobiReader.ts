@@ -145,13 +145,23 @@ export function useMobiReader(bookId: number) {
 
   const tts = useTTS({
     getDoc,
-    getPageMetrics: pagination.getPageMetrics,
+    getPageMetrics: () => {
+      const metrics = pagination.getPageMetrics();
+      const root = getScrollRoot();
+      return {
+        pageWidth: metrics.pageWidth,
+        gap: metrics.gap,
+        stride: metrics.pageWidth + metrics.gap,
+        scrollLeft: root?.scrollLeft ?? 0,
+        rootRect: root?.getBoundingClientRect() ?? new DOMRect(),
+      };
+    },
     currentPage: pagination.currentPage,
     onPageTurnNeeded: () => {
       if (pagination.currentPage < pagination.totalPages) {
         pagination.next();
       }
-    }
+    },
   });
 
   const { handleIframeLoad } = useMobiIframe({
@@ -173,9 +183,10 @@ export function useMobiReader(bookId: number) {
   const srcDoc = useMemo(() => {
     if (!htmlQ.data) return "";
     const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__ !== undefined;
-    const baseUrl = !isTauri && bookQ.data?.gutenberg_id
-      ? `https://www.gutenberg.org/cache/epub/${bookQ.data.gutenberg_id}/`
-      : undefined;
+    const baseUrl =
+      !isTauri && bookQ.data?.gutenberg_id
+        ? `https://www.gutenberg.org/cache/epub/${bookQ.data.gutenberg_id}/`
+        : undefined;
     const { html: processedHtml } = processGutenbergContent(htmlQ.data, bookId, baseUrl);
     const css = buildReaderCss({ columns, margin, pageGap, fontFamily, lineHeight });
     const wrappedBody = wrapBody(processedHtml);
@@ -217,30 +228,34 @@ export function useMobiReader(bookId: number) {
     };
   }, []);
 
-  useEffect(() => {
+  // Restore reading progress from localStorage during rendering when data changes
+  const [prevProgressKey, setPrevProgressKey] = useState<string | null>(null);
+  const [prevHtmlData, setPrevHtmlData] = useState<string | undefined>(undefined);
+
+  if (progressKey !== prevProgressKey || htmlQ.data !== prevHtmlData) {
+    setPrevProgressKey(progressKey);
+    setPrevHtmlData(htmlQ.data);
     restoredRef.current = false;
+    toc.resetHeadingIndex();
+
     if (!htmlQ.data || !progressKey) {
       pendingRestoreRef.current = null;
-      return;
+    } else {
+      const raw = localStorage.getItem(progressKey);
+      if (!raw) {
+        pendingRestoreRef.current = null;
+      } else {
+        try {
+          const parsed = JSON.parse(raw) as { page?: number };
+          pendingRestoreRef.current = {
+            page: typeof parsed.page === "number" ? parsed.page : undefined,
+          };
+        } catch {
+          pendingRestoreRef.current = null;
+        }
+      }
     }
-    const raw = localStorage.getItem(progressKey);
-    if (!raw) {
-      pendingRestoreRef.current = null;
-      return;
-    }
-    try {
-      const parsed = JSON.parse(raw) as { page?: number };
-      pendingRestoreRef.current = {
-        page: typeof parsed.page === "number" ? parsed.page : undefined,
-      };
-    } catch {
-      pendingRestoreRef.current = null;
-    }
-  }, [htmlQ.data, progressKey]);
-
-  useEffect(() => {
-    toc.resetHeadingIndex();
-  }, [iframeReady, htmlQ.data]);
+  }
 
   useEffect(() => {
     if (restoredRef.current) return;
@@ -255,15 +270,7 @@ export function useMobiReader(bookId: number) {
     }
   }, [pagination.totalPages]);
 
-  useEffect(() => {
-    if (!iframeReady || !highlightsHook.highlights) return;
-    highlightsHook.renderHighlights(
-      highlightsHook.selectedHighlightId,
-      highlightsHook.activeAiQuote,
-      highlightsHook.activeAiBlockIndex
-    );
-  }, [iframeReady, highlightsHook.highlights, highlightsHook.activeAiQuote, highlightsHook.activeAiBlockIndex, highlightsHook.selectedHighlightId]);
-
+  // Synchronize highlights with the iframe DOM
   useEffect(() => {
     if (!iframeReady) return;
     highlightsHook.renderHighlights(
@@ -271,7 +278,13 @@ export function useMobiReader(bookId: number) {
       highlightsHook.activeAiQuote,
       highlightsHook.activeAiBlockIndex
     );
-  }, [highlightsHook.selectedHighlightId, highlightsHook.activeAiQuote, highlightsHook.activeAiBlockIndex, iframeReady]);
+  }, [
+    iframeReady,
+    highlightsHook.highlights,
+    highlightsHook.activeAiQuote,
+    highlightsHook.activeAiBlockIndex,
+    highlightsHook.selectedHighlightId,
+  ]);
 
   const scrollToHighlight = (highlightId: number) => {
     let attempts = 0;

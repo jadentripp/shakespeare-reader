@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "bun:test";
 // @ts-ignore
 import fs from 'fs';
 // @ts-ignore

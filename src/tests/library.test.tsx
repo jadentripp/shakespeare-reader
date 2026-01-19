@@ -1,21 +1,13 @@
-// @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from "bun:test";
 import { render, screen, cleanup } from "@testing-library/react";
-import LibraryPage from "../routes/LibraryPage";
+import * as matchers from "@testing-library/jest-dom/matchers";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
+import * as tauri from "../lib/tauri";
+import * as useLibraryModule from "../hooks/useLibrary";
+import LibraryPage from "../routes/LibraryPage";
 
-// Mock @tanstack/react-router
-vi.mock("@tanstack/react-router", () => ({
-  useNavigate: vi.fn(),
-  Link: ({ children, to, params }: any) => <a href={to}>{children}</a>,
-}));
-
-// Mock useLibrary hook
-const mockUseLibrary = vi.fn();
-vi.mock("../hooks/useLibrary", () => ({
-  useLibrary: () => mockUseLibrary(),
-}));
+expect.extend(matchers);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,78 +18,85 @@ const queryClient = new QueryClient({
 });
 
 describe("LibraryPage", () => {
+  const spies: any[] = [];
+  let currentMockValues: any = {};
+
   beforeEach(() => {
-    vi.clearAllMocks();
     queryClient.clear();
     cleanup();
-    
-    // Default mock implementation
-    mockUseLibrary.mockReturnValue({
-        booksQ: { data: [], isLoading: false },
-        catalogQ: { isFetching: false, data: { results: [], count: 0 } },
-        catalogKey: "collection-all",
-        setCatalogKey: vi.fn(),
-        activeCatalog: { kind: "all", catalogKey: "collection-all" },
-        catalogSearch: null,
-        canQueryCatalog: false,
-        hasQueueActivity: false,
-        filteredBooks: [],
-        booksInProgress: [],
-        progressByBookId: new Map(),
-        counts: { queued: 0, downloading: 0, done: 0, failed: 0 },
-        recentSearches: [],
-        queue: [],
-        setQueue: vi.fn(),
-        libraryQuery: "",
-        setLibraryQuery: vi.fn(),
-        deleteBook: vi.fn(),
-        sortedCatalogResults: [],
-        showAllCategories: false,
-        setShowAllCategories: vi.fn(),
-        paused: false,
-        setPaused: vi.fn(),
-        retryFailed: vi.fn(),
-        clearDone: vi.fn(),
-        clearFailed: vi.fn(),
-        resumeAll: vi.fn(),
-        startOrResumeBulk: vi.fn(),
-        bulkScan: { running: false },
-        canBulkScan: false,
-        setCatalogPageUrl: vi.fn(),
-        searchFocused: false,
-        setSearchFocused: vi.fn(),
-        handleSearch: vi.fn(),
-        clearRecentSearches: vi.fn(),
-        enqueue: vi.fn(),
-        active: null,
-        catalogQuery: "",
-        setCatalogQuery: vi.fn(),
-        sortBy: "relevance",
-        setSortBy: vi.fn(),
-    });
+    mock.restore();
+
+    currentMockValues = {
+      booksQ: { data: [], isLoading: false },
+      catalogQ: { isFetching: false, data: { results: [], count: 0 } },
+      catalogKey: "collection-all",
+      setCatalogKey: mock(),
+      activeCatalog: { kind: "all", catalogKey: "collection-all" },
+      catalogSearch: null,
+      canQueryCatalog: false,
+      hasQueueActivity: false,
+      filteredBooks: [],
+      booksInProgress: [],
+      progressByBookId: new Map(),
+      counts: { queued: 0, downloading: 0, done: 0, failed: 0 },
+      recentSearches: [],
+      queue: [],
+      setQueue: mock(),
+      libraryQuery: "",
+      setLibraryQuery: mock(),
+      deleteBook: mock(),
+      sortedCatalogResults: [],
+      showAllCategories: false,
+      setShowAllCategories: mock(),
+      paused: false,
+      setPaused: mock(),
+      retryFailed: mock(),
+      clearDone: mock(),
+      clearFailed: mock(),
+      resumeAll: mock(),
+      startOrResumeBulk: mock(),
+      bulkScan: { running: false },
+      canBulkScan: false,
+      setCatalogPageUrl: mock(),
+      searchFocused: false,
+      setSearchFocused: mock(),
+      handleSearch: mock(),
+      clearRecentSearches: mock(),
+      enqueue: mock(),
+      active: null,
+      catalogQuery: "",
+      setCatalogQuery: mock(),
+      sortBy: "relevance",
+      setSortBy: mock(),
+    };
+
+    spies.push(spyOn(useLibraryModule, 'useLibrary').mockImplementation(() => currentMockValues));
+  });
+
+  afterEach(() => {
+    spies.forEach(s => s.mockRestore());
+    spies.length = 0;
+    cleanup();
   });
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-        {children}
+      {children}
     </QueryClientProvider>
   );
 
   it("should display book title", async () => {
     const mockBook = { id: 1, title: "Test Book", authors: "Test Author", gutenberg_id: 12345 };
-    mockUseLibrary.mockReturnValue({
-        ...mockUseLibrary(),
-        filteredBooks: [mockBook],
-        booksQ: { data: [mockBook], isLoading: false },
-    });
+    currentMockValues.filteredBooks = [mockBook];
+    currentMockValues.booksQ = { data: [mockBook], isLoading: false };
 
     render(<LibraryPage />, { wrapper });
 
-    expect(screen.getByText("Test Book")).toBeDefined();
+    expect(screen.getByText("Test Book")).toBeInTheDocument();
   });
 
   it("should display empty state when no books are found", async () => {
     render(<LibraryPage />, { wrapper });
-    expect(screen.getByText("Your library is empty")).toBeDefined();
+    expect(screen.getByText("Your library is empty")).toBeInTheDocument();
   });
 });

@@ -1,0 +1,489 @@
+bun test v1.3.2 (b131639c)
+
+src/tests/navigation.test.ts:
+(pass) cleanFootnoteContent > should remove return links like "back" [4.91ms]
+(pass) cleanFootnoteContent > should remove return links like "↑" [0.30ms]
+(pass) cleanFootnoteContent > should remove return links like "↩" [0.57ms]
+(pass) cleanFootnoteContent > should strip [1] style prefixes from text nodes [0.21ms]
+(pass) cleanFootnoteContent > should remove citation numbers like "[1]" [0.21ms]
+(pass) cleanFootnoteContent > should keep other links [0.53ms]
+(pass) cleanFootnoteContent > should handle complex HTML [0.46ms]
+
+src/tests/BookCard.test.tsx:
+(pass) BookCard > should render local book in grid variant by default [52.40ms]
+(pass) BookCard > should render catalog book in list variant [11.52ms]
+
+src/tests/readerHtml.test.ts:
+(pass) processGutenbergContent > should inject data-block-index into meaningful blocks [4.81ms]
+(pass) processGutenbergContent > should extract metadata correctly [0.64ms]
+
+src/tests/useTTS.test.ts:
+(pass) useTTS > should initialize with idle state [6.48ms]
+(pass) useTTS > should call audioPlayer.play with page text [3.59ms]
+
+src/tests/useLibrary.test.tsx:
+(pass) useLibrary hook > should initialize with default values [9.36ms]
+(pass) useLibrary hook > should handle library search query changes [2.91ms]
+(pass) useLibrary hook > should filter books based on library query [56.67ms]
+(pass) useLibrary hook > should handle catalog search and update recent searches [3.80ms]
+(pass) useLibrary hook > should handle book deletion [3.88ms]
+
+src/tests/ReaderTopBar.test.tsx:
+(pass) ReaderTopBar > renders the TTS play button when idle [14.77ms]
+(pass) ReaderTopBar > renders the pause button when playing [10.60ms]
+
+src/tests/useChatSidebar.test.tsx:
+(pass) useChatSidebar hook > should initialize with default states [2.36ms]
+
+src/tests/ThreeDLibraryPage.test.tsx:
+<ambientLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <ambientLight> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<directionalLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <directionalLight> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+React does not recognize the `castShadow` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `castshadow` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+React does not recognize the `shadow-mapSize-width` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `shadow-mapsize-width` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+React does not recognize the `shadow-mapSize-height` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `shadow-mapsize-height` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+<spotLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <spotLight> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<pointLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <pointLight> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<pointLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <planeGeometry> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <meshStandardMaterial> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+The tag <mesh> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+React does not recognize the `receiveShadow` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `receiveshadow` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <boxGeometry> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <group> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<cylinderGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <cylinderGeometry> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+React does not recognize the `envMapIntensity` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `envmapintensity` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+<cylinderGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<torusGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <torusGeometry> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+React does not recognize the `emissiveIntensity` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `emissiveintensity` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<pointLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<pointLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<pointLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<pointLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<pointLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<pointLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<pointLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+(pass) ThreeDLibraryPage > should render the 3D scene with ReadingRoom elements [39.54ms]
+
+src/tests/ReadingRoom.test.tsx:
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+(pass) ReadingRoom > should render floor, walls and rug [4.87ms]
+
+src/tests/useMobiReader.test.tsx:
+(pass) useMobiReader hook > should initialize with default states [5.08ms]
+(pass) useMobiReader hook > should toggle columns [1.44ms]
+
+src/tests/SettingsAppearance.test.tsx:
+React has detected a change in the order of Hooks called by TestComponent. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://react.dev/link/rules-of-hooks
+
+   Previous render            Next render
+   ------------------------------------------------------
+1. useState                   useState
+2. useState                   useState
+3. useState                   useState
+4. useState                   useState
+5. useState                   useState
+6. useState                   useState
+7. useState                   useState
+8. useState                   useState
+9. useContext                 useContext
+10. useContext                useContext
+11. useContext                useContext
+12. useContext                useContext
+13. useEffect                 useEffect
+14. useState                  useState
+15. useCallback               useCallback
+16. useSyncExternalStore      useSyncExternalStore
+17. useEffect                 useEffect
+18. useContext                useContext
+19. useContext                useContext
+20. useContext                useContext
+21. useEffect                 useEffect
+22. useState                  useState
+23. useCallback               useCallback
+24. useSyncExternalStore      useSyncExternalStore
+25. useEffect                 useEffect
+26. useRef                    useRef
+27. useRef                    useRef
+28. useRef                    useState
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+# Unhandled error between tests
+-------------------------------
+7968 |       return updateReducerImpl(hook, currentHook, reducer);
+7969 |     }
+7970 |     function updateReducerImpl(hook, current, reducer) {
+7971 |       var queue = hook.queue;
+7972 |       if (null === queue)
+7973 |         throw Error(
+                     ^
+error: Should have a queue. You are likely calling Hooks conditionally, which is not allowed. (https://react.dev/link/invalid-hook-call)
+      at updateReducerImpl (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:7973:15)
+      at useState (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:26511:18)
+      at useReaderAppearance (/Users/jadentripp/Desktop/tests/reader/ai-reader/src/lib/appearance.ts:18:35)
+      at useMobiReader (/Users/jadentripp/Desktop/tests/reader/ai-reader/src/lib/reader/hooks/useMobiReader.ts:47:7)
+      at TestComponent (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/@testing-library/react/dist/pure.js:330:27)
+      at react_stack_bottom_frame (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:25904:20)
+      at renderWithHooks (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:7662:22)
+      at updateFunctionComponent (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:10166:19)
+      at runWithFiberInDEV (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at performUnitOfWork (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:17641:22)
+-------------------------------
+
+An error occurred in the <TestComponent> component.
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+
+
+# Unhandled error between tests
+-------------------------------
+7968 |       return updateReducerImpl(hook, currentHook, reducer);
+7969 |     }
+7970 |     function updateReducerImpl(hook, current, reducer) {
+7971 |       var queue = hook.queue;
+7972 |       if (null === queue)
+7973 |         throw Error(
+                     ^
+error: Should have a queue. You are likely calling Hooks conditionally, which is not allowed. (https://react.dev/link/invalid-hook-call)
+      at updateReducerImpl (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:7973:15)
+      at useState (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:26511:18)
+      at useReaderAppearance (/Users/jadentripp/Desktop/tests/reader/ai-reader/src/lib/appearance.ts:18:35)
+      at useMobiReader (/Users/jadentripp/Desktop/tests/reader/ai-reader/src/lib/reader/hooks/useMobiReader.ts:47:7)
+      at TestComponent (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/@testing-library/react/dist/pure.js:330:27)
+      at react_stack_bottom_frame (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:25904:20)
+      at renderWithHooks (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:7662:22)
+      at updateFunctionComponent (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:10166:19)
+      at runWithFiberInDEV (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at performUnitOfWork (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/react-dom/cjs/react-dom-client.development.js:17641:22)
+-------------------------------
+
+An error occurred in the <TestComponent> component.
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+
+
+# Unhandled error between tests
+-------------------------------
+ 6 | 
+ 7 | expect.extend(matchers);
+ 8 | 
+ 9 | import SettingsPage from "../routes/SettingsPage";
+10 | 
+11 | describe("SettingsPage Appearance Section", () => {
+     ^
+error: Cannot call describe() after the test run has completed
+      at /Users/jadentripp/Desktop/tests/reader/ai-reader/src/tests/SettingsAppearance.test.tsx:11:1
+      at loadAndEvaluateModule (2:1)
+-------------------------------
+
+
+src/tests/fonts.test.ts:
+(pass) Project Fonts > index.html should include Google Fonts links for EB Garamond and Inter [0.29ms]
+
+src/tests/useTTS_auto.test.ts:
+(pass) useTTS auto-advance > triggers onPageTurnNeeded when audio ends naturally and autoNext is true [17.50ms]
+
+src/tests/SettingsSidebar.test.tsx:
+(pass) SettingsSidebar > renders all settings categories [4.94ms]
+(pass) SettingsSidebar > calls onTabChange when a category is clicked [7.16ms]
+(pass) SettingsSidebar > highlights the active tab [4.87ms]
+
+src/tests/BookMesh.test.tsx:
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+Received `true` for a non-boolean attribute `transparent`.
+
+If you want to write it to the DOM, pass a string instead: transparent="true" or transparent={value.toString()}.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<cylinderGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+(pass) BookMesh > should render the book mesh and its components [6.55ms]
+
+src/tests/threeDLibrary.test.tsx:
+(skip) ThreeDLibraryPage > should render the 3D Library placeholder
+
+src/tests/LibraryGrid.test.tsx:
+(pass) LibraryGrid > should render children in grid variant [2.57ms]
+(pass) LibraryGrid > should render children in list variant [0.75ms]
+
+src/tests/threadTitle.test.ts:
+(skip) AI Thread Title Generation (TODO: Module mocking not yet supported in bun) > should generate a concise title from the first interaction
+(skip) AI Thread Title Generation (TODO: Module mocking not yet supported in bun) > should clean up quotes from the generated title
+
+src/tests/appearance.test.ts:
+(pass) useReaderAppearance > should return default values when no data in localStorage [1.03ms]
+(pass) useReaderAppearance > should persist changes to localStorage [0.88ms]
+(pass) useReaderAppearance > should load data from localStorage on initialization [0.48ms]
+
+src/tests/SettingsPage_voices.test.tsx:
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  has_env_key: false,
+  has_saved_key: false,
+}
+[Settings] Loading saved voice ID: v1
+[Settings] No key detected
+[Settings] voiceId changed: v1
+(pass) SettingsPage Voice Selection > renders the Voice selection dropdown [77.41ms]
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  has_env_key: false,
+  has_saved_key: false,
+}
+[Settings] Loading saved voice ID: v1
+[Settings] No key detected
+[Settings] voiceId changed: v1
+(pass) SettingsPage Voice Selection > shows preview button when a voice with preview is selected [97.26ms]
+
+src/tests/openai.test.ts:
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > resolveApiKey > should resolve key from Tauri settings first
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > resolveApiKey > should fallback to environment variables if no saved key
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > resolveApiKey > should throw error if no key found
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > listModels > should filter and sort gpt models correctly
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > chat > should call openai.responses.create and format result
+
+src/tests/elevenlabs.test.ts:
+[ElevenLabs] textToSpeech called for text: "Hello world..." with voiceId: v1
+[ElevenLabs] textToSpeech conversion successful
+(pass) ElevenLabsService > should be able to convert text to speech [2.99ms]
+[ElevenLabs] getVoices called
+[ElevenLabs] getVoices successful, found 1 voices
+[ElevenLabs] Sample voice object structure: {
+  has_voice_id: true,
+  has_voiceId: false,
+  raw_keys: [ "voice_id", "name" ],
+}
+(pass) ElevenLabsService > should be able to list voices [0.39ms]
+(pass) AudioPlayer > should initialize with idle state [0.13ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[ElevenLabs] textToSpeech called for text: "Test text..." with voiceId: v1
+[ElevenLabs] textToSpeech conversion successful
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 1, total length: 4
+[AudioPlayer] Audio data received, size: 4 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 10.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback
+[AudioPlayer] State transition: idle -> playing
+(pass) AudioPlayer > should be able to play text [1.50ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Resolved voiceId from database: fake-api-key
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: fake-api-key
+[ElevenLabs] textToSpeech called for text: "Test text..." with voiceId: fake-api-key
+[ElevenLabs] textToSpeech conversion successful
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 1, total length: 4
+[AudioPlayer] Audio data received, size: 4 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 10.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Pause requested
+[AudioPlayer] State transition: playing -> paused
+[AudioPlayer] Resume requested
+[AudioPlayer] State transition: paused -> playing
+(pass) AudioPlayer > should be able to pause and resume [0.36ms]
+
+src/tests/toc.test.ts:
+(pass) parseSceneLinksHierarchical > should group scenes under acts [1.68ms]
+(pass) parseSceneLinksHierarchical > should handle scenes before any act [0.45ms]
+
+src/tests/libraryStateSharing.test.tsx:
+(pass) Library State Sharing > shares state between multiple components using the hook under the same provider [3.10ms]
+
+src/tests/SettingsPage.test.tsx:
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  has_env_key: false,
+  has_saved_key: false,
+}
+[Settings] Loading saved voice ID: null
+[Settings] No saved voice ID, will use default when voices load
+[Settings] No key detected
+(pass) SettingsPage > renders the ElevenLabs API key input [37.69ms]
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  has_env_key: false,
+  has_saved_key: false,
+}
+[Settings] Loading saved voice ID: null
+[Settings] No saved voice ID, will use default when voices load
+[Settings] No key detected
+(pass) SettingsPage > renders the Connection Status section [35.30ms]
+(skip) SettingsPage > shows the settings page content
+
+src/tests/webGPUScene.test.tsx:
+(pass) WebGPUScene > should render the Canvas component [2.51ms]
+
+src/tests/ReaderLayout.test.tsx:
+(pass) ReaderLayout > renders children [2.58ms]
+(pass) ReaderLayout > stores the column count on the root element [0.62ms]
+(pass) ReaderLayout > updates the column count when set to 2 [0.16ms]
+
+src/tests/theme.test.ts:
+(pass) Global Theme Variables > should define shadcn theme tokens in index.css [0.40ms]
+(pass) Global Theme Variables > should apply the new variables to global selectors [0.14ms]
+
+src/tests/AppearancePanel.test.tsx:
+(pass) AppearancePanel > renders correctly with default props [16.03ms]
+(pass) AppearancePanel > calls onFontFamilyChange when font selection changes [41.21ms]
+(pass) AppearancePanel > renders sliders for line height and margin [22.55ms]
+
+src/tests/pollution.test.ts:
+(pass) Pollution Check > should set a value in localStorage
+(pass) Pollution Check > should find localStorage empty in a fresh test [0.61ms]
+(pass) Pollution Check > should add an element to the body [0.18ms]
+(pass) Pollution Check > should find the body empty in a fresh test [0.31ms]
+
+src/tests/library.test.tsx:
+(pass) LibraryPage > should display book title [17.35ms]
+(pass) LibraryPage > should display empty state when no books are found [8.01ms]
+
+src/tests/SelectionTTS.test.tsx:
+(pass) ReaderPane Selection TTS > renders the Read button in the selection popover [7.10ms]
+(pass) ReaderPane Selection TTS > calls onReadAloud when the Read button is clicked [5.17ms]
+
+9 tests skipped:
+(skip) ThreeDLibraryPage > should render the 3D Library placeholder
+(skip) AI Thread Title Generation (TODO: Module mocking not yet supported in bun) > should generate a concise title from the first interaction
+(skip) AI Thread Title Generation (TODO: Module mocking not yet supported in bun) > should clean up quotes from the generated title
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > resolveApiKey > should resolve key from Tauri settings first
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > resolveApiKey > should fallback to environment variables if no saved key
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > resolveApiKey > should throw error if no key found
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > listModels > should filter and sort gpt models correctly
+(skip) OpenAI Service (TODO: Module mocking not yet supported in bun) > chat > should call openai.responses.create and format result
+(skip) SettingsPage > shows the settings page content
+
+
+1 tests failed:
+
+ 65 pass
+ 9 skip
+ 1 fail
+ 3 errors
+ 127 expect() calls
+Ran 75 tests across 32 files. [2.21s]

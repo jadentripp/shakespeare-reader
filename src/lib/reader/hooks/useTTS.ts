@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { audioPlayer, PlaybackState, VoiceSettings } from '@/lib/elevenlabs';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { audioPlayer, VoiceSettings } from '@/lib/elevenlabs';
 import { getPageContent, PageMetrics } from '@/lib/readerUtils';
 import { getSetting } from '@/lib/tauri';
 
@@ -11,7 +11,12 @@ interface UseTTSOptions {
 }
 
 export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }: UseTTSOptions) {
-  const [state, setState] = useState<PlaybackState>('idle');
+  const state = React.useSyncExternalStore(
+    useCallback((callback: () => void) => audioPlayer.subscribe(callback), []),
+    () => audioPlayer.getState(),
+    () => 'idle' as const
+  );
+
   const [autoNext, setAutoNext] = useState(false);
   const [voiceId, setVoiceId] = useState<string | undefined>();
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings | undefined>();
@@ -36,21 +41,16 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
     });
   }, []);
 
+  // Track state transitions for auto-advance
+  const prevStateRef = useRef(state);
   useEffect(() => {
-    return audioPlayer.subscribe((newState) => {
-      setState((prevState) => {
-        if (newState === 'idle' && prevState === 'playing') {
-            // Use a timeout or next tick to avoid state update loops during subscribe
-            setTimeout(() => {
-                if (autoNext) {
-                  onPageTurnNeeded?.();
-                }
-            }, 0);
-        }
-        return newState;
-      });
-    });
-  }, [autoNext, onPageTurnNeeded]);
+    if (state === 'idle' && prevStateRef.current === 'playing') {
+      if (autoNext) {
+        onPageTurnNeeded?.();
+      }
+    }
+    prevStateRef.current = state;
+  }, [state, autoNext, onPageTurnNeeded]);
 
   // When currentPage changes, if autoNext is true, start playing
   useEffect(() => {
@@ -62,7 +62,7 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
   const getPageText = useCallback((pageIndex: number) => {
     const doc = getDoc();
     if (!doc) return "";
-    
+
     const metrics = getPageMetrics();
     const content = getPageContent(doc, pageIndex, metrics);
     return content.text;

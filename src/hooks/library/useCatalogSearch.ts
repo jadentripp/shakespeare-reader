@@ -1,5 +1,5 @@
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useMemo, useEffect } from "react";
 import {
   CATALOG_BY_KEY,
   CATALOG_GROUPS,
@@ -16,19 +16,19 @@ import {
 } from "@/lib/gutenbergUtils";
 
 export function useCatalogSearch() {
-  const [catalogKey, setCatalogKey] = useState<string>(DEFAULT_CATALOG_KEY);
-  const [catalogQuery, setCatalogQuery] = useState("");
-  const [showAllCategories, setShowAllCategories] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>("relevance");
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [catalogPageUrl, setCatalogPageUrl] = useState<string | null>(null);
+  const [catalogKey, setCatalogKey] = React.useState<string>(DEFAULT_CATALOG_KEY);
+  const [catalogQuery, setCatalogQuery] = React.useState("");
+  const [showAllCategories, setShowAllCategories] = React.useState(false);
+  const [sortBy, setSortBy] = React.useState<SortOption>("relevance");
+  const [searchFocused, setSearchFocused] = React.useState(false);
+  const [recentSearches, setRecentSearches] = React.useState<string[]>([]);
+  const [catalogPageUrl, setCatalogPageUrl] = React.useState<string | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setRecentSearches(getRecentSearches());
   }, []);
 
-  const activeCatalog = useMemo<CatalogEntry>(() => {
+  const activeCatalog = React.useMemo<CatalogEntry>(() => {
     return CATALOG_BY_KEY.get(catalogKey) ?? CATALOG_GROUPS[0].items[0]!;
   }, [catalogKey]);
 
@@ -36,6 +36,22 @@ export function useCatalogSearch() {
   const catalogTopic = activeCatalog.kind === "category" ? activeCatalog.topic ?? null : null;
   const canQueryCatalog =
     activeCatalog.kind === "collection" || catalogSearch.length > 0 || Boolean(catalogTopic);
+
+  // Reset page when search or catalog changes
+  const [prevCatalogKey, setPrevCatalogKey] = React.useState(catalogKey);
+  const [prevCatalogSearch, setPrevCatalogSearch] = React.useState(catalogSearch);
+  const [prevCatalogTopic, setPrevCatalogTopic] = React.useState(catalogTopic);
+
+  if (
+    catalogKey !== prevCatalogKey ||
+    catalogSearch !== prevCatalogSearch ||
+    catalogTopic !== prevCatalogTopic
+  ) {
+    setPrevCatalogKey(catalogKey);
+    setPrevCatalogSearch(catalogSearch);
+    setPrevCatalogTopic(catalogTopic);
+    setCatalogPageUrl(null);
+  }
 
   const catalogQ = useQuery({
     queryKey: ["gutendex", activeCatalog.catalogKey, catalogPageUrl, catalogSearch, catalogTopic],
@@ -48,10 +64,6 @@ export function useCatalogSearch() {
       }),
     enabled: canQueryCatalog,
   });
-
-  useEffect(() => {
-    setCatalogPageUrl(null);
-  }, [catalogKey, catalogSearch, catalogTopic]);
 
   function handleSearch(query: string) {
     setCatalogQuery(query);
@@ -67,7 +79,7 @@ export function useCatalogSearch() {
     setRecentSearches([]);
   }
 
-  const sortedCatalogResults = useMemo(() => {
+  const sortedCatalogResults = React.useMemo(() => {
     const results = catalogQ.data?.results ?? [];
     return sortResults(results, sortBy, catalogSearch);
   }, [catalogQ.data, sortBy, catalogSearch]);

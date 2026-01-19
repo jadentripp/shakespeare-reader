@@ -6,7 +6,7 @@ AI Reader is an AI-powered desktop application for reading and interacting with 
 
 - **Desktop Framework:** [Tauri v2](https://tauri.app/) (Rust-based shell)
 - **Frontend Framework:** [React 19](https://react.dev/) with [TypeScript](https://www.typescriptlang.org/)
-- **Build Tool:** [Vite](https://vitejs.dev/)
+- **Build Tool:** [Bun](https://bun.sh/) (native bundler & dev server)
 - **Package Manager:** [Bun](https://bun.sh/)
 - **Routing & State:** [TanStack Router](https://tanstack.com/router/v1) & [TanStack Query](https://tanstack.com/query/v5)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/) & [Radix UI](https://www.radix-ui.com/)
@@ -14,7 +14,7 @@ AI Reader is an AI-powered desktop application for reading and interacting with 
 - **AI Integration:** [OpenAI API](https://openai.com/api/) (Chat, Assistant, Model Selection)
 - **Audio/TTS:** [ElevenLabs](https://elevenlabs.io/)
 - **3D Components:** [React Three Fiber](https://r3f.docs.pmnd.rs/) & [Three.js](https://threejs.org/)
-- **Testing:** [Vitest](https://vitest.dev/) & [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
+- **Testing:** [Bun Test](https://bun.sh/docs/cli/test) & [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
 
 ## Project Structure
 
@@ -22,7 +22,7 @@ AI Reader is an AI-powered desktop application for reading and interacting with 
   - `components/`: UI components, organized by feature (reader, library, settings, three, ui).
   - `lib/`: Core logic, utilities, hooks, and Tauri command wrappers.
   - `routes/`: Route components for different pages (Library, Book, Settings, etc.).
-  - `tests/`: Extensive test suite using Vitest.
+  - `tests/`: Extensive test suite using Bun Test.
 - `src-tauri/`: Rust backend and Tauri configuration.
   - `src/`: Rust logic for database management, book downloading/extraction, and Gutendex integration.
 - `conductor/`: Project management and specification documents (Product Definition, Tech Stack, Tracks).
@@ -30,11 +30,11 @@ AI Reader is an AI-powered desktop application for reading and interacting with 
 ## Building and Running
 
 - `bun install`: Install dependencies.
-- `bun run dev`: Start the Vite development server (Web only).
+- `bun run dev`: Start the Bun development server (Web only).
 - `bun run tauri dev`: Run the desktop application in development mode.
 - `bun run build`: Build web assets.
 - `bun run tauri build`: Build the production desktop application.
-- `bun run test`: Execute the test suite using Vitest.
+- `bun run test`: Execute the test suite using Bun Test.
 - `bun run db:reset`: Clear the local database and downloaded book files.
 
 ## Development Conventions
@@ -49,7 +49,7 @@ AI Reader is an AI-powered desktop application for reading and interacting with 
   - SQLite database is initialized and managed in `src-tauri/src/db.rs`.
   - Book processing logic (MOBI to HTML) is in `src-tauri/src/books.rs`.
 - **Testing:**
-  - Vitest is the primary testing framework.
+  - Bun Test is the primary testing framework.
   - Tests are located in `src/tests/`.
   - Note: `AGENTS.md` may contain outdated information regarding testing; rely on `package.json` and the `src/tests/` directory.
 - **AI:**

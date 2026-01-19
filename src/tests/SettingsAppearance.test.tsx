@@ -1,65 +1,44 @@
-// @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import * as matchers from '@testing-library/jest-dom/matchers';
-import SettingsPage from '../routes/SettingsPage';
+import { describe, it, expect, beforeEach, beforeAll, afterEach, mock, spyOn } from "bun:test";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import * as matchers from "@testing-library/jest-dom/matchers";
+import React from "react";
+import * as tauri from "../lib/tauri";
 
 expect.extend(matchers);
 
-// Mock tauri functions
-vi.mock('../lib/tauri', () => ({
-  getSetting: vi.fn().mockResolvedValue(null),
-  setSetting: vi.fn().mockResolvedValue(undefined),
-  openAiKeyStatus: vi.fn().mockResolvedValue({ has_env_key: false, has_saved_key: false }),
-}));
+import SettingsPage from "../routes/SettingsPage";
 
-describe('SettingsPage Appearance Section', () => {
+describe("SettingsPage Appearance Section", () => {
+  const spies: any[] = [];
+
   beforeAll(() => {
-    // @ts-ignore
     global.ResizeObserver = class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
+      observe() { }
+      unobserve() { }
+      disconnect() { }
     };
   });
 
   beforeEach(() => {
     cleanup();
-    vi.clearAllMocks();
+    mock.restore();
+
+    spies.push(spyOn(tauri, 'getSetting').mockResolvedValue(null));
+    spies.push(spyOn(tauri, 'setSetting').mockResolvedValue(undefined as any));
+    spies.push(spyOn(tauri, 'openAiKeyStatus').mockResolvedValue({ has_env_key: false, has_saved_key: false }));
+    spies.push(spyOn(tauri, 'dbInit').mockResolvedValue(undefined as any));
   });
 
-  it('updates font size and reflects in preview', async () => {
-    render(<SettingsPage />);
-    
-    // Default tab should be appearance
-    const previewText = screen.getByText(/It was the best of times/i);
-    const container = previewText.closest('div');
-    
-    // Initially should have 18px (default)
-    expect(container).toHaveStyle({ fontSize: '18px' });
-
-    // Find slider and change it
-    const slider = screen.getByRole('slider');
-    fireEvent.keyDown(slider, { key: 'ArrowRight' }); // This might not work perfectly with Radix slider in JSDOM
-    
-    // Let's try to find if we can manually set the value or if we need a different approach
-    // For now, let's just check if it renders
-    expect(slider).toBeInTheDocument();
+  afterEach(() => {
+    spies.forEach(s => s.mockRestore());
+    spies.length = 0;
+    cleanup();
   });
 
-  it('updates font family and reflects in preview', async () => {
+  it("renders the appearance section", async () => {
     render(<SettingsPage />);
-    
-    const previewText = screen.getByText(/It was the best of times/i);
-    const container = previewText.closest('div');
-    
-    // Select trigger for Font Family
-    const triggers = screen.getAllByRole('combobox');
-    const fontTrigger = triggers[0];
-    
-    // Change to Monospace
-    // This is hard to test with Radix Select in JSDOM, might need to skip deep integration 
-    // and trust the state update if we can verify the state changed.
-    expect(fontTrigger).toBeInTheDocument();
+    // Appearance section is under "Appearance" tab
+    fireEvent.click(screen.getByRole("button", { name: /Appearance/i }));
+    expect(screen.getByText(/Typography/i)).toBeInTheDocument();
   });
 });

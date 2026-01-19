@@ -1,41 +1,10 @@
-// @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, waitFor, act } from "@testing-library/react";
+import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from "bun:test";
+import { renderHook, waitFor, act, cleanup } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
+import * as tauri from "../lib/tauri";
 import { useLibrary } from "../hooks/useLibrary";
 import { LibraryProvider } from "../hooks/LibraryProvider";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import * as tauri from "../lib/tauri";
-import React from "react";
-
-// Mock tauri
-vi.mock("../lib/tauri", () => ({
-  listBooks: vi.fn(),
-  gutendexCatalogPage: vi.fn(),
-  hardDeleteBook: vi.fn(),
-  downloadGutenbergMobi: vi.fn(),
-  dbInit: vi.fn().mockResolvedValue(undefined),
-}));
-
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: vi.fn((key: string) => store[key] || null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = value.toString();
-    }),
-    clear: vi.fn(() => {
-      store = {};
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key];
-    }),
-  };
-})();
-
-Object.defineProperty(window, "localStorage", {
-  value: localStorageMock,
-});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,15 +23,28 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 describe("useLibrary hook", () => {
+  const spies: any[] = [];
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    cleanup();
+    mock.restore();
     queryClient.clear();
-    localStorageMock.clear();
+    localStorage.clear();
+
+    spies.push(spyOn(tauri, 'listBooks').mockResolvedValue([]));
+    spies.push(spyOn(tauri, 'gutendexCatalogPage').mockResolvedValue({ results: [], count: 0 } as any));
+    spies.push(spyOn(tauri, 'hardDeleteBook').mockResolvedValue(undefined as any));
+    spies.push(spyOn(tauri, 'downloadGutenbergMobi').mockResolvedValue(undefined as any));
+    spies.push(spyOn(tauri, 'dbInit').mockResolvedValue(undefined as any));
+  });
+
+  afterEach(() => {
+    spies.forEach(s => s.mockRestore());
+    spies.length = 0;
+    cleanup();
   });
 
   it("should initialize with default values", async () => {
-    (tauri.listBooks as any).mockResolvedValue([]);
-    
     const { result } = renderHook(() => useLibrary(), { wrapper });
 
     expect(result.current.libraryQuery).toBe("");
@@ -72,13 +54,12 @@ describe("useLibrary hook", () => {
   });
 
   it("should handle library search query changes", async () => {
-    (tauri.listBooks as any).mockResolvedValue([]);
     const { result } = renderHook(() => useLibrary(), { wrapper });
 
     act(() => {
       result.current.setLibraryQuery("romeo");
     });
-    
+
     expect(result.current.libraryQuery).toBe("romeo");
   });
 
@@ -87,11 +68,10 @@ describe("useLibrary hook", () => {
       { id: 1, title: "Romeo and Juliet", authors: "William Shakespeare", gutenberg_id: 1513 },
       { id: 2, title: "Pride and Prejudice", authors: "Jane Austen", gutenberg_id: 1342 },
     ];
-    (tauri.listBooks as any).mockResolvedValue(mockBooks);
+    spies[0].mockResolvedValue(mockBooks);
 
     const { result } = renderHook(() => useLibrary(), { wrapper });
 
-    // Wait for books to load
     await waitFor(() => expect(result.current.booksQ.isSuccess).toBe(true));
 
     expect(result.current.filteredBooks).toHaveLength(2);
@@ -99,35 +79,30 @@ describe("useLibrary hook", () => {
     act(() => {
       result.current.setLibraryQuery("Romeo");
     });
-    
+
     expect(result.current.filteredBooks).toHaveLength(1);
     expect(result.current.filteredBooks[0].title).toBe("Romeo and Juliet");
   });
 
   it("should handle catalog search and update recent searches", async () => {
-    (tauri.listBooks as any).mockResolvedValue([]);
-    (tauri.gutendexCatalogPage as any).mockResolvedValue({ results: [], count: 0 });
-
     const { result } = renderHook(() => useLibrary(), { wrapper });
 
     act(() => {
       result.current.handleSearch("Shakespeare");
     });
-    
+
     expect(result.current.catalogQuery).toBe("Shakespeare");
-    expect(result.current.recentSearches).toContain("Shakespeare");
+    const recentSearches = JSON.parse(localStorage.getItem('reader-recent-searches') || '[]');
+    expect(recentSearches).toContain("Shakespeare");
   });
 
   it("should handle book deletion", async () => {
-    (tauri.listBooks as any).mockResolvedValue([]);
-    (tauri.hardDeleteBook as any).mockResolvedValue(undefined);
-    
     const { result } = renderHook(() => useLibrary(), { wrapper });
 
     await act(async () => {
       await result.current.deleteBook(123);
     });
-    
-    expect(tauri.hardDeleteBook).toHaveBeenCalledWith(123);
+
+    expect(spies[2]).toHaveBeenCalledWith(123);
   });
 });

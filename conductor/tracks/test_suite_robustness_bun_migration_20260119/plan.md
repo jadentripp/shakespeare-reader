@@ -8,7 +8,7 @@
 - [x] Task: Conductor - User Manual Verification 'Environment & Tooling Cleanup' (Protocol in workflow.md) [426bc8e]
 
 ## Phase 2: Global State Isolation & Pollution Fixes
-- [ ] Task: Enhance `src/tests/setup.ts` to clear `localStorage` and `sessionStorage` in `afterEach`.
+- [~] Task: Enhance `src/tests/setup.ts` to clear `localStorage` and `sessionStorage` in `afterEach`.
 - [ ] Task: Enhance `src/tests/setup.ts` to cleanup DOM (`document.body.innerHTML = ''` or similar) in `afterEach`.
 - [ ] Task: Enhance `src/tests/setup.ts` to restore all mocks (`bun.mock.restore()`) in `afterEach`.
 - [ ] Task: Refactor `elevenlabs.test.ts` to ensure `mock.module` calls are properly scoped or reset, preventing pollution of other tests.

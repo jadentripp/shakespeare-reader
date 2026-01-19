@@ -1,9 +1,13 @@
-// @vitest-environment jsdom
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, beforeEach } from "bun:test";
+import { render, screen, cleanup } from "@testing-library/react";
 import { LibraryGrid } from "../components/library/LibraryGrid";
+import React from "react";
 
 describe("LibraryGrid", () => {
+  beforeEach(() => {
+    cleanup();
+  });
+
   it("should render children in grid variant", () => {
     render(
       <LibraryGrid variant="grid">
@@ -21,6 +25,6 @@ describe("LibraryGrid", () => {
       </LibraryGrid>
     );
     const container = screen.getByTestId("child").parentElement;
-    expect(container?.className).toContain("flex-col"); // I plan to change space-y-3 to flex-col gap-4
+    expect(container?.className).toContain("flex-col");
   });
 });

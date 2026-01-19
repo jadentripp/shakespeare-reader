@@ -1,0 +1,100 @@
+bun test v1.3.2 (b131639c)
+
+src/tests/navigation.test.ts:
+Global beforeEach running
+(pass) cleanFootnoteContent > should remove return links like "back" [2.91ms]
+Global beforeEach running
+(pass) cleanFootnoteContent > should remove return links like "↑" [1.86ms]
+Global beforeEach running
+(pass) cleanFootnoteContent > should remove return links like "↩" [0.69ms]
+Global beforeEach running
+(pass) cleanFootnoteContent > should strip [1] style prefixes from text nodes [0.10ms]
+Global beforeEach running
+(pass) cleanFootnoteContent > should remove citation numbers like "[1]" [0.35ms]
+Global beforeEach running
+(pass) cleanFootnoteContent > should keep other links [0.57ms]
+Global beforeEach running
+(pass) cleanFootnoteContent > should handle complex HTML [0.48ms]
+
+src/tests/BookCard.test.tsx:
+Global beforeEach running
+(pass) BookCard > should render local book in grid variant by default [51.19ms]
+Global beforeEach running
+(pass) BookCard > should render catalog book in list variant [10.83ms]
+
+src/tests/readerHtml.test.ts:
+Global beforeEach running
+(pass) processGutenbergContent > should inject data-block-index into meaningful blocks [4.18ms]
+Global beforeEach running
+(pass) processGutenbergContent > should extract metadata correctly [0.59ms]
+
+src/tests/useTTS.test.ts:
+Global beforeEach running
+(pass) useTTS > should initialize with idle state [5.92ms]
+Global beforeEach running
+(pass) useTTS > should call audioPlayer.play with page text [4.09ms]
+
+src/tests/useLibrary.test.tsx:
+Global beforeEach running
+(pass) useLibrary hook > should initialize with default values [7.68ms]
+Global beforeEach running
+(pass) useLibrary hook > should handle library search query changes [3.07ms]
+Global beforeEach running
+(pass) useLibrary hook > should filter books based on library query [56.67ms]
+Global beforeEach running
+(pass) useLibrary hook > should handle catalog search and update recent searches [3.34ms]
+Global beforeEach running
+(pass) useLibrary hook > should handle book deletion [4.38ms]
+
+src/tests/ReaderTopBar.test.tsx:
+Global beforeEach running
+(pass) ReaderTopBar > renders the TTS play button when idle [16.20ms]
+Global beforeEach running
+(pass) ReaderTopBar > renders the pause button when playing [7.75ms]
+
+src/tests/useChatSidebar.test.tsx:
+Global beforeEach running
+(pass) useChatSidebar hook > should initialize with default states [2.32ms]
+
+src/tests/ThreeDLibraryPage.test.tsx:
+THREE.WARNING: Multiple instances of Three.js being imported.
+Global beforeEach running
+<ambientLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <ambientLight> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<directionalLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <directionalLight> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+React does not recognize the `castShadow` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `castshadow` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+React does not recognize the `shadow-mapSize-width` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `shadow-mapsize-width` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+React does not recognize the `shadow-mapSize-height` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `shadow-mapsize-height` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+<spotLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <spotLight> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<pointLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <pointLight> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<pointLight /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<cylinderGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <cylinderGeometry> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <meshStandardMaterial> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+React does not recognize the `envMapIntensity` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `envmapintensity` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+The tag <mesh> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+React does not recognize the `receiveShadow` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `receiveshadow` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+<cylinderGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<torusGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <torusGeometry> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <boxGeometry> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+React does not recognize the `emissiveIntensity` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `emissiveintensity` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+The tag <group> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.

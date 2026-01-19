@@ -1,0 +1,10 @@
+[serve.static]
+[serve.static]
+plugins = ["bun-plugin-tailwind"]
+env = "*"
+
+[build]
+plugins = ["bun-plugin-tailwind"]
+
+[test]
+preload = ["./src/tests/setup.ts"]

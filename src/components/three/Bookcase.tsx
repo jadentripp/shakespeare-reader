@@ -27,7 +27,7 @@ const Bookcase: React.FC<BookcaseProps> = ({
     const trimColor = '#DAA520';
 
     return (
-        <group position={position} data-testid="bookcase">
+        <group position={position}>
             {/* Left side panel */}
             <Box args={[0.12, height, depth]} position={[-width / 2 - 0.06, height / 2, 0]} castShadow receiveShadow>
                 <meshStandardMaterial color={frameColor} roughness={0.6} metalness={0.1} />

@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "bun:test";
 import { cleanFootnoteContent } from '../lib/readerUtils';
 
 describe('cleanFootnoteContent', () => {

@@ -1,8 +1,8 @@
 {
   "track_id": "3d_library_parity_20260119",
   "type": "feature",
-  "status": "new",
+  "status": "in_progress",
   "created_at": "2026-01-19T10:00:00Z",
-  "updated_at": "2026-01-19T10:00:00Z",
+  "updated_at": "2026-01-19T12:00:00Z",
   "description": "Make the 3d library have feature parity with the 2d library"
 }

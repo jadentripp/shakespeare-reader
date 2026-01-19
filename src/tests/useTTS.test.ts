@@ -1,32 +1,38 @@
-// @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test';
 import { renderHook, act } from '@testing-library/react';
 import { useTTS } from '../lib/reader/hooks/useTTS';
 import { audioPlayer } from '@/lib/elevenlabs';
-
-// Mock audioPlayer
-vi.mock('@/lib/elevenlabs', () => ({
-  audioPlayer: {
-    play: vi.fn().mockResolvedValue(undefined),
-    pause: vi.fn(),
-    resume: vi.fn(),
-    stop: vi.fn(),
-    subscribe: vi.fn(),
-  },
-}));
-
-// Mock readerUtils
-vi.mock('@/lib/readerUtils', () => ({
-  getPageContent: vi.fn().mockReturnValue({ text: 'Mocked page text' }),
-}));
+import * as readerUtils from '@/lib/readerUtils';
+import * as tauri from '@/lib/tauri';
 
 describe('useTTS', () => {
-  const mockGetDoc = vi.fn().mockReturnValue({});
-  const mockGetPageMetrics = vi.fn().mockReturnValue({});
-  const mockOnPageTurnNeeded = vi.fn();
+  const mockGetDoc = mock(() => ({}));
+  const mockGetPageMetrics = mock(() => ({}));
+  const mockOnPageTurnNeeded = mock(() => { });
+  const spies: any[] = [];
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.restore();
+
+    // Setup spies
+    spies.push(spyOn(audioPlayer, 'play').mockResolvedValue(undefined as any));
+    spies.push(spyOn(audioPlayer, 'pause').mockImplementation(() => { }));
+    spies.push(spyOn(audioPlayer, 'resume').mockImplementation(() => { }));
+    spies.push(spyOn(audioPlayer, 'stop').mockImplementation(() => { }));
+    spies.push(spyOn(audioPlayer, 'getState').mockReturnValue('idle'));
+    spies.push(spyOn(audioPlayer, 'subscribe').mockReturnValue(() => { }));
+
+    spies.push(spyOn(readerUtils, 'getPageContent').mockReturnValue({ text: 'Mocked page text' } as any));
+    spies.push(spyOn(tauri, 'getSetting').mockResolvedValue(null));
+
+    mockGetDoc.mockClear();
+    mockGetPageMetrics.mockClear();
+    mockOnPageTurnNeeded.mockClear();
+  });
+
+  afterEach(() => {
+    spies.forEach(s => s.mockRestore());
+    spies.length = 0;
   });
 
   it('should initialize with idle state', () => {

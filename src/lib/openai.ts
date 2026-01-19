@@ -16,13 +16,7 @@ export async function resolveApiKey(): Promise<string> {
     return saved.trim();
   }
 
-  // @ts-ignore
-  const envKey = import.meta.env.VITE_OPENAI_API_KEY;
-  if (envKey && envKey.trim()) {
-    return envKey.trim();
-  }
-
-  throw new Error('Missing OpenAI API key (set in Settings or VITE_OPENAI_API_KEY)');
+  throw new Error('Missing OpenAI API key (set in Settings)');
 }
 
 class OpenAIService {
@@ -30,12 +24,16 @@ class OpenAIService {
 
   getClient(): OpenAI {
     if (this.client) return this.client;
-    
+
     this.client = new OpenAI({
       apiKey: resolveApiKey, // Use the async resolver directly
       dangerouslyAllowBrowser: true, // Required for Tauri/Web environment
     });
     return this.client;
+  }
+
+  reset() {
+    this.client = null;
   }
 
   async listModels(): Promise<string[]> {
@@ -44,22 +42,22 @@ class OpenAIService {
     try {
       const response = await client.models.list();
       console.log("[OpenAI] listModels raw response count:", response.data.length);
-      
+
       const filtered = response.data
         .filter((model: any) => {
           const id = model.id;
           // Only show GPT models
           if (!id.startsWith('gpt-')) return false;
-          
+
           // Filter out specialized models
           const excludeTerms = ['realtime', 'search', 'tts', 'codex', 'image', 'audio', 'transcribe'];
           if (excludeTerms.some(term => id.includes(term))) return false;
-          
+
           return true;
         })
         .sort((a: any, b: any) => (b.created || 0) - (a.created || 0))
         .map((model: any) => model.id);
-        
+
       console.log("[OpenAI] listModels filtered count:", filtered.length);
       return filtered;
     } catch (e) {
@@ -70,14 +68,14 @@ class OpenAIService {
 
   async chat(messages: ChatMessage[], model_override?: string): Promise<ChatResult> {
     const client = this.getClient();
-    
+
     const model = model_override || (await getSetting('openai_model')) || 'gpt-5.2';
 
     const response = await client.responses.create({
       model,
       input: messages as any, // Cast to any to match OpenAI SDK expectation if needed
       // @ts-ignore - Reasoning might not be in the current SDK types but is supported by API
-      reasoning: undefined, 
+      reasoning: undefined,
     });
 
     let content = '';
@@ -124,8 +122,8 @@ export const openAIService = new OpenAIService();
 
 // Helper exports to match original test expectations and common usage
 export const listModels = () => openAIService.listModels();
-export const chat = (messages: ChatMessage[], model_override?: string) => 
+export const chat = (messages: ChatMessage[], model_override?: string) =>
   openAIService.chat(messages, model_override);
-export const generateThreadTitle = (messages: ChatMessage[]) => 
+export const generateThreadTitle = (messages: ChatMessage[]) =>
   openAIService.generateThreadTitle(messages);
 export { OpenAIService };

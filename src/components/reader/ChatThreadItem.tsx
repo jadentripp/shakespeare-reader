@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Edit2 } from "lucide-react";
 
@@ -14,9 +14,11 @@ export function ChatThreadItem({
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(title);
 
-  useEffect(() => {
+  const [prevTitle, setPrevTitle] = useState(title);
+  if (title !== prevTitle) {
+    setPrevTitle(title);
     setValue(title);
-  }, [title]);
+  }
 
   if (isEditing) {
     return (

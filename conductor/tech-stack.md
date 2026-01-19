@@ -2,7 +2,7 @@
 
 ## Frontend
 - **Framework:** React 19 (TypeScript)
-- **Build Tool:** Vite
+- **Build Tool:** Bun (native bundler & dev server)
 - **Routing:** TanStack Router
 - **Data Fetching:** TanStack Query
 
@@ -28,5 +28,5 @@
 
 ## Development & Infrastructure
 - **Package Manager:** Bun
-- **Testing:** Vitest, React Testing Library
+- **Testing:** Bun Test, React Testing Library
 - **Language:** TypeScript 5.x, Rust 2021 Edition

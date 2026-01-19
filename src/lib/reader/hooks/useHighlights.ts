@@ -64,6 +64,13 @@ export function useHighlights(options: UseHighlightsOptions): UseHighlightsResul
     return (highlightsQ.data as any[] | undefined)?.find((h: any) => h.id === selectedHighlightId) ?? null;
   }, [highlightsQ.data, selectedHighlightId]);
 
+  // Sync noteDraft when selection changes during rendering
+  const [prevSelectedHighlightIdForDraft, setPrevSelectedHighlightIdForDraft] = useState(selectedHighlightId);
+  if (selectedHighlightId !== prevSelectedHighlightIdForDraft) {
+    setPrevSelectedHighlightIdForDraft(selectedHighlightId);
+    setNoteDraft(selectedHighlight?.note ?? "");
+  }
+
   const attachedHighlights = useMemo(() => {
     return (highlightsQ.data as any[] | undefined)?.filter((h: any) => attachedHighlightIds.includes(h.id)) ?? [];
   }, [highlightsQ.data, attachedHighlightIds]);

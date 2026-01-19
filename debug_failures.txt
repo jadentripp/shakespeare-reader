@@ -1,0 +1,99 @@
+[0m[1mbun test [0m[2mv1.3.2 (b131639c)[0m
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  [0mhas_env_key[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+  [0mhas_saved_key[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+}
+[Settings] Loading saved voice ID: [0m[33mnull[0m
+[Settings] No saved voice ID, will use default when voices load
+[Settings] No key detected
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  [0mhas_env_key[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+  [0mhas_saved_key[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+}
+[Settings] Loading saved voice ID: v1
+[Settings] No key detected
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  [0mhas_env_key[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+  [0mhas_saved_key[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+}
+[Settings] Loading saved voice ID: v1
+[Settings] No key detected
+[ElevenLabs] textToSpeech called for text: "Hello world..." with voiceId: v1
+[ElevenLabs] textToSpeech conversion successful
+[ElevenLabs] getVoices called
+[ElevenLabs] getVoices successful, found 1 voices
+[ElevenLabs] Sample voice object structure: {
+  [0mhas_voice_id[2m:[0m [0m[33mtrue[0m[0m[2m,[0m
+  [0mhas_voiceId[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+  [0mraw_keys[2m:[0m [ [0m[32m"voice_id"[0m[0m[0m[2m,[0m [0m[32m"name"[0m[0m ][0m[2m,[0m
+}
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[ElevenLabs] textToSpeech called for text: "Test text..." with voiceId: v1
+[ElevenLabs] textToSpeech conversion successful
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 1, total length: 4
+[AudioPlayer] Audio data received, size: 4 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 10.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Resolved voiceId from database: fake-api-key
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  [0mstability[2m:[0m [0m[33m0.5[0m[0m[2m,[0m
+  [0msimilarity_boost[2m:[0m [0m[33m0.75[0m[0m[2m,[0m
+  [0mstyle[2m:[0m [0m[33m0[0m[0m[2m,[0m
+  [0muse_speaker_boost[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: fake-api-key
+[ElevenLabs] textToSpeech called for text: "Test text..." with voiceId: fake-api-key
+[ElevenLabs] textToSpeech conversion successful
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 1, total length: 4
+[AudioPlayer] Audio data received, size: 4 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 10.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Pause requested
+[AudioPlayer] State transition: playing -> paused
+[AudioPlayer] Resume requested
+[AudioPlayer] State transition: paused -> playing
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  [0mhas_env_key[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+  [0mhas_saved_key[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+}
+[Settings] Loading saved voice ID: [0m[33mnull[0m
+[Settings] No saved voice ID, will use default when voices load
+[Settings] No key detected
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  [0mhas_env_key[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+  [0mhas_saved_key[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+}
+[Settings] Loading saved voice ID: [0m[33mnull[0m
+[Settings] No saved voice ID, will use default when voices load
+[Settings] No key detected

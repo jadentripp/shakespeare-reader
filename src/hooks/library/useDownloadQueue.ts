@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { downloadGutenbergMobi, gutendexCatalogPage } from "@/lib/tauri";
 import { bestMobiUrl, coverUrl, authorsString } from "@/lib/gutenbergUtils";
@@ -45,23 +45,27 @@ export function useDownloadQueue(localGutenbergIds: Set<number>) {
   });
 
   const queueRef = useRef(queue);
-  useEffect(() => {
-    queueRef.current = queue;
-  }, [queue]);
-
   const pausedRef = useRef(paused);
-  useEffect(() => {
-    pausedRef.current = paused;
-  }, [paused]);
+
+  // Stable update function to keep state and ref in sync without Effects
+  const updateQueueAndRef = (updater: (prev: DownloadTask[]) => DownloadTask[]) => {
+    setQueue((prev) => {
+      const next = updater(prev);
+      queueRef.current = next;
+      return next;
+    });
+  };
 
   const runnerRef = useRef(false);
   const bulkRunnerRef = useRef(false);
 
   function enqueue(task: Omit<DownloadTask, "status" | "attempts" | "error">) {
-    setQueue((prev) => {
+    updateQueueAndRef((prev) => {
       if (prev.some((t) => t.gutenbergId === task.gutenbergId)) return prev;
-      return [...prev, { ...task, status: "queued", attempts: 0, error: null }];
+      return [...prev, { ...task, status: "queued" as DownloadStatus, attempts: 0, error: null }];
     });
+    // Explicitly start runner
+    setTimeout(() => void runQueue(), 0);
   }
 
   async function runQueue() {
@@ -70,16 +74,17 @@ export function useDownloadQueue(localGutenbergIds: Set<number>) {
     runnerRef.current = true;
     try {
       while (true) {
-        if (pausedRef.current) return;
+        if (pausedRef.current) break;
         const next = queueRef.current.find((t) => t.status === "queued");
-        if (!next) return;
+        if (!next) break;
 
-        setQueue((prev) =>
+        // Mark as downloading synchronously in the ref
+        updateQueueAndRef((prev) =>
           prev.map((t) =>
             t.gutenbergId === next.gutenbergId
-              ? { ...t, status: "downloading", attempts: t.attempts + 1, error: null }
+              ? { ...t, status: "downloading" as DownloadStatus, attempts: t.attempts + 1, error: null }
               : t,
-          ),
+          )
         );
 
         try {
@@ -91,19 +96,26 @@ export function useDownloadQueue(localGutenbergIds: Set<number>) {
             coverUrl: next.coverUrl,
             mobiUrl: next.mobiUrl,
           });
+
           await qc.invalidateQueries({ queryKey: ["books"] });
-          setQueue((prev) =>
-            prev.map((t) => (t.gutenbergId === next.gutenbergId ? { ...t, status: "done" } : t)),
+
+          updateQueueAndRef((prev) =>
+            prev.map((t) =>
+              t.gutenbergId === next.gutenbergId ? { ...t, status: "done" as DownloadStatus } : t
+            )
           );
         } catch (e) {
-          setQueue((prev) =>
+          updateQueueAndRef((prev) =>
             prev.map((t) =>
               t.gutenbergId === next.gutenbergId
-                ? { ...t, status: "failed", error: String(e) }
+                ? { ...t, status: "failed" as DownloadStatus, error: String(e) }
                 : t,
-            ),
+            )
           );
         }
+
+        // Brief yield to prevent event loop starvation and allow re-renders
+        await new Promise(resolve => setTimeout(resolve, 10));
       }
     } finally {
       runnerRef.current = false;
@@ -120,7 +132,7 @@ export function useDownloadQueue(localGutenbergIds: Set<number>) {
     if (bulkRunnerRef.current) return;
     if (pausedRef.current) return;
     bulkRunnerRef.current = true;
-    
+
     setBulkScan((prev) =>
       reset
         ? {
@@ -168,7 +180,7 @@ export function useDownloadQueue(localGutenbergIds: Set<number>) {
             enqueued += 1;
           }
         }
-        
+
         setBulkScan((prev) => ({
           ...prev,
           running: !!page.next && !pausedRef.current,
@@ -205,10 +217,12 @@ export function useDownloadQueue(localGutenbergIds: Set<number>) {
     return out;
   }, [queue]);
 
-  useEffect(() => {
-    if (paused) return;
-    if (counts.queued > 0) void runQueue();
-  }, [paused, counts.queued]);
+  // Synchronize pausedRef whenever paused changes
+  const setPausedAndRef = (p: boolean) => {
+    setPaused(p);
+    pausedRef.current = p;
+    if (!p) setTimeout(() => void runQueue(), 0);
+  };
 
   const active = useMemo(() => queue.find((t) => t.status === "downloading") ?? null, [queue]);
 
@@ -216,7 +230,7 @@ export function useDownloadQueue(localGutenbergIds: Set<number>) {
     queue,
     setQueue,
     paused,
-    setPaused,
+    setPaused: setPausedAndRef,
     bulkScan,
     setBulkScan,
     counts,
@@ -224,8 +238,11 @@ export function useDownloadQueue(localGutenbergIds: Set<number>) {
     enqueue,
     runQueue,
     runBulkScan,
-    retryFailed: () => setQueue(prev => prev.map(t => t.status === "failed" ? { ...t, status: "queued", error: null } : t)),
-    clearFailed: () => setQueue(prev => prev.filter(t => t.status !== "failed")),
-    clearDone: () => setQueue(prev => prev.filter(t => t.status !== "done")),
+    retryFailed: () => {
+      updateQueueAndRef(prev => prev.map(t => t.status === "failed" ? { ...t, status: "queued" as DownloadStatus, error: null } : t));
+      setTimeout(() => void runQueue(), 0);
+    },
+    clearFailed: () => updateQueueAndRef(prev => prev.filter(t => t.status !== "failed")),
+    clearDone: () => updateQueueAndRef(prev => prev.filter(t => t.status !== "done")),
   };
 }

@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "bun:test";
 import { render, screen } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import ReaderLayout from '../components/ReaderLayout';

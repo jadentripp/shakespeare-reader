@@ -8,7 +8,7 @@
 
 ## Build, Test, and Development Commands
 - `bun install`: install dependencies (Bun is the expected package manager; see `bun.lock`).
-- `bun run dev`: start the Vite dev server for the web UI.
+- `bun run dev`: start the Bun dev server for the web UI.
 - `bun run tauri dev`: run the desktop app in development mode.
 - `bun run build`: type-check (`tsc`) and build the web bundle into `dist/`.
 - `bun run preview`: serve the production build locally.

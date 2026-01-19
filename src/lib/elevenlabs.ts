@@ -21,13 +21,7 @@ export async function resolveElevenLabsApiKey(): Promise<string> {
     return saved.trim();
   }
 
-  // @ts-ignore
-  const envKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
-  if (envKey && envKey.trim()) {
-    return envKey.trim();
-  }
-
-  throw new Error('Missing ElevenLabs API key (set in Settings or VITE_ELEVENLABS_API_KEY)');
+  throw new Error('Missing ElevenLabs API key (set in Settings)');
 }
 
 export class ElevenLabsService {
@@ -35,7 +29,7 @@ export class ElevenLabsService {
 
   private async getClient(): Promise<ElevenLabsClient> {
     if (this.client) return this.client;
-    
+
     const apiKey = await resolveElevenLabsApiKey();
     this.client = new ElevenLabsClient({
       apiKey,
@@ -48,16 +42,16 @@ export class ElevenLabsService {
     const client = await this.getClient();
     try {
       const response = await client.textToSpeech.convert(voiceId, {
-              text,
-              modelId: "eleven_flash_v2_5", // Faster and more modern
-              outputFormat: "mp3_44100_128",
-              voiceSettings: settings ? {
-                stability: settings.stability,
-                similarityBoost: settings.similarity_boost,
-                style: settings.style,
-                useSpeakerBoost: settings.use_speaker_boost,
-              } : undefined,
-            });
+        text,
+        modelId: "eleven_flash_v2_5", // Faster and more modern
+        outputFormat: "mp3_44100_128",
+        voiceSettings: settings ? {
+          stability: settings.stability,
+          similarityBoost: settings.similarity_boost,
+          style: settings.style,
+          useSpeakerBoost: settings.use_speaker_boost,
+        } : undefined,
+      });
       console.log(`[ElevenLabs] textToSpeech conversion successful`);
       return response;
     } catch (e: any) {
@@ -76,7 +70,7 @@ export class ElevenLabsService {
     try {
       const response = await client.voices.getAll();
       console.log(`[ElevenLabs] getVoices successful, found ${response.voices.length} voices`);
-      
+
       if (response.voices.length > 0) {
         console.log(`[ElevenLabs] Sample voice object structure:`, {
           has_voice_id: 'voice_id' in response.voices[0],
@@ -113,7 +107,7 @@ export class AudioPlayer {
   private state: PlaybackState = 'idle';
   private currentSource: AudioBufferSourceNode | null = null;
   private queue: Array<{ text: string; audioBuffer: AudioBuffer }> = [];
-  private onStateChange: ((state: PlaybackState) => void) | null = null;
+  private listeners = new Set<(state: PlaybackState) => void>();
 
   constructor() {
     // Context is lazily initialized on first play
@@ -135,7 +129,7 @@ export class AudioPlayer {
   setState(state: PlaybackState) {
     console.log(`[AudioPlayer] State transition: ${this.state} -> ${state}`);
     this.state = state;
-    this.onStateChange?.(state);
+    this.listeners.forEach(l => l(state));
   }
 
   async play(text: string, voiceId?: string, settings?: VoiceSettings) {
@@ -157,7 +151,7 @@ export class AudioPlayer {
 
       if (!finalVoiceId) {
         // Fallback to a sensible default if nothing found (e.g. Rachel)
-        finalVoiceId = "21m00Tcm4TbcDqnu8SRw"; 
+        finalVoiceId = "21m00Tcm4TbcDqnu8SRw";
         console.log(`[AudioPlayer] No voiceId found, falling back to Rachel: ${finalVoiceId}`);
       }
 
@@ -169,7 +163,7 @@ export class AudioPlayer {
         const similarity = await getSetting("elevenlabs_similarity");
         const style = await getSetting("elevenlabs_style");
         const boost = await getSetting("elevenlabs_speaker_boost");
-        
+
         if (stability !== null) {
           finalSettings = {
             stability: parseFloat(stability) || 0.5,
@@ -185,17 +179,17 @@ export class AudioPlayer {
 
       console.log(`[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: ${finalVoiceId}`);
       const audioStream = await elevenLabsService.textToSpeech(text, finalVoiceId, finalSettings);
-      
+
       console.log(`[AudioPlayer] Converting stream to buffer`);
       const audioData = await this.streamToBuffer(audioStream);
       console.log(`[AudioPlayer] Audio data received, size: ${audioData.byteLength} bytes`);
-      
+
       console.log(`[AudioPlayer] Decoding audio data`);
       const audioBuffer = await ctx.decodeAudioData(audioData);
       console.log(`[AudioPlayer] Audio decoded successfully, duration: ${audioBuffer.duration.toFixed(2)}s`);
 
       this.stop(); // Stop any current playback
-      
+
       this.currentSource = ctx.createBufferSource();
       this.currentSource.buffer = audioBuffer;
       this.currentSource.connect(ctx.destination);
@@ -205,7 +199,7 @@ export class AudioPlayer {
           this.setState('idle');
         }
       };
-      
+
       console.log(`[AudioPlayer] Starting playback`);
       this.currentSource.start(0);
       this.setState('playing');
@@ -265,7 +259,8 @@ export class AudioPlayer {
   }
 
   subscribe(callback: (state: PlaybackState) => void) {
-    this.onStateChange = callback;
+    this.listeners.add(callback);
+    return () => this.listeners.delete(callback);
   }
 }
 
