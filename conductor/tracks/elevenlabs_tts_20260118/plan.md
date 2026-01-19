@@ -7,7 +7,7 @@ Establish the foundation for using the ElevenLabs API within the application.
     - [ ] Update `SettingsPage.tsx` to include a password input for the ElevenLabs API key.
     - [ ] Update local storage or secure store logic to persist this key.
     - [ ] Add a `useElevenLabs` hook or utility to retrieve the key securely.
-- [ ] Task: Install & Configure SDK
+- [x] Task: Install & Configure SDK 79d4105
     - [ ] Install `@elevenlabs/elevenlabs-js`.
     - [ ] Create `src/lib/elevenlabs.ts` to wrap API calls (initialization, text-to-speech conversion).
     - [ ] Implement a basic "test voice" function to verify the key and connection in the Settings panel.
