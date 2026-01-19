@@ -180,7 +180,6 @@ export function useChat(
         threadId,
         role: "assistant",
         content: processedContent,
-        reasoningSummary: response.reasoning_summary,
         contextMap: JSON.stringify(mapping),
       });
 

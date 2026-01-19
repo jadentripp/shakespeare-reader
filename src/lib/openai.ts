@@ -8,7 +8,6 @@ export interface ChatMessage {
 
 export interface ChatResult {
   content: string;
-  reasoning_summary?: string;
 }
 
 export async function resolveApiKey(): Promise<string> {
@@ -72,7 +71,6 @@ class OpenAIService {
     });
 
     let content = '';
-    let reasoning_summary: string | undefined;
 
     // @ts-ignore - SDK types for 'responses' might be lagging
     for (const item of response.output || []) {
@@ -82,18 +80,11 @@ class OpenAIService {
             content += part.text;
           }
         }
-      } else if (item.type === 'reasoning') {
-        if (Array.isArray(item.summary)) {
-          reasoning_summary = item.summary.map((s: any) => s.text).join('');
-        } else if (typeof item.summary === 'string') {
-          reasoning_summary = item.summary;
-        }
       }
     }
 
     return {
       content,
-      reasoning_summary,
     };
   }
 }

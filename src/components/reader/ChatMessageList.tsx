@@ -8,7 +8,6 @@ import { Message, MessageAvatar, MessageContent, MessageAction } from "@/compone
 import { Loader } from "@/components/ui/loader";
 import { cn } from "@/lib/utils";
 import { Trash2, Feather, Quote } from "lucide-react";
-import { ChatReasoningTrace } from "./ChatReasoningTrace";
 import type { LocalChatMessage } from "@/lib/readerTypes";
 
 type ChatMessageListProps = {
@@ -48,9 +47,6 @@ export function ChatMessageList({
                       )}
                     />
                     <div className={cn("flex max-w-[85%] flex-col", isUser && "items-end")}>
-                      {message.reasoning_summary && (
-                        <ChatReasoningTrace summary={message.reasoning_summary} />
-                      )}
                       <MessageContent
                         markdown={!isUser}
                         onCitationClick={message.onCitationClick ?? onCitationClick}

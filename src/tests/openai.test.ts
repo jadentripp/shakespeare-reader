@@ -120,7 +120,6 @@ describe('OpenAI Service', () => {
       const result = await chat([{ role: 'user', content: 'Hi' }]);
 
       expect(result.content).toBe('Hello world');
-      expect(result.reasoning_summary).toBe('I thought about it');
       expect(mockCreateResponse).toHaveBeenCalledWith(expect.objectContaining({
         model: 'gpt-4o',
         input: [{ role: 'user', content: 'Hi' }],
