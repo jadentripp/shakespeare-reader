@@ -40,7 +40,7 @@ Decompose the AI assistant sidebar.
 - [x] Task: Update `ChatSidebar.tsx` to use new hook and components. (91ebc49)
 - [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) (ef43de9)
 
-## Phase 4: Utilities & Cleanup
+## Phase 4: Utilities & Cleanup [checkpoint: fc0310b]
 Address remaining offenders and ensure project-wide compliance.
 
 - [x] Task: Refactor `src/components/ui/loader.tsx`. (0b6eabb)
@@ -49,4 +49,4 @@ Address remaining offenders and ensure project-wide compliance.
     - [x] Split into sub-hooks or smaller logic units.
 - [x] Task: Final Line Count Verification. (0b6eabb)
     - [x] Run a project-wide script to confirm all files in `src/` are < 400 lines.
-- [~] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md) (fc0310b)
