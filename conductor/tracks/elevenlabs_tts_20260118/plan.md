@@ -16,7 +16,7 @@ Establish the foundation for using the ElevenLabs API within the application.
 ## Phase 2: Core Playback Engine (Streaming)
 Build the logic for fetching audio, playing it, and managing the queue.
 
-- [ ] Task: Implement Audio Stream Manager
+- [x] Task: Implement Audio Stream Manager 5db8136
     - [ ] Create a `AudioPlayer` class or hook that handles:
         - Fetching audio streams for a given text chunk.
         - Buffering (playing one chunk while fetching the next).
