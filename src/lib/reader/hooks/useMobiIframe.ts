@@ -41,6 +41,7 @@ export function useMobiIframe(params: {
   const scrollHandlerRef = useRef<((event: Event) => void) | null>(null);
   const wheelHandlerRef = useRef<((event: WheelEvent) => void) | null>(null);
   const selectionHandlerRef = useRef<(() => void) | null>(null);
+  const keydownHandlerRef = useRef<((event: KeyboardEvent) => void) | null>(null);
   const highlightClickRef = useRef<((event: Event) => void) | null>(null);
   const linkClickRef = useRef<((event: MouseEvent) => void) | null>(null);
 
@@ -155,6 +156,20 @@ export function useMobiIframe(params: {
     doc.addEventListener("mouseup", handleSelection);
     doc.addEventListener("keyup", handleSelection);
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && /input|textarea|select|button/i.test(target.tagName)) return;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        pagination.prev();
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        pagination.next();
+      }
+    };
+    keydownHandlerRef.current = handleKeyDown;
+    doc.addEventListener("keydown", handleKeyDown);
+
     const handleHighlightClick = (event: Event) => {
       const target = getEventTargetElement(event.target);
       if (target && target.tagName === "IMG") {
@@ -213,6 +228,9 @@ export function useMobiIframe(params: {
       if (doc && selectionHandlerRef.current) {
         doc.removeEventListener("mouseup", selectionHandlerRef.current);
         doc.removeEventListener("keyup", selectionHandlerRef.current);
+      }
+      if (doc && keydownHandlerRef.current) {
+        doc.removeEventListener("keydown", keydownHandlerRef.current);
       }
       if (doc && linkClickRef.current) {
         doc.removeEventListener("click", linkClickRef.current, true);
