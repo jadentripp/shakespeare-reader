@@ -61,10 +61,10 @@ export default function HighlightsSidebar({
 
   return (
     <aside className="min-h-0 flex flex-col">
-      <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/50 bg-card shadow-sm">
-        {/* Tab Navigation - Editorial Style */}
-        <div className="shrink-0 border-b border-border/40">
-          <div className="flex items-center justify-between px-3 py-2">
+      <div className="flex h-full flex-col overflow-hidden rounded-none border-2 border-black dark:border-white bg-background shadow-xl">
+        {/* Tab Navigation - Bauhaus Style */}
+        <div className="shrink-0 border-b-2 border-black dark:border-white">
+          <div className="flex items-center justify-between px-3 py-2 bg-black/5 dark:bg-white/5">
             <div className="flex items-center gap-6">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -75,7 +75,7 @@ export default function HighlightsSidebar({
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "group flex items-center gap-2 transition-all duration-200",
+                      "group flex items-center gap-2 transition-all duration-200 py-1",
                       isActive
                         ? "text-foreground"
                         : "text-muted-foreground/70 hover:text-foreground"
@@ -86,15 +86,15 @@ export default function HighlightsSidebar({
                       isActive && "scale-110"
                     )} />
                     <span className={cn(
-                      "text-[13px] tracking-wide transition-all duration-200",
-                      isActive ? "font-semibold" : "font-medium"
+                      "text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200",
+                      isActive ? "opacity-100" : "opacity-60"
                     )}>
                       {tab.label}
                     </span>
                     {tab.count !== undefined && tab.count > 0 && (
                       <span className={cn(
-                        "tabular-nums text-[11px] font-medium transition-colors duration-200",
-                        isActive ? "text-foreground/70" : "text-muted-foreground/50"
+                        "tabular-nums text-[10px] font-black transition-colors duration-200 px-1 bg-black/10 dark:bg-white/10",
+                        isActive ? "text-foreground" : "text-muted-foreground/50"
                       )}>
                         {tab.count}
                       </span>
@@ -107,15 +107,15 @@ export default function HighlightsSidebar({
               type="button"
               onClick={onCollapse}
               title="Collapse panel"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition-all duration-200 hover:bg-muted hover:text-foreground"
+              className="flex h-8 w-8 items-center justify-center rounded-none text-muted-foreground/60 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black border border-transparent hover:border-black dark:hover:border-white"
             >
               <PanelLeftClose className="h-4 w-4" />
             </button>
           </div>
           {/* Active indicator bar */}
-          <div className="relative h-0.5 bg-border/30">
+          <div className="relative h-1 bg-black/10 dark:bg-white/10">
             <div
-              className="absolute bottom-0 h-0.5 bg-foreground/80 transition-all duration-300 ease-out"
+              className="absolute bottom-0 h-1 bg-[#E02E2E] transition-all duration-300 ease-out"
               style={{
                 left: `${(tabs.findIndex(t => t.id === activeTab) / tabs.length) * 100}%`,
                 width: `${100 / tabs.length}%`,

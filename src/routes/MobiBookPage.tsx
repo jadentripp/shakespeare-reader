@@ -22,24 +22,50 @@ export default function MobiBookPage(props: { bookId: number }) {
     );
   }
 
-  return (
-    <div className="mx-auto flex h-[calc(100vh-3rem)] max-w-[1800px] flex-col gap-2 overflow-hidden px-4 py-2">
-      <ReaderToolbar 
-        reader={reader} 
-        onTtsSettings={() => setTtsExpanded(true)}
-      />
-      <ReaderContent reader={reader} />
-      <TTSPanel 
-        expanded={ttsExpanded} 
-        onExpandChange={setTtsExpanded}
-      />
-      {lightboxImage && (
-        <ReaderLightbox 
-          image={lightboxImage} 
-          onClose={() => setLightboxImage(null)} 
-          onSave={handleSaveImage} 
+    return (
+
+      <div className="mx-auto flex h-screen max-w-[1800px] flex-col overflow-hidden border-x-2 border-black dark:border-white bg-background">
+
+        <ReaderToolbar 
+
+          reader={reader} 
+
+          onTtsSettings={() => setTtsExpanded(true)}
+
         />
-      )}
-    </div>
-  );
-}
+
+        <div className="flex-1 min-h-0 p-4">
+
+          <ReaderContent reader={reader} />
+
+        </div>
+
+        <TTSPanel 
+
+          expanded={ttsExpanded} 
+
+          onExpandChange={setTtsExpanded}
+
+        />
+
+        {lightboxImage && (
+
+          <ReaderLightbox 
+
+            image={lightboxImage} 
+
+            onClose={() => setLightboxImage(null)} 
+
+            onSave={handleSaveImage} 
+
+          />
+
+        )}
+
+      </div>
+
+    );
+
+  }
+
+  

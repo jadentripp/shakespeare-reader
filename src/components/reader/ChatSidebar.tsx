@@ -8,7 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { BookChatThread, ChatPrompt, LocalChatMessage } from "@/lib/readerTypes";
 import type { Highlight } from "@/lib/tauri";
-import { Sparkles, Check, PanelRightClose, PlusSquare, History, MessageSquare, X, Eraser, Trash2, MapPin, BookOpen, Feather, Quote, Lightbulb } from "lucide-react";
+import { Check, PanelRightClose, PlusSquare, History, MessageSquare, X, Eraser, Trash2, MapPin, BookOpen, Feather, Quote, Lightbulb } from "lucide-react";
 import { ChatModelSelector } from "./ChatModelSelector";
 import { ChatThreadItem } from "./ChatThreadItem";
 import { ChatMessageList } from "./ChatMessageList";
@@ -361,31 +361,31 @@ export default function ChatSidebar({
 
           </div>
 
-                    <div className="flex items-center gap-3">
+                                <div className={cn(
 
-                      <div className={cn(
+                                  "relative flex h-10 w-10 items-center justify-center rounded-none transition-all duration-300 border-[3px]",
 
-                        "relative flex h-10 w-10 items-center justify-center rounded-none transition-all duration-300 border-[3px]",
+                                  chatSending 
 
-                        chatSending 
+                                    ? "bg-[#FFD700] text-black border-black" 
 
-                          ? "bg-[#FFD700] text-black border-black" 
+                                    : (isHighlightContext ? "bg-[#E02E2E] text-white border-black" : "bg-black text-white dark:bg-white dark:text-black border-black dark:border-white")
 
-                          : (isHighlightContext ? "bg-[#E02E2E] text-white border-black" : "bg-black text-white dark:bg-white dark:text-black border-black dark:border-white")
+                                )}>
 
-                      )}>
+                                  {isHighlightContext ? (
 
-                        {isHighlightContext ? (
+                                    <MessageSquare className="h-5 w-5" />
 
-                          <MessageSquare className="h-5 w-5" />
+                                  ) : (
 
-                        ) : (
+                                    <span className="text-lg font-black leading-none mt-0.5">A</span>
 
-                          <Sparkles className="h-5 w-5" />
+                                  )}
 
-                        )}
+                                </div>
 
-                      </div>
+                    
 
                       <div className="flex flex-col">
 

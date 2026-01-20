@@ -12,8 +12,8 @@ const ReaderLayout: React.FC<ReaderLayoutProps> = ({ children, columns, style })
     <div
       data-columns={columns}
       className={cn(
-        "relative h-full w-full overflow-hidden rounded-2xl border bg-card shadow-sm",
-        columns === 2 && "ring-1 ring-border/40"
+        "relative h-full w-full overflow-hidden rounded-none border-2 border-black dark:border-white bg-background shadow-2xl",
+        columns === 2 && "border-x-4"
       )}
       style={style}
     >

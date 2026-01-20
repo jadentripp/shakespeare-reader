@@ -42,7 +42,7 @@ export function ChatThreadItem({
             }
             setIsEditing(false);
           }}
-          className="h-7 text-xs px-1.5 py-0 min-w-0"
+          className="h-7 text-[10px] font-bold px-1.5 py-0 min-w-0 rounded-none border-2 border-[#E02E2E]"
         />
       </form>
     );
@@ -56,7 +56,7 @@ export function ChatThreadItem({
           e.stopPropagation();
           setIsEditing(true);
         }}
-        className="opacity-0 group-hover/title:opacity-100 p-0.5 hover:text-primary transition-all"
+        className="opacity-0 group-hover/title:opacity-100 p-0.5 hover:text-[#E02E2E] transition-all"
         title="Rename thread"
       >
         <Edit2 className="h-2.5 w-2.5" />
