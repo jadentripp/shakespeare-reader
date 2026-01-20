@@ -3,9 +3,9 @@
 ## Phase 1: Core Staging Logic & Context Tray UI
 Implement the foundational logic for managing multiple context snippets and create the visual "Context Tray" in the chat interface.
 
-- [~] Task: Create `src/tests/contextStaging.test.ts` to define multi-snippet management logic.
-- [ ] Task: Update `useHighlights` hook to support a "staged snippets" state separate from permanent highlights.
-- [ ] Task: Implement `addSnippetToContext` and `removeSnippetFromContext` actions.
+- [x] Task: Create `src/tests/contextStaging.test.ts` to define multi-snippet management logic. 1249f05
+- [x] Task: Update `useHighlights` hook to support a "staged snippets" state separate from permanent highlights. 1249f05
+- [x] Task: Implement `addSnippetToContext` and `removeSnippetFromContext` actions. 1249f05
 - [ ] Task: Create `src/components/reader/ContextTray.tsx` component (Bauhaus style chips).
 - [ ] Task: Integrate `ContextTray` into `ChatSidebar.tsx` above the chat input.
 - [ ] Task: Conductor - User Manual Verification 'Core Staging Logic & Context Tray UI' (Protocol in workflow.md)
