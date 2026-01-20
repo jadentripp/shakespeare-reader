@@ -1,12 +1,38 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, Volume2, VolumeX, Volume1, ChevronUp, RotateCcw, ListOrdered } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  Play, 
+  Pause, 
+  Volume2, 
+  VolumeX, 
+  Volume1, 
+  RotateCcw, 
+  Mic2, 
+  Settings2,
+  X,
+  Gauge
+} from "lucide-react";
 import { useTTS } from "@/lib/hooks/useTTS";
+import { elevenLabsService, Voice } from "@/lib/elevenlabs";
 import { cn } from "@/lib/utils";
 
 interface TTSPanelProps {
   className?: string;
+  expanded?: boolean;
+  onExpandChange?: (expanded: boolean) => void;
 }
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] as const;
@@ -20,7 +46,7 @@ const VolumeIcon = ({ volume }: { volume: number }) => {
   return <Volume2 className="h-4 w-4" />;
 };
 
-export function TTSPanel({ className }: TTSPanelProps) {
+export function TTSPanel({ className, expanded: controlledExpanded, onExpandChange }: TTSPanelProps) {
   const {
     state,
     progress,
@@ -30,6 +56,8 @@ export function TTSPanel({ className }: TTSPanelProps) {
     setPlaybackRate,
     setVolume,
     seek,
+    voiceId,
+    changeVoice,
   } = useTTS({
     getDoc: () => null,
     getPageMetrics: () => ({ 
@@ -42,39 +70,38 @@ export function TTSPanel({ className }: TTSPanelProps) {
     currentPage: 0,
   });
 
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [internalExpanded, setInternalExpanded] = useState(false);
+  
+  // Use controlled state if provided, otherwise internal
+  const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
+  
+  const setIsExpanded = useCallback((value: boolean) => {
+    setInternalExpanded(value);
+    onExpandChange?.(value);
+  }, [onExpandChange]);
+
   const [playbackRate, setPlaybackRateLocal] = useState<PlaybackSpeed>(1);
   const [volume, setVolumeLocal] = useState(1);
-  const [showSpeedSelector, setShowSpeedSelector] = useState(false);
+  const [voices, setVoices] = useState<Voice[]>([]);
+  const [loadingVoices, setLoadingVoices] = useState(false);
 
-  const touchStartY = useRef<number>(0);
-  const touchStartExpanded = useRef<boolean>(false);
-
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    touchStartY.current = e.clientY;
-    touchStartExpanded.current = isExpanded;
-  }, [isExpanded]);
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!touchStartExpanded.current) return;
-    
-    const deltaY = e.clientY - touchStartY.current;
-    
-    if (deltaY > 50) {
-      setIsExpanded(false);
-      touchStartY.current = 0;
-      touchStartExpanded.current = false;
-    }
-  }, []);
-
-  const handlePointerUp = useCallback(() => {
-    touchStartY.current = 0;
-    touchStartExpanded.current = false;
-  }, []);
+  useEffect(() => {
+    setLoadingVoices(true);
+    elevenLabsService.getVoices()
+      .then((fetchedVoices) => {
+        setVoices(fetchedVoices);
+        if (fetchedVoices.length > 0 && !voiceId) {
+          changeVoice(fetchedVoices[0].voice_id);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoadingVoices(false));
+  }, [voiceId, changeVoice]);
 
   const isPlaying = state === "playing";
   const isPaused = state === "paused";
-  const currentVoiceName = "Voice 1";
+  const currentVoice = voices.find(v => v.voice_id === voiceId);
+  const currentVoiceName = currentVoice?.name || "Select a Voice";
 
   const handleTogglePlayPause = () => {
     if (isPlaying) {
@@ -89,7 +116,6 @@ export function TTSPanel({ className }: TTSPanelProps) {
   const handleSpeedSelect = (speed: PlaybackSpeed) => {
     setPlaybackRateLocal(speed);
     setPlaybackRate(speed);
-    setShowSpeedSelector(false);
   };
 
   const handleVolumeChange = (value: number[]) => {
@@ -115,197 +141,188 @@ export function TTSPanel({ className }: TTSPanelProps) {
     }
   };
 
+  const handleSeek = (value: number[]) => {
+    seek(value[0]);
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const progressPercent = progress.duration > 0 
-    ? (progress.currentTime / progress.duration) * 100 
-    : 0;
+  // If idle and not explicitly expanded, hide (or if you want a "launch" button, handle that elsewhere)
+  if (state === 'idle' && !isExpanded) return null;
 
   return (
     <div
       data-testid="tts-panel-container"
-      onClick={() => !isExpanded && setIsExpanded(true)}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-50",
-        "bg-background/80 backdrop-blur-xl border-t border-border/50",
-        "shadow-lg transition-all duration-300 ease-out",
-        "animate-in slide-in-from-bottom-0",
-        "touch-none",
-        isExpanded ? "h-auto pb-4" : "h-16",
+        "fixed bottom-6 left-1/2 -translate-x-1/2 z-50",
+        "w-[95%] max-w-3xl", // Floating island look
+        "bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl",
+        "shadow-lg shadow-black/5",
+        "transition-all duration-300 ease-out",
+        "animate-in slide-in-from-bottom-4 fade-in",
         className
       )}
     >
-      {/* Progress bar at top */}
-      <div className="absolute top-0 left-0 right-0 h-0.5 bg-muted">
-        <div 
-          data-testid="tts-progress-fill"
-          className="h-full bg-primary transition-all duration-100"
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
-
-      {/* Mini-player (collapsed state) */}
-      <div className={cn(
-        "flex items-center gap-3 px-4 h-16",
-        isExpanded && "border-b border-border/30"
-      )}>
-        {/* Play/Pause button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleTogglePlayPause();
-          }}
-          aria-label={isPlaying ? "Pause" : "Play"}
-          className="h-10 w-10 rounded-full bg-primary/10 hover:bg-primary/20"
-        >
-          {isPlaying ? (
-            <Pause className="h-5 w-5" />
-          ) : (
-            <Play className="h-5 w-5 ml-0.5" />
-          )}
-        </Button>
-
-        {/* Voice name and time */}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{currentVoiceName}</p>
-          <p className="text-xs text-muted-foreground">
-            {formatTime(progress.currentTime)} / {formatTime(progress.duration)}
-          </p>
-        </div>
-
-        {/* Volume icon */}
-        <div className="text-muted-foreground">
-          <VolumeIcon volume={volume} />
-        </div>
-
-        {/* Expand indicator */}
-        {!isExpanded && (
-          <div className="flex items-center gap-1 text-muted-foreground text-xs">
-            <span>Tap to expand</span>
-            <ChevronUp className="h-3 w-3" />
+      <div className="flex flex-col p-2 gap-1">
+        {/* Progress Bar Row */}
+        <div className="px-2 pt-1">
+          <Slider
+            value={[progress.currentTime]}
+            max={progress.duration || 100} // Prevent 0 max
+            step={1}
+            onValueChange={handleSeek}
+            className="w-full cursor-pointer py-1"
+          />
+          <div className="flex justify-between px-1 mt-1 text-[10px] font-medium text-muted-foreground/70 select-none">
+            <span>{formatTime(progress.currentTime)}</span>
+            <span>{formatTime(progress.duration)}</span>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Expanded controls */}
-      {isExpanded && (
-        <div className="px-4 py-3 space-y-4">
-          {/* Skip controls */}
-          <div className="flex items-center justify-center gap-4">
+        {/* Controls Row */}
+        <div className="flex items-center justify-between px-2 pb-1 gap-4">
+          
+          {/* Left: Info & Voice */}
+          <div className="flex items-center gap-3 flex-1 min-w-0 justify-start">
+             <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 gap-2 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <Mic2 className="h-4 w-4" />
+                  <span className="text-xs font-medium truncate max-w-[100px] sm:max-w-[140px]">
+                    {currentVoiceName}
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2" side="top" align="start">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-xs text-muted-foreground px-2 mb-1">Select Voice</h4>
+                  <div className="max-h-[200px] overflow-y-auto space-y-1 pr-1">
+                    {voices.map((voice) => (
+                      <button
+                        key={voice.voice_id}
+                        onClick={() => changeVoice(voice.voice_id)}
+                        className={cn(
+                          "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors",
+                          voiceId === voice.voice_id 
+                            ? "bg-primary/10 text-primary font-medium" 
+                            : "hover:bg-muted text-foreground/80"
+                        )}
+                      >
+                        {voice.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Center: Transport */}
+          <div className="flex items-center justify-center gap-2 flex-[2]">
             <Button
               variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSkipBackward();
-              }}
-              aria-label="Skip backward 15 seconds"
-              className="h-10 w-10 rounded-full"
+              size="icon"
+              onClick={handleSkipBackward}
+              className="h-9 w-9 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/50"
             >
-              <RotateCcw className="h-5 w-5" />
-              <span className="sr-only">-15s</span>
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="default"
+              size="icon"
+              onClick={handleTogglePlayPause}
+              className="h-10 w-10 rounded-full shadow-md hover:scale-105 transition-transform"
+            >
+              {isPlaying ? (
+                <Pause className="h-5 w-5 fill-current" />
+              ) : (
+                <Play className="h-5 w-5 fill-current ml-0.5" />
+              )}
             </Button>
 
             <Button
               variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSkipForward();
-              }}
-              aria-label="Skip forward 15 seconds"
-              className="h-10 w-10 rounded-full"
+              size="icon"
+              onClick={handleSkipForward}
+              className="h-9 w-9 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/50"
             >
-              <RotateCcw className="h-5 w-5 scale-x-[-1]" />
-              <span className="sr-only">+15s</span>
+              <RotateCcw className="h-4 w-4 scale-x-[-1]" />
             </Button>
           </div>
 
-          {/* Speed control */}
-          <div className="relative flex items-center gap-3">
-            <ListOrdered className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="text-sm font-medium w-12">Speed</span>
+          {/* Right: Settings & Volume */}
+          <div className="flex items-center gap-1 flex-1 justify-end">
             
-            <Button
-              data-testid="speed-button"
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowSpeedSelector(!showSpeedSelector);
-              }}
-              className="flex-1 justify-between h-8"
-            >
-              <span>{getSpeedLabel(playbackRate)}</span>
-            </Button>
+            {/* Speed Popover */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-12 gap-0.5 px-0 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md">
+                   <Gauge className="h-3.5 w-3.5 mr-1" />
+                   <span className="text-xs font-medium">{getSpeedLabel(playbackRate)}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-40 p-1" side="top" align="center">
+                <div className="grid grid-cols-1 gap-0.5">
+                  {SPEED_OPTIONS.map((speed) => (
+                    <button
+                      key={speed}
+                      onClick={() => handleSpeedSelect(speed)}
+                      className={cn(
+                        "flex items-center justify-between px-2 py-1.5 rounded-sm text-xs transition-colors",
+                        playbackRate === speed
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "hover:bg-muted text-foreground/80"
+                      )}
+                    >
+                      <span>{speed}x</span>
+                      {playbackRate === speed && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
 
-            {/* Speed selector dropdown */}
-            {showSpeedSelector && (
-              <div 
-                data-testid="speed-selector"
-                className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-10 p-1 grid grid-cols-4 gap-1"
-              >
-                {SPEED_OPTIONS.map((speed) => (
-                  <Button
-                    key={speed}
-                    variant={playbackRate === speed ? "default" : "ghost"}
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSpeedSelect(speed);
-                    }}
-                    className="h-8 text-xs"
-                  >
-                    {getSpeedLabel(speed)}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
+            {/* Volume Popover (Optional: could be inline if space permits, but popover is safer for mobile/responsive) */}
+            <Popover>
+               <PopoverTrigger asChild>
+                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md">
+                    <VolumeIcon volume={volume} />
+                 </Button>
+               </PopoverTrigger>
+               <PopoverContent className="w-12 h-32 p-0 flex justify-center py-4" side="top" align="center">
+                  <Slider
+                    orientation="vertical"
+                    value={[volume]}
+                    max={1}
+                    step={0.05}
+                    onValueChange={handleVolumeChange}
+                    className="h-full"
+                  />
+               </PopoverContent>
+            </Popover>
 
-          {/* Volume control */}
-          <div className="flex items-center gap-3">
-            <VolumeIcon volume={volume} />
-            <span className="text-sm font-medium w-12">Volume</span>
-            <Slider
-              value={[volume]}
-              onValueChange={handleVolumeChange}
-              min={0}
-              max={1}
-              step={0.1}
-              className="flex-1"
-            />
-            <span className="text-sm text-muted-foreground w-10 text-right">
-              {Math.round(volume * 100)}%
-            </span>
-          </div>
+            <div className="w-px h-4 bg-border/50 mx-1" />
 
-          {/* Collapse button */}
-          <div className="flex justify-center">
             <Button
               variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsExpanded(false);
-              }}
-              className="text-xs text-muted-foreground"
+              size="icon"
+              onClick={() => setIsExpanded(false)}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-destructive/10 hover:text-destructive rounded-full"
             >
-              Collapse
+              <X className="h-4 w-4" />
             </Button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

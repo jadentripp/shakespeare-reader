@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import AppearancePanel from "@/components/AppearancePanel";
-import { ChevronLeft, ChevronRight, Settings2, Columns2, BookOpen, Play, Pause, Square, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings2, Columns2, BookOpen, Play, Pause, Square, Loader2, SlidersHorizontal } from "lucide-react";
 import { PlaybackState } from "@/lib/elevenlabs";
 
 type ReaderTopBarProps = {
@@ -30,6 +30,7 @@ type ReaderTopBarProps = {
   onTtsPlay: () => void;
   onTtsPause: () => void;
   onTtsStop: () => void;
+  onTtsSettings: () => void;
 };
 
 export default function ReaderTopBar({
@@ -56,6 +57,7 @@ export default function ReaderTopBar({
   onTtsPlay,
   onTtsPause,
   onTtsStop,
+  onTtsSettings,
 }: ReaderTopBarProps) {
   return (
     <div className="shrink-0 flex items-center gap-4 px-2 py-1.5">
@@ -74,6 +76,16 @@ export default function ReaderTopBar({
 
       {/* TTS Controls */}
       <div className="flex items-center gap-1 rounded-full border bg-card/60 backdrop-blur-sm p-1 shadow-sm">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onTtsSettings}
+          aria-label="TTS Settings"
+          className="h-8 w-8 p-0 rounded-full hover:bg-muted/60"
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5 fill-current opacity-70" />
+        </Button>
+
         {ttsState === 'playing' ? (
           <Button
             variant="ghost"

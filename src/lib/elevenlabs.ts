@@ -152,6 +152,7 @@ export class AudioPlayer {
   setState(state: PlaybackState) {
     console.log(`[AudioPlayer] State transition: ${this.state} -> ${state}`);
     this.state = state;
+    this.updateProgressCache();
     this.listeners.forEach(l => l(state));
 
     // Start/stop progress updates
@@ -177,6 +178,7 @@ export class AudioPlayer {
   }
 
   private notifyProgressListeners() {
+    this.updateProgressCache();
     const progress = this.getProgress();
     this.progressListeners.forEach(l => l(progress));
   }
@@ -423,17 +425,19 @@ export class AudioPlayer {
    */
   private _cachedProgress: AudioProgress = { currentTime: 0, duration: 0, isBuffering: false };
 
-  getProgress(): AudioProgress {
+  private updateProgressCache() {
     const currentTime = this.getCurrentTime();
     const duration = this.getDuration();
     const isBuffering = this.state === 'buffering';
 
     if (currentTime !== this._cachedProgress.currentTime ||
-      duration !== this._cachedProgress.duration ||
-      isBuffering !== this._cachedProgress.isBuffering) {
+        duration !== this._cachedProgress.duration ||
+        isBuffering !== this._cachedProgress.isBuffering) {
       this._cachedProgress = { currentTime, duration, isBuffering };
     }
+  }
 
+  getProgress(): AudioProgress {
     return this._cachedProgress;
   }
 

@@ -132,19 +132,23 @@ export async function getBookHtml(bookId: number): Promise<string> {
 
   // Try each URL with each proxy
   for (const url of urls) {
-    // First try direct fetch
-    try {
-      console.log(`Web fallback: attempting direct fetch from ${url}`);
-      const resp = await fetch(url);
-      if (resp.ok) {
-        const html = await resp.text();
-        if (html && html.length > 100) {
-          console.log(`✓ Successfully fetched book HTML directly from ${url}`);
-          return html;
+    // First try direct fetch (SKIP for Gutenberg in browser to avoid red CORS errors)
+    if (!url.includes('gutenberg.org')) {
+      try {
+        console.log(`Web fallback: attempting direct fetch from ${url}`);
+        const resp = await fetch(url);
+        if (resp.ok) {
+          const html = await resp.text();
+          if (html && html.length > 100) {
+            console.log(`✓ Successfully fetched book HTML directly from ${url}`);
+            return html;
+          }
         }
+      } catch (e) {
+        console.log(`Direct fetch failed for ${url}, trying proxies...`);
       }
-    } catch (e) {
-      console.log(`Direct fetch failed for ${url}, trying proxies...`);
+    } else {
+        console.log(`Skipping direct fetch for ${url} (CORS restricted)`);
     }
 
     // Try each CORS proxy

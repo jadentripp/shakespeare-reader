@@ -3,9 +3,10 @@ import { useMobiReader } from "@/lib/reader/hooks/useMobiReader";
 
 type ReaderToolbarProps = {
   reader: ReturnType<typeof useMobiReader>;
+  onTtsSettings: () => void;
 };
 
-export function ReaderToolbar({ reader }: ReaderToolbarProps) {
+export function ReaderToolbar({ reader, onTtsSettings }: ReaderToolbarProps) {
   const {
     bookQ,
     showAppearance,
@@ -55,6 +56,7 @@ export function ReaderToolbar({ reader }: ReaderToolbarProps) {
       }}
       onTtsPause={tts.pause}
       onTtsStop={tts.stop}
+      onTtsSettings={onTtsSettings}
     />
   );
 }

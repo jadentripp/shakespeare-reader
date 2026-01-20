@@ -10,6 +10,8 @@ interface UseTTSOptions {
   onPageTurnNeeded?: () => void;
 }
 
+const INITIAL_PROGRESS = { currentTime: 0, duration: 0, isBuffering: false };
+
 export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }: UseTTSOptions) {
   const state = React.useSyncExternalStore(
     useCallback((callback: () => void) => audioPlayer.subscribe(callback), []),
@@ -20,7 +22,7 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
   const progress = React.useSyncExternalStore(
     useCallback((callback: () => void) => audioPlayer.subscribeProgress(callback), []),
     () => audioPlayer.getProgress(),
-    () => ({ currentTime: 0, duration: 0, isBuffering: false })
+    () => INITIAL_PROGRESS
   );
 
   const [autoNext, setAutoNext] = useState(false);
@@ -128,6 +130,13 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
     audioPlayer.seek(position);
   }, []);
 
+  const changeVoice = useCallback(async (newVoiceId: string) => {
+    console.log(`[useTTS] changeVoice called with: ${newVoiceId}`);
+    setVoiceId(newVoiceId);
+    const { setSetting } = await import('@/lib/tauri');
+    await setSetting({ key: 'elevenlabs_voice_id', value: newVoiceId });
+  }, []);
+
   return {
     state,
     progress,
@@ -141,5 +150,7 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
     setPlaybackRate,
     setVolume,
     seek,
+    voiceId,
+    changeVoice,
   };
 }
