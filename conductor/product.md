@@ -20,7 +20,7 @@ AI Reader transforms the experience of reading public domain literature from a p
 - **Rich Media Support:** Integrated inline illustration and image extraction from MOBI files, providing a more faithful and visually engaging reading experience for classic literature.
 - **Audiobook Narration:** High-quality AI-powered text-to-speech using ElevenLabs with a dedicated bottom sheet TTS panel. Users can control playback with seekable progress bar, playback speed (0.5x-2x), skip forward/backward (15s), and volume sliders. Panel features smooth slide-up animations, swipe gestures for collapse, and responsive design matching the reader aesthetic.
 - **Active Reading Tools:** Robust highlighting and note-taking capabilities with easy browsing.
-- **AI-Powered Insights:** Context-aware chat assistant for summaries, explanations, and analysis. Features an editorial Bauhaus layout with high-contrast headers, interactive citations, and reasoning traces. Supports both selection-based and page-level context.
+- **AI-Powered Insights:** Context-aware chat assistant for summaries, explanations, and analysis. Features an editorial Bauhaus layout with high-contrast headers, interactive citations, and reasoning traces. Supports multi-segment selection via a persistent Context Tray, allowing users to stage and discuss disparate parts of the text simultaneously.
 - **Premium Settings Experience:** A sidebar-driven, desktop-class settings interface with card-based organization and interactive live previews for appearance customization.
 - **Interactive Media Features:** Click-to-zoom lightbox for detailed inspection of illustrations and the ability to save images locally.
 

@@ -3,7 +3,7 @@
 ## Visual Identity & UX
 - **Focused & Minimal:** The interface should prioritize the text, with UI elements receding when not in use.
 - **Bauhaus Aesthetic:** Embrace a "Modern Minimalist" look characterized by bold geometric shapes, sharp corners (no border-radius), and massive sans-serif typography for navigation and headers.
-- **Monochromatic Palette:** Use a strict black, white, and gray UI base, allowing colorful book covers and specific bold accents (like Bauhaus Red) to pop.
+- **Monochromatic Palette:** Use a strict black, white, and gray UI base, allowing colorful book covers and specific bold accents (like Bauhaus Red for highlights and Bauhaus Blue for active context) to pop.
 - **Functional Grid:** Maintain a strict, uniform layout with generous whitespace and clear hierarchy.
 
 ## Tone & Voice
