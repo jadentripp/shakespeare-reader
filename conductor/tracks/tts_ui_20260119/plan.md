@@ -24,7 +24,7 @@
 
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Foundation - Audio Player Enhancements' (Protocol in workflow.md)
 
-## Phase 2: TTS Panel Component - Structure & Styling
+## Phase 2: TTS Panel Component - Structure & Styling [checkpoint: 5dc377b]
 
 - [x] Task: Create TTSPanel component shell bcdebc4
     - [x] Write tests for TTSPanel rendering in collapsed and expanded states
