@@ -32,11 +32,11 @@
     - [x] Implement expanded state with full controls layout
     - [x] Add glassmorphism/blur styling consistent with reader aesthetic
 
-- [ ] Task: Implement panel animation and gestures
-    - [ ] Write tests for panel open/close state transitions
-    - [ ] Implement smooth slide-up animation for panel appearance
-    - [ ] Implement swipe-down gesture to collapse/dismiss panel
-    - [ ] Implement tap-to-expand on collapsed mini-player
+- [x] Task: Implement panel animation and gestures 2a799ef
+    - [x] Write tests for panel open/close state transitions
+    - [x] Implement smooth slide-up animation for panel appearance
+    - [x] Implement swipe-down gesture to collapse/dismiss panel
+    - [x] Implement tap-to-expand on collapsed mini-player
 
 - [ ] Task: Create progress bar component
     - [ ] Write tests for TTSProgressBar rendering and interaction
