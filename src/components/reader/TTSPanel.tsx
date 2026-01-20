@@ -71,6 +71,7 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
   });
 
   const [internalExpanded, setInternalExpanded] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   
   // Use controlled state if provided, otherwise internal
   const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
@@ -186,43 +187,45 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
         {/* Controls Row */}
         <div className="flex items-center justify-between px-2 pb-1 gap-4">
           
-          {/* Left: Info & Voice */}
+          {/* Left: Info & Voice (Conditional) */}
           <div className="flex items-center gap-3 flex-1 min-w-0 justify-start">
-             <Popover>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 gap-2 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                >
-                  <Mic2 className="h-4 w-4" />
-                  <span className="text-xs font-medium truncate max-w-[100px] sm:max-w-[140px]">
-                    {currentVoiceName}
-                  </span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-2" side="top" align="start">
-                <div className="space-y-2">
-                  <h4 className="font-medium text-xs text-muted-foreground px-2 mb-1">Select Voice</h4>
-                  <div className="max-h-[200px] overflow-y-auto space-y-1 pr-1">
-                    {voices.map((voice) => (
-                      <button
-                        key={voice.voice_id}
-                        onClick={() => changeVoice(voice.voice_id)}
-                        className={cn(
-                          "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors",
-                          voiceId === voice.voice_id 
-                            ? "bg-primary/10 text-primary font-medium" 
-                            : "hover:bg-muted text-foreground/80"
-                        )}
-                      >
-                        {voice.name}
-                      </button>
-                    ))}
+             {showSettings && (
+               <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 gap-2 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors animate-in fade-in slide-in-from-left-2 duration-200"
+                  >
+                    <Mic2 className="h-4 w-4" />
+                    <span className="text-xs font-medium truncate max-w-[100px] sm:max-w-[140px]">
+                      {currentVoiceName}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" side="top" align="start">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-xs text-muted-foreground px-2 mb-1">Select Voice</h4>
+                    <div className="max-h-[200px] overflow-y-auto space-y-1 pr-1">
+                      {voices.map((voice) => (
+                        <button
+                          key={voice.voice_id}
+                          onClick={() => changeVoice(voice.voice_id)}
+                          className={cn(
+                            "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors",
+                            voiceId === voice.voice_id 
+                              ? "bg-primary/10 text-primary font-medium" 
+                              : "hover:bg-muted text-foreground/80"
+                          )}
+                        >
+                          {voice.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+             )}
           </div>
 
           {/* Center: Transport */}
@@ -257,60 +260,77 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
             >
               <RotateCcw className="h-4 w-4 scale-x-[-1]" />
             </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowSettings(!showSettings)}
+              className={cn(
+                "h-9 w-9 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/50 transition-colors",
+                showSettings && "bg-muted text-foreground"
+              )}
+              aria-label="Toggle settings"
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Right: Settings & Volume */}
           <div className="flex items-center gap-1 flex-1 justify-end">
             
-            {/* Speed Popover */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-12 gap-0.5 px-0 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md">
-                   <Gauge className="h-3.5 w-3.5 mr-1" />
-                   <span className="text-xs font-medium">{getSpeedLabel(playbackRate)}</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-40 p-1" side="top" align="center">
-                <div className="grid grid-cols-1 gap-0.5">
-                  {SPEED_OPTIONS.map((speed) => (
-                    <button
-                      key={speed}
-                      onClick={() => handleSpeedSelect(speed)}
-                      className={cn(
-                        "flex items-center justify-between px-2 py-1.5 rounded-sm text-xs transition-colors",
-                        playbackRate === speed
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "hover:bg-muted text-foreground/80"
-                      )}
-                    >
-                      <span>{speed}x</span>
-                      {playbackRate === speed && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
+            {showSettings && (
+              <>
+                {/* Speed Popover */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-12 gap-0.5 px-0 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md animate-in fade-in slide-in-from-right-2 duration-200">
+                       <Gauge className="h-3.5 w-3.5 mr-1" />
+                       <span className="text-xs font-medium">{getSpeedLabel(playbackRate)}</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-40 p-1" side="top" align="center">
+                    <div className="grid grid-cols-1 gap-0.5">
+                      {SPEED_OPTIONS.map((speed) => (
+                        <button
+                          key={speed}
+                          onClick={() => handleSpeedSelect(speed)}
+                          className={cn(
+                            "flex items-center justify-between px-2 py-1.5 rounded-sm text-xs transition-colors",
+                            playbackRate === speed
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "hover:bg-muted text-foreground/80"
+                          )}
+                        >
+                          <span>{speed}x</span>
+                          {playbackRate === speed && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
 
-            {/* Volume Popover (Optional: could be inline if space permits, but popover is safer for mobile/responsive) */}
-            <Popover>
-               <PopoverTrigger asChild>
-                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md">
-                    <VolumeIcon volume={volume} />
-                 </Button>
-               </PopoverTrigger>
-               <PopoverContent className="w-12 h-32 p-0 flex justify-center py-4" side="top" align="center">
-                  <Slider
-                    orientation="vertical"
-                    value={[volume]}
-                    max={1}
-                    step={0.05}
-                    onValueChange={handleVolumeChange}
-                    className="h-full"
-                  />
-               </PopoverContent>
-            </Popover>
+                {/* Volume Popover */}
+                <Popover>
+                   <PopoverTrigger asChild>
+                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md animate-in fade-in slide-in-from-right-2 duration-200">
+                        <VolumeIcon volume={volume} />
+                     </Button>
+                   </PopoverTrigger>
+                   <PopoverContent className="w-12 h-32 p-0 flex justify-center py-4" side="top" align="center">
+                      <Slider
+                        orientation="vertical"
+                        value={[volume]}
+                        max={1}
+                        step={0.05}
+                        onValueChange={handleVolumeChange}
+                        className="h-full"
+                      />
+                   </PopoverContent>
+                </Popover>
 
-            <div className="w-px h-4 bg-border/50 mx-1" />
+                <div className="w-px h-4 bg-border/50 mx-1 animate-in fade-in duration-200" />
+              </>
+            )}
 
             <Button
               variant="ghost"
