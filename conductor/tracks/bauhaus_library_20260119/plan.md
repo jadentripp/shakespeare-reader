@@ -27,11 +27,11 @@
 - [x] Task: Conductor - User Manual Verification 'Top-Down Navigation & Header' (Protocol in workflow.md) [a448979]
 
 ## Phase 3: Global Bauhaus Styling & Polish
-- [ ] Task: Update Global Colors & Typography
-    - [ ] Define Bauhaus accent color (e.g., #E02E2E) in Tailwind config (or CSS variables)
-    - [ ] Enforce geometric sans-serif for UI elements in the library view
-    - [ ] Update `LibraryGrid` spacing to be uniform and generous
-- [ ] Task: Final Polish & cleanup
+- [x] Task: Update Global Colors & Typography [c1cfd45]
+    - [x] Define Bauhaus accent color (e.g., #E02E2E) in Tailwind config (or CSS variables)
+    - [x] Enforce geometric sans-serif for UI elements in the library view
+    - [x] Update `LibraryGrid` spacing to be uniform and generous
+- [~] Task: Final Polish & cleanup
     - [ ] Remove unused sidebar components if no longer needed
     - [ ] Ensure responsive behavior (grid adapts, header scales)
     - [ ] Verify accessibility (contrast, focus states)
