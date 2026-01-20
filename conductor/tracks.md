@@ -1,11 +1,11 @@
 # Active Tracks
 
-- [x] **Track: Bauhaus-Inspired 2D Library Redesign**
-*Link: [./tracks/bauhaus_library_20260119/](./tracks/bauhaus_library_20260119/)*
-
 ---
 
 # Archived Tracks
+
+- [x] **Track: Bauhaus-Inspired 2D Library Redesign**
+*Link: [./archive/bauhaus_library_20260119/](./archive/bauhaus_library_20260119/)*
 
 - [x] **Track: Fix Test Suite Robustness & Bun Migration**
 *Link: [./archive/test_suite_robustness_bun_migration_20260119/](./archive/test_suite_robustness_bun_migration_20260119/)*
