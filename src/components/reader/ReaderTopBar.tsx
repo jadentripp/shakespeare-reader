@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import AppearancePanel from "@/components/AppearancePanel";
-import { ChevronLeft, ChevronRight, Settings2, Columns2, BookOpen, Play, Pause, Square, Loader2, SlidersHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings2, Columns2, BookOpen, Play, Pause, Square, Loader2, SlidersHorizontal, Settings } from "lucide-react";
 import { PlaybackState } from "@/lib/elevenlabs";
+import { Link } from "@tanstack/react-router";
 
 type ReaderTopBarProps = {
   title?: string;
@@ -219,6 +220,17 @@ export default function ReaderTopBar({
             />
           </PopoverContent>
         </Popover>
+
+        {/* Global Settings */}
+        <Link to="/settings">
+          <button
+            type="button"
+            className="flex h-9 w-9 items-center justify-center border-2 border-black dark:border-white bg-background text-foreground transition-all hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+            title="Application Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+        </Link>
       </div>
 
       {/* Reading Progress Bar (Absolute bottom) */}

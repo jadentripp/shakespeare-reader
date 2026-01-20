@@ -1,5 +1,8 @@
 # Active Tracks
 
+- [ ] **Track: Remove global application header from App.tsx**
+*Link: [./tracks/remove_global_header_20260119/](./tracks/remove_global_header_20260119/)*
+
 ---
 
 # Archived Tracks

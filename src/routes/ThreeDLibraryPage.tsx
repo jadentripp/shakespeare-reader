@@ -846,17 +846,6 @@ const ThreeDLibraryPage: React.FC = () => {
           <SortSwitcher current={sortBy} onSelect={setSortBy} />
         </div>
 
-        {/* Top-Right: Navigation */}
-        <div className="absolute top-12 right-8">
-          <button
-            onClick={() => navigate({ to: '/' })}
-            className="pointer-events-auto flex items-center gap-2.5 px-6 py-2.5 bg-white/5 hover:bg-white/10 backdrop-blur-2xl border border-white/10 rounded-full text-white/90 text-xs font-bold tracking-widest uppercase transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-black/50"
-          >
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Library
-          </button>
-        </div>
-
         {/* Collections Menu - simplified */}
         <CollectionsMenu
           catalogKey={catalogKey}
