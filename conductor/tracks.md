@@ -1,5 +1,8 @@
 # Active Tracks
 
+- [~] **Track: Bauhaus-Inspired 2D Library Redesign**
+*Link: [./tracks/bauhaus_library_20260119/](./tracks/bauhaus_library_20260119/)*
+
 ---
 
 # Archived Tracks

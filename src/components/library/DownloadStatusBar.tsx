@@ -36,54 +36,47 @@ export function DownloadStatusBar({
 }: DownloadStatusBarProps) {
   return (
     <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-      <div className="flex items-center gap-4 rounded-xl border border-amber-200/60 bg-gradient-to-r from-amber-50 to-orange-50/50 px-5 py-3.5 shadow-sm dark:border-amber-800/40 dark:from-amber-950/30 dark:to-orange-950/20">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4 border-2 border-black bg-background px-5 py-4 dark:border-white">
+        <div className="flex items-center gap-4">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                className="h-10 w-10 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
                 onClick={() => paused ? resumeAll() : setPaused(true)}
               >
-                {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                {paused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{paused ? "Resume" : "Pause"}</TooltipContent>
+            <TooltipContent className="rounded-none border-2 border-black font-mono text-[10px] uppercase font-bold dark:border-white">{paused ? "Resume" : "Pause"}</TooltipContent>
           </Tooltip>
 
-          <div className="h-8 w-px bg-amber-200 dark:bg-amber-800" />
+          <div className="h-8 w-1 bg-black dark:bg-white" />
 
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-6 font-mono text-[10px] font-bold uppercase tracking-widest">
             {counts.downloading > 0 && (
               <span className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" />
-                </span>
-                <span className="font-medium">{counts.downloading}</span>
-                <span className="text-muted-foreground">active</span>
+                <span className="h-2 w-2 animate-pulse bg-amber-500" />
+                <span>{counts.downloading} Active</span>
               </span>
             )}
             {counts.queued > 0 && (
-              <span className="flex items-center gap-2 text-muted-foreground">
+              <span className="flex items-center gap-2 text-stone-400">
                 <Clock className="h-3.5 w-3.5" />
-                <span className="font-medium text-foreground">{counts.queued}</span>
-                queued
+                <span>{counts.queued} Queued</span>
               </span>
             )}
             {counts.done > 0 && (
-              <span className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+              <span className="flex items-center gap-2 text-stone-500">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span className="font-medium">{counts.done}</span>
-                done
+                <span>{counts.done} Done</span>
               </span>
             )}
             {counts.failed > 0 && (
-              <span className="flex items-center gap-2 text-destructive">
-                <span className="h-2 w-2 rounded-full bg-destructive" />
-                <span className="font-medium">{counts.failed}</span>
-                failed
+              <span className="flex items-center gap-2 text-red-600">
+                <span className="h-2 w-2 bg-red-600" />
+                <span>{counts.failed} Failed</span>
               </span>
             )}
           </div>
@@ -91,41 +84,41 @@ export function DownloadStatusBar({
 
         {active && (
           <>
-            <div className="h-8 w-px bg-amber-200 dark:bg-amber-800" />
-            <span className="flex-1 truncate text-sm">
-              Downloading <span className="font-medium">{active.title}</span>
+            <div className="h-8 w-px bg-stone-200 dark:bg-stone-800" />
+            <span className="flex-1 truncate font-sans text-xs font-black uppercase tracking-tight">
+              Loading: {active.title}
             </span>
           </>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-4">
           {counts.failed > 0 && (
-            <Button variant="ghost" size="sm" onClick={retryFailed} className="h-8 gap-1.5">
-              <RotateCcw className="h-3.5 w-3.5" />
+            <Button variant="ghost" size="sm" onClick={retryFailed} className="h-10 rounded-none border-2 border-black font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black">
+              <RotateCcw className="h-4 w-4" />
               Retry
             </Button>
           )}
           {(counts.done > 0 || counts.failed > 0) && (
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 gap-1.5">
-                  <Trash className="h-3.5 w-3.5" />
+                <Button variant="ghost" size="sm" className="h-10 rounded-none border-2 border-black font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black">
+                  <Trash className="h-4 w-4" />
                   Clear
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-44 p-1.5">
+              <PopoverContent align="end" className="w-48 rounded-none border-2 border-black p-1 dark:border-white">
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
+                  className="flex w-full items-center gap-2 px-3 py-3 font-mono text-[10px] font-bold uppercase tracking-widest hover:bg-stone-100 disabled:opacity-50 dark:hover:bg-stone-800"
                   onClick={clearDone}
                   disabled={counts.done === 0}
                 >
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <CheckCircle2 className="h-4 w-4" />
                   Completed ({counts.done})
                 </button>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                  className="flex w-full items-center gap-2 px-3 py-3 font-mono text-[10px] font-bold uppercase tracking-widest text-red-600 hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-950/20"
                   onClick={clearFailed}
                   disabled={counts.failed === 0}
                 >
