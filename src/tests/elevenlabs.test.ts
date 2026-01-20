@@ -76,13 +76,20 @@ describe('AudioPlayer', () => {
     mockAudioContextInstance = {
       createBufferSource: mock(() => ({
         buffer: null,
+        playbackRate: { value: 1 },
         connect: mock(() => { }),
         start: mock(() => { }),
         stop: mock(() => { }),
         onended: null,
       })),
+      createGain: mock(() => ({
+        gain: { value: 1 },
+        connect: mock(() => { }),
+        disconnect: mock(() => { }),
+      })),
       decodeAudioData: mock(() => Promise.resolve({ duration: 10 })),
       state: 'suspended',
+      currentTime: 0,
       resume: mock(() => Promise.resolve(undefined)),
       suspend: mock(() => Promise.resolve(undefined)),
       close: mock(() => Promise.resolve(undefined)),
@@ -92,10 +99,12 @@ describe('AudioPlayer', () => {
     class MockAudioContext {
       constructor() { return mockAudioContextInstance; }
       createBufferSource() { return mockAudioContextInstance.createBufferSource(); }
+      createGain() { return mockAudioContextInstance.createGain(); }
       decodeAudioData(data: any) { return mockAudioContextInstance.decodeAudioData(data); }
       resume() { return mockAudioContextInstance.resume(); }
       suspend() { return mockAudioContextInstance.suspend(); }
       get state() { return mockAudioContextInstance.state; }
+      get currentTime() { return mockAudioContextInstance.currentTime; }
       get destination() { return mockAudioContextInstance.destination; }
     }
 

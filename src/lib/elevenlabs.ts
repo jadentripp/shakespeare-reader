@@ -102,12 +102,29 @@ export const elevenLabsService = new ElevenLabsService();
 
 export type PlaybackState = 'idle' | 'playing' | 'paused' | 'buffering' | 'error';
 
+export interface AudioProgress {
+  currentTime: number;
+  duration: number;
+  isBuffering: boolean;
+}
+
 export class AudioPlayer {
   private context: AudioContext | null = null;
   private state: PlaybackState = 'idle';
   private currentSource: AudioBufferSourceNode | null = null;
+  private gainNode: GainNode | null = null;
+  private currentBuffer: AudioBuffer | null = null;
   private queue: Array<{ text: string; audioBuffer: AudioBuffer }> = [];
   private listeners = new Set<(state: PlaybackState) => void>();
+  private progressListeners = new Set<(progress: AudioProgress) => void>();
+
+  // Playback state tracking
+  private _playbackRate: number = 1;
+  private _volume: number = 1;
+  private _startTime: number = 0;  // AudioContext.currentTime when playback started
+  private _startOffset: number = 0; // Position in audio buffer when playback started
+  private _pausedAt: number = 0;    // Position where playback was paused
+  private progressInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     // Context is lazily initialized on first play
@@ -118,6 +135,12 @@ export class AudioPlayer {
       console.log(`[AudioPlayer] Initializing AudioContext`);
       this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
       console.log(`[AudioPlayer] AudioContext state: ${this.context.state}`);
+    }
+    // Initialize gain node for volume control
+    if (!this.gainNode && this.context) {
+      this.gainNode = this.context.createGain();
+      this.gainNode.gain.value = this._volume;
+      this.gainNode.connect(this.context.destination);
     }
     return this.context;
   }
@@ -130,6 +153,32 @@ export class AudioPlayer {
     console.log(`[AudioPlayer] State transition: ${this.state} -> ${state}`);
     this.state = state;
     this.listeners.forEach(l => l(state));
+
+    // Start/stop progress updates
+    if (state === 'playing') {
+      this.startProgressUpdates();
+    } else {
+      this.stopProgressUpdates();
+    }
+  }
+
+  private startProgressUpdates() {
+    this.stopProgressUpdates();
+    this.progressInterval = setInterval(() => {
+      this.notifyProgressListeners();
+    }, 100);
+  }
+
+  private stopProgressUpdates() {
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+      this.progressInterval = null;
+    }
+  }
+
+  private notifyProgressListeners() {
+    const progress = this.getProgress();
+    this.progressListeners.forEach(l => l(progress));
   }
 
   async play(text: string, voiceId?: string, settings?: VoiceSettings) {
@@ -190,18 +239,12 @@ export class AudioPlayer {
 
       this.stop(); // Stop any current playback
 
-      this.currentSource = ctx.createBufferSource();
-      this.currentSource.buffer = audioBuffer;
-      this.currentSource.connect(ctx.destination);
-      this.currentSource.onended = () => {
-        console.log(`[AudioPlayer] Playback ended`);
-        if (this.state === 'playing') {
-          this.setState('idle');
-        }
-      };
+      // Store the buffer for seeking
+      this.currentBuffer = audioBuffer;
+      this._startOffset = 0;
+      this._pausedAt = 0;
 
-      console.log(`[AudioPlayer] Starting playback`);
-      this.currentSource.start(0);
+      this.startPlayback(audioBuffer, 0);
       this.setState('playing');
     } catch (e) {
       console.error('[AudioPlayer] Audio playback error:', e);
@@ -209,9 +252,51 @@ export class AudioPlayer {
     }
   }
 
+  private startPlayback(buffer: AudioBuffer, offset: number) {
+    const ctx = this.initContext();
+
+    // Disconnect and clean up previous source
+    if (this.currentSource) {
+      try {
+        this.currentSource.stop();
+      } catch (e) {
+        // Source might have already stopped
+      }
+      this.currentSource = null;
+    }
+
+    this.currentSource = ctx.createBufferSource();
+    this.currentSource.buffer = buffer;
+    this.currentSource.playbackRate.value = this._playbackRate;
+
+    // Connect through gain node for volume control
+    if (this.gainNode) {
+      this.currentSource.connect(this.gainNode);
+    } else {
+      this.currentSource.connect(ctx.destination);
+    }
+
+    this.currentSource.onended = () => {
+      console.log(`[AudioPlayer] Playback ended`);
+      if (this.state === 'playing') {
+        this._pausedAt = 0;
+        this._startOffset = 0;
+        this.setState('idle');
+      }
+    };
+
+    this._startTime = ctx.currentTime;
+    this._startOffset = offset;
+
+    console.log(`[AudioPlayer] Starting playback at offset: ${offset.toFixed(2)}s`);
+    this.currentSource.start(0, offset);
+  }
+
   pause() {
     console.log(`[AudioPlayer] Pause requested`);
     if (this.state === 'playing') {
+      // Calculate current position before pausing
+      this._pausedAt = this.getCurrentTime();
       this.context?.suspend();
       this.setState('paused');
     }
@@ -226,6 +311,7 @@ export class AudioPlayer {
   }
 
   stop() {
+    this.stopProgressUpdates();
     if (this.currentSource) {
       console.log(`[AudioPlayer] Stopping current source`);
       try {
@@ -235,7 +321,111 @@ export class AudioPlayer {
       }
       this.currentSource = null;
     }
+    this._startOffset = 0;
+    this._pausedAt = 0;
     this.setState('idle');
+  }
+
+  /**
+   * Seek to a specific position in the audio (in seconds)
+   */
+  seek(position: number) {
+    if (!this.currentBuffer || !this.context) {
+      console.log(`[AudioPlayer] Cannot seek: no audio loaded`);
+      return;
+    }
+
+    const duration = this.currentBuffer.duration;
+    const clampedPosition = Math.max(0, Math.min(position, duration));
+
+    console.log(`[AudioPlayer] Seeking to position: ${clampedPosition.toFixed(2)}s`);
+
+    if (this.state === 'playing') {
+      // Restart playback from new position
+      this.startPlayback(this.currentBuffer, clampedPosition);
+    } else if (this.state === 'paused') {
+      // Just update the position, playback will resume from here
+      this._pausedAt = clampedPosition;
+      this._startOffset = clampedPosition;
+    }
+
+    this.notifyProgressListeners();
+  }
+
+  /**
+   * Set playback rate (0.5 to 2.0)
+   */
+  setPlaybackRate(rate: number) {
+    const clampedRate = Math.max(0.5, Math.min(2, rate));
+    console.log(`[AudioPlayer] Setting playback rate to: ${clampedRate}x`);
+    this._playbackRate = clampedRate;
+
+    if (this.currentSource) {
+      this.currentSource.playbackRate.value = clampedRate;
+    }
+  }
+
+  /**
+   * Get current playback rate
+   */
+  getPlaybackRate(): number {
+    return this._playbackRate;
+  }
+
+  /**
+   * Set volume (0 to 1)
+   */
+  setVolume(level: number) {
+    const clampedLevel = Math.max(0, Math.min(1, level));
+    console.log(`[AudioPlayer] Setting volume to: ${clampedLevel}`);
+    this._volume = clampedLevel;
+
+    if (this.gainNode) {
+      this.gainNode.gain.value = clampedLevel;
+    }
+  }
+
+  /**
+   * Get current volume
+   */
+  getVolume(): number {
+    return this._volume;
+  }
+
+  /**
+   * Get current playback time in seconds
+   */
+  getCurrentTime(): number {
+    if (!this.context || !this.currentBuffer) return 0;
+
+    if (this.state === 'paused') {
+      return this._pausedAt;
+    }
+
+    if (this.state === 'playing') {
+      const elapsed = (this.context.currentTime - this._startTime) * this._playbackRate;
+      return Math.min(this._startOffset + elapsed, this.currentBuffer.duration);
+    }
+
+    return 0;
+  }
+
+  /**
+   * Get audio duration in seconds
+   */
+  getDuration(): number {
+    return this.currentBuffer?.duration ?? 0;
+  }
+
+  /**
+   * Get progress info (currentTime, duration, isBuffering)
+   */
+  getProgress(): AudioProgress {
+    return {
+      currentTime: this.getCurrentTime(),
+      duration: this.getDuration(),
+      isBuffering: this.state === 'buffering',
+    };
   }
 
   private async streamToBuffer(stream: ReadableStream): Promise<ArrayBuffer> {
@@ -261,6 +451,14 @@ export class AudioPlayer {
   subscribe(callback: (state: PlaybackState) => void) {
     this.listeners.add(callback);
     return () => this.listeners.delete(callback);
+  }
+
+  /**
+   * Subscribe to progress updates (fires ~10x per second during playback)
+   */
+  subscribeProgress(callback: (progress: AudioProgress) => void) {
+    this.progressListeners.add(callback);
+    return () => this.progressListeners.delete(callback);
   }
 }
 
