@@ -285,6 +285,7 @@ export function useMobiReader(bookId: number) {
     highlightsHook.activeAiQuote,
     highlightsHook.activeAiBlockIndex,
     highlightsHook.selectedHighlightId,
+    highlightsHook.stagedSnippets,
   ]);
 
   const scrollToHighlight = (highlightId: number) => {
