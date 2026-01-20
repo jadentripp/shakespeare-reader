@@ -1,5 +1,8 @@
 # Active Tracks
 
+- [x] **Track: Reader UI Bauhaus Alignment**
+*Link: [./tracks/reader_ui_bauhaus_20260119/](./tracks/reader_ui_bauhaus_20260119/)*
+
 ---
 
 # Archived Tracks
