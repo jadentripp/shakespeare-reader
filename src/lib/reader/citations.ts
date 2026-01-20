@@ -53,9 +53,10 @@ export const buildChatSystemPrompt = (options: {
   }
 
   if (stagedSnippets.length > 0) {
-    contextBlocks.push("Staged Context Snippets:");
+    contextBlocks.push("## CRITICAL CONTEXT: SPECIFIC TEXT SEGMENTS UNDER DISCUSSION");
+    contextBlocks.push("The user has explicitly selected the following segments for focused analysis:");
     stagedSnippets.forEach((s) => {
-      contextBlocks.push(`"${s.text}"`);
+      contextBlocks.push(`- "${s.text}"`);
     });
     contextBlocks.push("");
   }
