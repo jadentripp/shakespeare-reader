@@ -57,6 +57,7 @@ export default function LibraryPage() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const showSearchPrompt = !canQueryCatalog;
+  const showDiscoverFirst = catalogSearch || (activeCatalog.kind !== "all" && catalogKey !== "collection-all");
 
   return (
     <TooltipProvider>
@@ -90,87 +91,88 @@ export default function LibraryPage() {
             />
           )}
 
-          {(catalogSearch || (activeCatalog.kind !== "all" && catalogKey !== "collection-all")) ? (
-            <>
-              <CatalogResults
-                catalogSearch={catalogSearch}
-                activeCatalog={activeCatalog}
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-                canBulkScan={canBulkScan}
-                startOrResumeBulk={startOrResumeBulk}
-                bulkScan={bulkScan}
-                showSearchPrompt={showSearchPrompt}
-                catalogQ={catalogQ}
-                sortedCatalogResults={sortedCatalogResults}
-                localGutenbergIds={localGutenbergIds}
-                queue={queue}
-                enqueue={enqueue}
-                setPaused={setPaused}
-                runQueue={resumeAll} // resumeAll handles queue run
-                setCatalogPageUrl={setCatalogPageUrl}
-              />
-              <LibraryCollections
-                catalogKey={catalogKey}
-                setCatalogKey={setCatalogKey}
-                showAllCategories={showAllCategories}
-                setShowAllCategories={setShowAllCategories}
-              />
-              <ContinueReading
-                booksInProgress={booksInProgress}
-                progressByBookId={progressByBookId}
-              />
-              <YourLibrary
-                booksQ={booksQ}
-                libraryQuery={libraryQuery}
-                setLibraryQuery={setLibraryQuery}
-                filteredBooks={filteredBooks}
-                progressByBookId={progressByBookId}
-                deleteBook={deleteBook}
-              />
-            </>
-          ) : (
-            <>
-              <LibraryCollections
-                catalogKey={catalogKey}
-                setCatalogKey={setCatalogKey}
-                showAllCategories={showAllCategories}
-                setShowAllCategories={setShowAllCategories}
-              />
-              <ContinueReading
-                booksInProgress={booksInProgress}
-                progressByBookId={progressByBookId}
-              />
-              <YourLibrary
-                booksQ={booksQ}
-                libraryQuery={libraryQuery}
-                setLibraryQuery={setLibraryQuery}
-                filteredBooks={filteredBooks}
-                progressByBookId={progressByBookId}
-                deleteBook={deleteBook}
-              />
-              <CatalogResults
-                catalogSearch={catalogSearch}
-                activeCatalog={activeCatalog}
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-                canBulkScan={canBulkScan}
-                startOrResumeBulk={startOrResumeBulk}
-                bulkScan={bulkScan}
-                showSearchPrompt={showSearchPrompt}
-                catalogQ={catalogQ}
-                sortedCatalogResults={sortedCatalogResults}
-                localGutenbergIds={localGutenbergIds}
-                queue={queue}
-                enqueue={enqueue}
-                setPaused={setPaused}
-                runQueue={resumeAll}
-                setCatalogPageUrl={setCatalogPageUrl}
-              />
-            </>
-          )}
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+            <div className="space-y-10">
+              {showDiscoverFirst ? (
+                <>
+                  <CatalogResults
+                    catalogSearch={catalogSearch}
+                    activeCatalog={activeCatalog}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                    canBulkScan={canBulkScan}
+                    startOrResumeBulk={startOrResumeBulk}
+                    bulkScan={bulkScan}
+                    showSearchPrompt={showSearchPrompt}
+                    catalogQ={catalogQ}
+                    sortedCatalogResults={sortedCatalogResults}
+                    localGutenbergIds={localGutenbergIds}
+                    queue={queue}
+                    enqueue={enqueue}
+                    setPaused={setPaused}
+                    runQueue={resumeAll} // resumeAll handles queue run
+                    setCatalogPageUrl={setCatalogPageUrl}
+                  />
+                  <YourLibrary
+                    booksQ={booksQ}
+                    libraryQuery={libraryQuery}
+                    setLibraryQuery={setLibraryQuery}
+                    filteredBooks={filteredBooks}
+                    progressByBookId={progressByBookId}
+                    deleteBook={deleteBook}
+                  />
+                  <ContinueReading
+                    booksInProgress={booksInProgress}
+                    progressByBookId={progressByBookId}
+                  />
+                </>
+              ) : (
+                <>
+                  <ContinueReading
+                    booksInProgress={booksInProgress}
+                    progressByBookId={progressByBookId}
+                  />
+                  <YourLibrary
+                    booksQ={booksQ}
+                    libraryQuery={libraryQuery}
+                    setLibraryQuery={setLibraryQuery}
+                    filteredBooks={filteredBooks}
+                    progressByBookId={progressByBookId}
+                    deleteBook={deleteBook}
+                  />
+                  <CatalogResults
+                    catalogSearch={catalogSearch}
+                    activeCatalog={activeCatalog}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                    canBulkScan={canBulkScan}
+                    startOrResumeBulk={startOrResumeBulk}
+                    bulkScan={bulkScan}
+                    showSearchPrompt={showSearchPrompt}
+                    catalogQ={catalogQ}
+                    sortedCatalogResults={sortedCatalogResults}
+                    localGutenbergIds={localGutenbergIds}
+                    queue={queue}
+                    enqueue={enqueue}
+                    setPaused={setPaused}
+                    runQueue={resumeAll}
+                    setCatalogPageUrl={setCatalogPageUrl}
+                  />
+                </>
+              )}
+            </div>
 
-          <DownloadQueue queue={queue} setQueue={setQueue} />
+            <aside className="space-y-8 lg:sticky lg:top-8">
+              <LibraryCollections
+                catalogKey={catalogKey}
+                setCatalogKey={setCatalogKey}
+                showAllCategories={showAllCategories}
+                setShowAllCategories={setShowAllCategories}
+                variant="sidebar"
+              />
+              <DownloadQueue queue={queue} setQueue={setQueue} />
+            </aside>
+          </div>
         </div>
       </div>
     </TooltipProvider>
