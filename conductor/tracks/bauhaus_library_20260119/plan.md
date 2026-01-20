@@ -7,9 +7,9 @@
     - [x] Add strict geometric styling (no border-radius)
     - [x] Implement hover overlay for "Read" and "Delete" actions
     - [x] Add unit tests in `src/tests/BookCardMinimal.test.tsx`
-- [~] Task: Integrate `BookCardMinimal` into `LibraryGrid`
-    - [ ] Update `LibraryGrid` to support the new card variant
-    - [ ] Update tests to verify grid rendering with new cards
+- [x] Task: Integrate `BookCardMinimal` into `LibraryGrid` [b86eef6]
+    - [x] Update `LibraryGrid` to support the new card variant
+    - [x] Update tests to verify grid rendering with new cards
 - [ ] Task: Conductor - User Manual Verification 'Minimalist Book Card Component' (Protocol in workflow.md)
 
 ## Phase 2: Top-Down Navigation & Header
