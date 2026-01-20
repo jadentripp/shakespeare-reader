@@ -12,14 +12,14 @@
     - [ ] Update interactive highlights and active button states in the reader view to use Bauhaus Red
 - [ ] Task: Conductor - User Manual Verification 'Top Bar & Global Reader Styling' (Protocol in workflow.md)
 
-## Phase 2: Sidebars & Floating Panels
-- [ ] Task: Refactor AI Chat Sidebar
+## Phase 2: Sidebars & Floating Panels [checkpoint: 0815baf]
+- [x] Task: Refactor AI Chat Sidebar 23b0db2
     - [ ] Create/Update tests in `src/tests/useChatSidebar.test.tsx` (or related UI tests) to verify geometric changes
     - [ ] Remove all border-radius from the chat container
     - [ ] Add 2px solid borders for panel separation
     - [ ] Update headers ("AI ASSISTANT") and button labels to bold geometric sans-serif
     - [ ] Update input fields to have sharp corners and bold borders
-- [ ] Task: Refactor Appearance Panel
+- [x] Task: Refactor Appearance Panel a372d61
     - [ ] Create/Update tests in `src/tests/AppearancePanel.test.tsx` for Bauhaus alignment
     - [ ] Apply sharp corners and bold 2px borders
     - [ ] Update typography to bold geometric sans-serif
