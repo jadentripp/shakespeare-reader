@@ -13,7 +13,7 @@ Implement the foundational logic for managing multiple context snippets and crea
 ## Phase 2: Reader Visualization & Interaction
 Update the reader's visual feedback to show staged snippets in "Bauhaus Blue" and integrate the selection menu.
 
-- [ ] Task: Create `src/tests/readerContextVisualization.test.tsx` to verify blue highlight rendering.
+- [~] Task: Create `src/tests/readerContextVisualization.test.tsx` to verify blue highlight rendering.
 - [ ] Task: Update `readerStyles.ts` to include the `readerContextSnippet` class with Bauhaus Blue (#0055A4).
 - [ ] Task: Modify `renderHighlights` in `useHighlights.ts` to render staged snippets with the new blue style.
 - [ ] Task: Update the floating selection menu in `ReaderPane.tsx` to change "Chat" to "Add to Chat" and ensure it triggers the staging logic.
