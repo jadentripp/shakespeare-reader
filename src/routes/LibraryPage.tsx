@@ -1,8 +1,7 @@
 import { useRef } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useLibrary } from "../hooks/useLibrary";
-import { LibraryHeader } from "../components/library/LibraryHeader";
-import { LibraryCollections } from "../components/library/LibraryCollections";
+import { BauhausHeader } from "../components/library/BauhausHeader";
 import { DownloadStatusBar } from "../components/library/DownloadStatusBar";
 import { CatalogResults } from "../components/library/CatalogResults";
 import { YourLibrary } from "../components/library/YourLibrary";
@@ -56,20 +55,15 @@ export default function LibraryPage() {
   } = useLibrary();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const showSearchPrompt = !canQueryCatalog;
   const showDiscoverFirst = catalogSearch || (activeCatalog.kind !== "all" && catalogKey !== "collection-all");
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen">
-        <LibraryHeader
+      <div className="min-h-screen bg-background">
+        <BauhausHeader
           catalogQuery={catalogQuery}
           setCatalogQuery={setCatalogQuery}
-          searchFocused={searchFocused}
-          setSearchFocused={setSearchFocused}
-          recentSearches={recentSearches}
           handleSearch={handleSearch}
-          clearRecentSearches={clearRecentSearches}
           catalogQ={catalogQ}
           activeCatalog={activeCatalog}
           catalogSearch={catalogSearch}
@@ -77,7 +71,7 @@ export default function LibraryPage() {
           searchInputRef={searchInputRef}
         />
 
-        <div className="mx-auto max-w-6xl space-y-10 px-6 py-8">
+        <main className="mx-auto max-w-6xl space-y-20 px-6 py-12">
           {hasQueueActivity && (
             <DownloadStatusBar
               paused={paused}
@@ -91,89 +85,83 @@ export default function LibraryPage() {
             />
           )}
 
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
-            <div className="space-y-10">
-              {showDiscoverFirst ? (
-                <>
-                  <CatalogResults
-                    catalogSearch={catalogSearch}
-                    activeCatalog={activeCatalog}
-                    sortBy={sortBy}
-                    setSortBy={setSortBy}
-                    canBulkScan={canBulkScan}
-                    startOrResumeBulk={startOrResumeBulk}
-                    bulkScan={bulkScan}
-                    showSearchPrompt={showSearchPrompt}
-                    catalogQ={catalogQ}
-                    sortedCatalogResults={sortedCatalogResults}
-                    localGutenbergIds={localGutenbergIds}
-                    queue={queue}
-                    enqueue={enqueue}
-                    setPaused={setPaused}
-                    runQueue={resumeAll} // resumeAll handles queue run
-                    setCatalogPageUrl={setCatalogPageUrl}
-                  />
-                  <YourLibrary
-                    booksQ={booksQ}
-                    libraryQuery={libraryQuery}
-                    setLibraryQuery={setLibraryQuery}
-                    filteredBooks={filteredBooks}
-                    progressByBookId={progressByBookId}
-                    deleteBook={deleteBook}
-                  />
-                  <ContinueReading
-                    booksInProgress={booksInProgress}
-                    progressByBookId={progressByBookId}
-                  />
-                </>
-              ) : (
-                <>
-                  <ContinueReading
-                    booksInProgress={booksInProgress}
-                    progressByBookId={progressByBookId}
-                  />
-                  <YourLibrary
-                    booksQ={booksQ}
-                    libraryQuery={libraryQuery}
-                    setLibraryQuery={setLibraryQuery}
-                    filteredBooks={filteredBooks}
-                    progressByBookId={progressByBookId}
-                    deleteBook={deleteBook}
-                  />
-                  <CatalogResults
-                    catalogSearch={catalogSearch}
-                    activeCatalog={activeCatalog}
-                    sortBy={sortBy}
-                    setSortBy={setSortBy}
-                    canBulkScan={canBulkScan}
-                    startOrResumeBulk={startOrResumeBulk}
-                    bulkScan={bulkScan}
-                    showSearchPrompt={showSearchPrompt}
-                    catalogQ={catalogQ}
-                    sortedCatalogResults={sortedCatalogResults}
-                    localGutenbergIds={localGutenbergIds}
-                    queue={queue}
-                    enqueue={enqueue}
-                    setPaused={setPaused}
-                    runQueue={resumeAll}
-                    setCatalogPageUrl={setCatalogPageUrl}
-                  />
-                </>
-              )}
-            </div>
-
-            <aside className="space-y-8 lg:sticky lg:top-8">
-              <LibraryCollections
-                catalogKey={catalogKey}
-                setCatalogKey={setCatalogKey}
-                showAllCategories={showAllCategories}
-                setShowAllCategories={setShowAllCategories}
-                variant="sidebar"
-              />
-              <DownloadQueue queue={queue} setQueue={setQueue} />
-            </aside>
+          <div className="space-y-20">
+            {showDiscoverFirst ? (
+              <>
+                <CatalogResults
+                  catalogSearch={catalogSearch}
+                  activeCatalog={activeCatalog}
+                  sortBy={sortBy}
+                  setSortBy={setSortBy}
+                  canBulkScan={canBulkScan}
+                  startOrResumeBulk={startOrResumeBulk}
+                  bulkScan={bulkScan}
+                  showSearchPrompt={!canQueryCatalog}
+                  catalogQ={catalogQ}
+                  sortedCatalogResults={sortedCatalogResults}
+                  localGutenbergIds={localGutenbergIds}
+                  queue={queue}
+                  enqueue={enqueue}
+                  setPaused={setPaused}
+                  runQueue={resumeAll}
+                  setCatalogPageUrl={setCatalogPageUrl}
+                />
+                <ContinueReading
+                  booksInProgress={booksInProgress}
+                  progressByBookId={progressByBookId}
+                />
+                <YourLibrary
+                  booksQ={booksQ}
+                  libraryQuery={libraryQuery}
+                  setLibraryQuery={setLibraryQuery}
+                  filteredBooks={filteredBooks}
+                  progressByBookId={progressByBookId}
+                  deleteBook={deleteBook}
+                />
+              </>
+            ) : (
+              <>
+                <ContinueReading
+                  booksInProgress={booksInProgress}
+                  progressByBookId={progressByBookId}
+                />
+                <YourLibrary
+                  booksQ={booksQ}
+                  libraryQuery={libraryQuery}
+                  setLibraryQuery={setLibraryQuery}
+                  filteredBooks={filteredBooks}
+                  progressByBookId={progressByBookId}
+                  deleteBook={deleteBook}
+                />
+                <CatalogResults
+                  catalogSearch={catalogSearch}
+                  activeCatalog={activeCatalog}
+                  sortBy={sortBy}
+                  setSortBy={setSortBy}
+                  canBulkScan={canBulkScan}
+                  startOrResumeBulk={startOrResumeBulk}
+                  bulkScan={bulkScan}
+                  showSearchPrompt={!canQueryCatalog}
+                  catalogQ={catalogQ}
+                  sortedCatalogResults={sortedCatalogResults}
+                  localGutenbergIds={localGutenbergIds}
+                  queue={queue}
+                  enqueue={enqueue}
+                  setPaused={setPaused}
+                  runQueue={resumeAll}
+                  setCatalogPageUrl={setCatalogPageUrl}
+                />
+              </>
+            )}
+            
+            {/* Download Queue at the bottom for full width */}
+            {queue.length > 0 && (
+              <div className="border-t-4 border-black pt-10 dark:border-white">
+                <DownloadQueue queue={queue} setQueue={setQueue} />
+              </div>
+            )}
           </div>
-        </div>
+        </main>
       </div>
     </TooltipProvider>
   );
