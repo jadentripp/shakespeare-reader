@@ -19,12 +19,12 @@
     - [x] Add horizontal filter bar for "Collections"
     - [x] Integrate search input as a bold, underlined field
     - [x] Add unit tests for header interactions and rendering
-- [~] Task: Refactor `LibraryPage` layout
-    - [ ] Remove `LibraryCollections` sidebar
-    - [ ] Replace `LibraryHeader` with `BauhausHeader`
-    - [ ] Ensure full-width layout for the main content area
-    - [ ] Update integration tests for `LibraryPage`
-- [ ] Task: Conductor - User Manual Verification 'Top-Down Navigation & Header' (Protocol in workflow.md)
+- [x] Task: Refactor `LibraryPage` layout [d98edfe]
+    - [x] Remove `LibraryCollections` sidebar
+    - [x] Replace `LibraryHeader` with `BauhausHeader`
+    - [x] Ensure full-width layout for the main content area
+    - [x] Update integration tests for `LibraryPage`
+- [~] Task: Conductor - User Manual Verification 'Top-Down Navigation & Header' (Protocol in workflow.md)
 
 ## Phase 3: Global Bauhaus Styling & Polish
 - [ ] Task: Update Global Colors & Typography
