@@ -17,10 +17,10 @@
     - [x] Implement progress state that updates during playback
     - [x] Ensure progress state is exposed via `useSyncExternalStore` pattern
 
-- [~] Task: Persist TTS preferences
-    - [ ] Write tests for saving/loading TTS preferences (speed, volume)
-    - [ ] Add `tts_playback_speed` and `tts_volume` to settings storage
-    - [ ] Load preferences on app initialization in `useTTS` hook
+- [x] Task: Persist TTS preferences 
+    - [x] Write tests for saving/loading TTS preferences (speed, volume)
+    - [x] Add `tts_playback_speed` and `tts_volume` to settings storage
+    - [x] Load preferences on app initialization in `useTTS` hook
 
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Foundation - Audio Player Enhancements' (Protocol in workflow.md)
 
