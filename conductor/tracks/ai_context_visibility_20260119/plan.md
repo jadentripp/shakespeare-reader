@@ -19,11 +19,11 @@ Update the reader's visual feedback to show staged snippets in "Bauhaus Blue" an
 - [x] Task: Update the floating selection menu in `ReaderPane.tsx` to change "Chat" to "Add to Chat" and ensure it triggers the staging logic. 7390c7b
 - [x] Task: Conductor - User Manual Verification 'Reader Visualization & Interaction' (Protocol in workflow.md) 1e0562c
 
-## Phase 3: AI Context Integration
+## Phase 3: AI Context Integration [checkpoint: 084faaa]
 Ensure the staged snippets are correctly passed to the OpenAI API and maintained across conversation turns.
 
-- [~] Task: Update `src/tests/aiContextIntegration.test.ts` to verify prompt construction with multiple snippets.
-- [ ] Task: Update `useChat.ts` to pull from the new "staged snippets" state instead of just the single `selectedHighlight`.
-- [ ] Task: Modify `buildChatSystemPrompt` in `citations.ts` to handle multiple focused snippets in a clean, structured way.
-- [ ] Task: Implement the "Clear Context" functionality to wipe the tray.
+- [x] Task: Update `src/tests/aiContextIntegration.test.ts` to verify prompt construction with multiple snippets. 084faaa
+- [x] Task: Update `useChat.ts` to pull from the new "staged snippets" state instead of just the single `selectedHighlight`. 084faaa
+- [x] Task: Modify `buildChatSystemPrompt` in `citations.ts` to handle multiple focused snippets in a clean, structured way. 084faaa
+- [x] Task: Implement the "Clear Context" functionality to wipe the tray. 084faaa
 - [ ] Task: Conductor - User Manual Verification 'AI Context Integration' (Protocol in workflow.md)
