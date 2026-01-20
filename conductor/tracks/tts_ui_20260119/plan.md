@@ -38,12 +38,12 @@
     - [x] Implement swipe-down gesture to collapse/dismiss panel
     - [x] Implement tap-to-expand on collapsed mini-player
 
-- [~] Task: Create progress bar component
-    - [ ] Write tests for TTSProgressBar rendering and interaction
-    - [ ] Create `src/components/reader/TTSProgressBar.tsx`
-    - [ ] Implement seekable progress bar with elapsed/remaining time display
-    - [ ] Add buffering state visual indicator
-    - [ ] Display page context (e.g., "Page 42 of 380")
+- [x] Task: Create progress bar component 2aa44c1
+    - [x] Write tests for TTSProgressBar rendering and interaction
+    - [x] Create `src/components/reader/TTSProgressBar.tsx`
+    - [x] Implement seekable progress bar with elapsed/remaining time display
+    - [x] Add buffering state visual indicator
+    - [x] Display page context (e.g., "Page 42 of 380")
 
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: TTS Panel Component - Structure & Styling' (Protocol in workflow.md)
 
