@@ -49,25 +49,25 @@
 
 ## Phase 3: Enhanced Playback Controls
 
-- [ ] Task: Implement playback speed control
-    - [ ] Write tests for speed selector component
-    - [ ] Create speed selector UI (0.5x, 0.75x, 1x, 1.25x, 1.5x, 1.75x, 2x)
-    - [ ] Connect speed selector to AudioPlayer.setPlaybackRate
-    - [ ] Persist selected speed preference
+- [x] Task: Implement playback speed control ac9a191
+    - [x] Write tests for speed selector component
+    - [x] Create speed selector UI (0.5x, 0.75x, 1x, 1.25x, 1.5x, 1.75x, 2x)
+    - [x] Connect speed selector to AudioPlayer.setPlaybackRate
+    - [x] Persist selected speed preference
 
-- [ ] Task: Implement skip controls
-    - [ ] Write tests for skip forward/backward functionality
-    - [ ] Create skip buttons UI (-15s, +15s)
-    - [ ] Implement skip logic that handles page boundaries
-    - [ ] Navigate to previous/next page if skip exceeds current audio bounds
+- [x] Task: Implement skip controls ac9a191
+    - [x] Write tests for skip forward/backward functionality
+    - [x] Create skip buttons UI (-15s, +15s)
+    - [x] Implement skip logic that handles page boundaries
+    - [x] Navigate to previous/next page if skip exceeds current audio bounds
 
-- [ ] Task: Implement volume control
-    - [ ] Write tests for volume slider component
-    - [ ] Create volume slider with dynamic icon (muted/low/medium/high)
-    - [ ] Connect volume slider to AudioPlayer.setVolume
-    - [ ] Persist volume preference
+- [x] Task: Implement volume control ac9a191
+    - [x] Write tests for volume slider component
+    - [x] Create volume slider with dynamic icon (muted/low/medium/high)
+    - [x] Connect volume slider to AudioPlayer.setVolume
+    - [x] Persist volume preference
 
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Enhanced Playback Controls' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Enhanced Playback Controls' (Protocol in workflow.md)
 
 ## Phase 4: Voice Quick-Switch
 
