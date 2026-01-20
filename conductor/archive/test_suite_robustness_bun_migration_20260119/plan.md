@@ -1,28 +1,38 @@
-# Implementation Plan - Test Suite Robustness & Bun Migration
+# Implementation Plan - Fix Test Suite Robustness & Bun Migration
 
-## Phase 1: Environment & Tooling Cleanup
-- [x] Task: Remove Vitest dependencies (`vitest`, `@vitest/ui`, plugins) from `package.json` and `node_modules`. [5050021]
-- [x] Task: Update `package.json` scripts to strictly use `bun test` (e.g., `"test": "bun test"`). [5050021]
-- [x] Task: Audit and remove any `vite.config.ts` or `vitest.config.ts` files if they are solely for testing configuration. [5050021]
-- [x] Task: Update `src/tests/setup.ts` imports to replace any lingering Vitest globals if present (though `bun:test` should be compatible). [5050021]
-- [x] Task: Conductor - User Manual Verification 'Environment & Tooling Cleanup' (Protocol in workflow.md) [426bc8e]
+## Phase 1: Fix ElevenLabs Service Mocks & Audio Tests [checkpoint: 2056580]
+This phase addresses the critical service mock failures causing the majority of test breakages.
 
-## Phase 2: Global State Isolation & Pollution Fixes
-- [~] Task: Enhance `src/tests/setup.ts` to clear `localStorage` and `sessionStorage` in `afterEach`.
-- [ ] Task: Enhance `src/tests/setup.ts` to cleanup DOM (`document.body.innerHTML = ''` or similar) in `afterEach`.
-- [ ] Task: Enhance `src/tests/setup.ts` to restore all mocks (`bun.mock.restore()`) in `afterEach`.
-- [ ] Task: Refactor `elevenlabs.test.ts` to ensure `mock.module` calls are properly scoped or reset, preventing pollution of other tests.
-- [ ] Task: Verify that `useReaderAppearance` tests (localStorage) and `SettingsSidebar` tests (DOM) no longer collide when run together.
-- [ ] Task: Conductor - User Manual Verification 'Global State Isolation & Pollution Fixes' (Protocol in workflow.md)
+- [x] Task: Analyze and Fix `elevenlabs.test.ts`
+    - [x] Read `src/lib/elevenlabs.ts` to understand the actual service interface.
+    - [x] Read `src/tests/elevenlabs.test.ts` to identify the broken mock definition.
+    - [x] Update the mock to correctly implement `textToSpeech` and `getVoices`.
+    - [x] Verify fix by running `bun test src/tests/elevenlabs.test.ts`.
+- [x] Task: Fix `audioPlayerEnhanced.test.ts`
+    - [x] Ensure the mock fix propagates to this file (or update local mocks if defined separately).
+    - [x] Verify fix by running `bun test src/tests/audioPlayerEnhanced.test.ts`.
+- [x] Task: Fix `TTSPanelPhase3.test.tsx`
+    - [x] Investigate the `undefined` error for `elevenLabsService.getVoices()`.
+    - [x] Ensure the component properly handles the mocked service response.
+    - [x] Verify fix by running `bun test src/tests/TTSPanelPhase3.test.tsx`.
+- [~] Task: Conductor - User Manual Verification 'Fix ElevenLabs Service Mocks & Audio Tests' (Protocol in workflow.md)
 
-## Phase 3: 3D/WebGL Test Compatibility
-- [ ] Task: Create a `src/tests/mocks/webgl.ts` (or similar) to mock `HTMLCanvasElement.prototype.getContext` and `@react-three/fiber` components.
-- [ ] Task: Integrate the WebGL mock into `src/tests/setup.ts` so it applies globally or to relevant tests.
-- [ ] Task: Run `ThreeDLibraryPage.test.tsx` and other 3D tests to verify they pass without crashing.
-- [ ] Task: Conductor - User Manual Verification '3D/WebGL Test Compatibility' (Protocol in workflow.md)
+## Phase 2: Fix 3D Component Tests [checkpoint: 2408c69]
+This phase addresses the rendering issues in React Three Fiber tests.
 
-## Phase 4: Final Verification & Cleanup
-- [ ] Task: Execute the full test suite (`bun test`) to ensure all tests pass (Green).
-- [ ] Task: Execute the test suite with randomization (`bun test --randomize`) to confirm strict isolation.
-- [ ] Task: Update project documentation (`README.md`, `AGENTS.md`) to reflect `bun test` as the single source of truth for testing.
-- [ ] Task: Conductor - User Manual Verification 'Final Verification & Cleanup' (Protocol in workflow.md)
+- [x] Task: Fix `ReadingRoom.test.tsx`
+    - [x] Analyze `src/components/three/ReadingRoom.tsx` to verify `data-testid` attributes or mesh naming.
+    - [x] Update test queries to correctly target 3D elements (e.g., using `three-test-renderer` patterns or checking how `bun test` handles R3F).
+    - [x] Verify fix by running `bun test src/tests/ReadingRoom.test.tsx`.
+- [x] Task: Fix `BookMesh.test.tsx`
+    - [x] Analyze `src/components/three/BookMesh.tsx` for similar querying issues.
+    - [x] Update test expectations to match the actual rendered structure.
+    - [x] Verify fix by running `bun test src/tests/BookMesh.test.tsx`.
+- [x] Task: Conductor - User Manual Verification 'Fix 3D Component Tests' (Protocol in workflow.md)
+
+## Phase 3: Final Verification [checkpoint: dfa447e]
+
+- [x] Task: Run Full Test Suite
+    - [x] Execute `bun test` to ensure all 212 tests pass.
+    - [x] Address any regressions if found.
+- [x] Task: Conductor - User Manual Verification 'Final Verification' (Protocol in workflow.md)
