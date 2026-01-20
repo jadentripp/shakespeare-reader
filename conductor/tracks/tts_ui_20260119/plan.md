@@ -38,7 +38,7 @@
     - [x] Implement swipe-down gesture to collapse/dismiss panel
     - [x] Implement tap-to-expand on collapsed mini-player
 
-- [ ] Task: Create progress bar component
+- [~] Task: Create progress bar component
     - [ ] Write tests for TTSProgressBar rendering and interaction
     - [ ] Create `src/components/reader/TTSProgressBar.tsx`
     - [ ] Implement seekable progress bar with elapsed/remaining time display
