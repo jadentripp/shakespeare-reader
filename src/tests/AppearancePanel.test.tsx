@@ -51,10 +51,24 @@ describe("AppearancePanel", () => {
     expect(defaultProps.onFontFamilyChange).toHaveBeenCalledWith("sans-serif");
   });
 
-  it("renders sliders for line height and margin", () => {
+  it("has sharp corners and bold 2px borders", () => {
+    const { container } = render(<AppearancePanel {...defaultProps} />);
+    const panel = container.firstChild as HTMLElement;
+    expect(panel.className).toContain('rounded-none');
+    expect(panel.className).toContain('border-2');
+  });
+
+  it("uses bold geometric sans-serif for headers", () => {
     render(<AppearancePanel {...defaultProps} />);
-    const sliders = screen.getAllByRole("slider");
-    expect(sliders).toHaveLength(2);
+    const header = screen.getByText(/READER APPEARANCE/i);
+    expect(header.className).toContain('font-black');
+    expect(header.className).toContain('uppercase');
+  });
+
+  it("has sharp corners on interactive elements", () => {
+    render(<AppearancePanel {...defaultProps} />);
+    const trigger = screen.getByRole("combobox");
+    expect(trigger.className).toContain('rounded-none');
   });
 });
 
