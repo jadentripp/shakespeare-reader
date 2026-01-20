@@ -6,8 +6,8 @@ Implement the foundational logic for managing multiple context snippets and crea
 - [x] Task: Create `src/tests/contextStaging.test.ts` to define multi-snippet management logic. 1249f05
 - [x] Task: Update `useHighlights` hook to support a "staged snippets" state separate from permanent highlights. 1249f05
 - [x] Task: Implement `addSnippetToContext` and `removeSnippetFromContext` actions. 1249f05
-- [ ] Task: Create `src/components/reader/ContextTray.tsx` component (Bauhaus style chips).
-- [ ] Task: Integrate `ContextTray` into `ChatSidebar.tsx` above the chat input.
+- [x] Task: Create `src/components/reader/ContextTray.tsx` component (Bauhaus style chips). 8f315cb
+- [x] Task: Integrate `ContextTray` into `ChatSidebar.tsx` above the chat input. 8f315cb
 - [ ] Task: Conductor - User Manual Verification 'Core Staging Logic & Context Tray UI' (Protocol in workflow.md)
 
 ## Phase 2: Reader Visualization & Interaction
