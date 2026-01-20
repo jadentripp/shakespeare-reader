@@ -12,12 +12,12 @@
     - [x] Implement volume control (0-1 range)
     - [x] Implement duration/currentTime tracking with state updates
 
-- [~] Task: Add progress state to AudioPlayer
-    - [ ] Write tests for progress state updates (currentTime, duration, buffered)
-    - [ ] Implement progress state that updates during playback
-    - [ ] Ensure progress state is exposed via `useSyncExternalStore` pattern
+- [x] Task: Add progress state to AudioPlayer 950f084
+    - [x] Write tests for progress state updates (currentTime, duration, buffered)
+    - [x] Implement progress state that updates during playback
+    - [x] Ensure progress state is exposed via `useSyncExternalStore` pattern
 
-- [ ] Task: Persist TTS preferences
+- [~] Task: Persist TTS preferences
     - [ ] Write tests for saving/loading TTS preferences (speed, volume)
     - [ ] Add `tts_playback_speed` and `tts_volume` to settings storage
     - [ ] Load preferences on app initialization in `useTTS` hook

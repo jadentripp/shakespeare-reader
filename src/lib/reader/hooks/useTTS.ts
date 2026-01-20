@@ -17,6 +17,12 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
     () => 'idle' as const
   );
 
+  const progress = React.useSyncExternalStore(
+    useCallback((callback: () => void) => audioPlayer.subscribeProgress(callback), []),
+    () => audioPlayer.getProgress(),
+    () => ({ currentTime: 0, duration: 0, isBuffering: false })
+  );
+
   const [autoNext, setAutoNext] = useState(false);
   const [voiceId, setVoiceId] = useState<string | undefined>();
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings | undefined>();
@@ -98,6 +104,7 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
 
   return {
     state,
+    progress,
     playCurrentPage,
     playText,
     pause,
