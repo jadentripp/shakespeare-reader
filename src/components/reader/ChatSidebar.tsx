@@ -361,47 +361,45 @@ export default function ChatSidebar({
 
           </div>
 
-          <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3">
 
-            <div className={cn(
+                      <div className={cn(
 
-              "relative flex h-9 w-9 items-center justify-center rounded-none transition-all duration-300 border-2 border-black dark:border-white",
+                        "relative flex h-10 w-10 items-center justify-center rounded-none transition-all duration-300 border-[3px]",
 
-              chatSending 
+                        chatSending 
 
-                ? "bg-[#E02E2E] text-white border-[#E02E2E]" 
+                          ? "bg-[#FFD700] text-black border-black" 
 
-                : (isHighlightContext ? "bg-[#E02E2E] text-white border-[#E02E2E]" : "bg-black text-white dark:bg-white dark:text-black")
+                          : (isHighlightContext ? "bg-[#E02E2E] text-white border-black" : "bg-black text-white dark:bg-white dark:text-black border-black dark:border-white")
 
-            )}>
+                      )}>
 
-              {chatSending && (
+                        {isHighlightContext ? (
 
-                <div className="absolute inset-0 bg-[#E02E2E] animate-ping opacity-20" />
+                          <MessageSquare className="h-5 w-5" />
 
-              )}
+                        ) : (
 
-              {isHighlightContext ? (
+                          <Sparkles className="h-5 w-5" />
 
-                <MessageSquare className="h-4 w-4" />
+                        )}
 
-              ) : (
+                      </div>
 
-                <Sparkles className="h-4 w-4" />
+                      <div className="flex flex-col">
 
-              )}
+                        <div className="bg-black dark:bg-white px-1.5 py-0.5 self-start">
 
-            </div>
+                          <h2 className="font-sans text-[11px] font-black uppercase tracking-tighter text-white dark:text-black leading-none">AI ASSISTANT</h2>
 
-            <div>
+                        </div>
 
-              <h2 className="font-sans text-xs font-black uppercase tracking-tighter leading-none">AI ASSISTANT</h2>
+                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-1">{contextHint}</p>
 
-              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">{contextHint}</p>
+                      </div>
 
-            </div>
-
-          </div>
+                    </div>
 
 
 
