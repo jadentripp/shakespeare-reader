@@ -1,6 +1,6 @@
 # TTS UI Enhancement - Implementation Plan
 
-## Phase 1: Foundation - Audio Player Enhancements
+## Phase 1: Foundation - Audio Player Enhancements [checkpoint: 1a792c7]
 
 - [x] Task: Extend AudioPlayer with seek, speed, and volume capabilities 950f084
     - [x] Write tests for `AudioPlayer.seek(position)` method
@@ -17,12 +17,12 @@
     - [x] Implement progress state that updates during playback
     - [x] Ensure progress state is exposed via `useSyncExternalStore` pattern
 
-- [x] Task: Persist TTS preferences 
+- [x] Task: Persist TTS preferences c1d8ecf
     - [x] Write tests for saving/loading TTS preferences (speed, volume)
     - [x] Add `tts_playback_speed` and `tts_volume` to settings storage
     - [x] Load preferences on app initialization in `useTTS` hook
 
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Foundation - Audio Player Enhancements' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Foundation - Audio Player Enhancements' (Protocol in workflow.md)
 
 ## Phase 2: TTS Panel Component - Structure & Styling
 
