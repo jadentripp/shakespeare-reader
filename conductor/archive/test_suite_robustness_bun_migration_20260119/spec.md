@@ -1,55 +1,31 @@
-# Track Specification: Test Suite Robustness & Bun Migration
+# Track Specification: Fix Test Suite Robustness & Bun Migration
 
-## 1. Overview
-**Goal:** Stabilize the test suite by eliminating state pollution (localStorage, DOM, Mocks) and finalizing the migration to `bun test` as the sole test runner, removing the `vitest` dependency.
+## Overview
+This track focuses on resolving the current test suite failures to ensure a stable and green baseline for future development. The primary goal is to fix 12 failing tests identified across `elevenlabs.test.ts`, `audioPlayerEnhanced.test.ts`, `TTSPanelPhase3.test.tsx`, `ReadingRoom.test.tsx`, and `BookMesh.test.tsx`.
 
-**Problem:**
-- **Pollution:** Tests leak state (localStorage, DOM nodes, Module mocks) into each other, causing false positives/negatives when run in parallel or sequence.
-- **Environment:** Some tests (Three.js/R3F) fail due to the lack of WebGL in the `happy-dom` environment.
-- **Tooling:** The project currently lists both `bun test` and `vitest`, creating confusion and redundancy.
+## Functional Requirements
+- **Fix ElevenLabs Service Mocks:**
+  - Investigate and resolve the `TypeError: elevenLabsService.textToSpeech is not a function` error affecting multiple tests.
+  - Ensure the `elevenLabsService` mock correctly implements the expected interface in both unit and component tests.
+- **Fix AudioPlayer Tests:**
+  - Resolve failures in `audioPlayerEnhanced.test.ts` caused by the service mock failure.
+  - Verify that `seek`, `getDuration`, and playback controls are correctly tested.
+- **Fix TTSPanel Component Tests:**
+  - Fix the crash in `TTSPanelPhase3.test.tsx` where `elevenLabsService.getVoices()` is failing.
+- **Fix 3D Component Tests:**
+  - Investigate why `ReadingRoom` and `BookMesh` tests are unable to find elements (e.g., `data-testid="floor"`).
+  - Update tests to align with current React Three Fiber rendering or testing library patterns.
 
-**Scope:**
-- `src/tests/` directory
-- `package.json` (removing vitest)
-- `src/tests/setup.ts` (global cleanup configuration)
-- `vite.config.ts` (if it contains test-specific config to be removed)
+## Non-Functional Requirements
+- **Code Coverage:** Maintain or improve existing code coverage.
+- **Performance:** Ensure tests run efficiently without unnecessary delays.
+- **Stability:** Eliminate flakiness in the repaired tests.
 
-## 2. Functional Requirements
+## Acceptance Criteria
+- [ ] executing `bun test` results in **zero** failures.
+- [ ] All 12 currently failing tests pass.
+- [ ] No existing passing tests are broken by the fixes.
 
-### 2.1 Test Environment & Tooling
-- **Primary Runner:** `bun test` MUST be the only test runner.
-- **Dependency Removal:** Remove `vitest`, `@vitest/ui`, and related Vitest plugins from `package.json`.
-- **Command Update:** Ensure `bun run test` executes `bun test`.
-
-### 2.2 Global State Isolation (The "Clean Slate" Rule)
-- **Automatic Cleanup:** The test setup (`setup.ts`) MUST automatically:
-  - Clear `localStorage` and `sessionStorage` after every test.
-  - Unmount/cleanup the DOM (reset `document.body`) after every test.
-  - Restore all mocks (`bun.mock.restore()`) after every test.
-- **Mechanism:** Use `beforeEach` and `afterEach` hooks in `setup.ts` to enforce this globally.
-
-### 2.3 3D/WebGL Test Handling
-- **Strategy:** Mock the graphics layer for Three.js/R3F tests.
-- **Implementation:**
-  - Mock `HTMLCanvasElement.prototype.getContext` to return a dummy context.
-  - If necessary, mock `@react-three/fiber`'s `Canvas` component to render children without invoking WebGL.
-
-### 2.4 Specific Pollution Fixes
-- **Module Mocks:** Ensure all `mock.module()` calls are scoped or reset so they don't affect subsequent test files.
-- **DOM Leaks:** Verify `SettingsSidebar` and similar component tests do not leave residual elements in the DOM.
-
-## 3. Non-Functional Requirements
-- **Performance:** Test execution speed should not significantly degrade due to cleanup hooks.
-- **Reliability:** `bun test` (run all) must pass 100% consistently on the local machine.
-- **Maintainability:** configuration should be centralized in `setup.ts` rather than duplicated in every test file.
-
-## 4. Acceptance Criteria
-- [ ] `bun run test` passes all tests successfully.
-- [ ] `vitest` is removed from `package.json` and `node_modules`.
-- [ ] Randomly running test files in different orders (using `bun test --randomize` if available, or manual selection) yields consistent results.
-- [ ] Three.js tests pass without WebGL errors.
-- [ ] No "cleanup" code (like `localStorage.clear()`) is required inside individual test files (it's handled globally).
-
-## 5. Out of Scope
-- Refactoring application logic (Dependency Injection) to improve testability (unless strictly necessary to unblock a test).
-- Adding new feature tests (focus is only on making existing tests robust).
+## Out of Scope
+- Adding new feature tests (unless required to fix coverage gaps created by refactoring).
+- Major refactoring of the application code (focus is on fixing tests/mocks).
