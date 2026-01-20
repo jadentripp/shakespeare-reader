@@ -26,11 +26,11 @@
 
 ## Phase 2: TTS Panel Component - Structure & Styling
 
-- [ ] Task: Create TTSPanel component shell
-    - [ ] Write tests for TTSPanel rendering in collapsed and expanded states
-    - [ ] Create `src/components/reader/TTSPanel.tsx` with collapsed mini-player state
-    - [ ] Implement expanded state with full controls layout
-    - [ ] Add glassmorphism/blur styling consistent with reader aesthetic
+- [~] Task: Create TTSPanel component shell
+    - [x] Write tests for TTSPanel rendering in collapsed and expanded states
+    - [x] Create `src/components/reader/TTSPanel.tsx` with collapsed mini-player state
+    - [x] Implement expanded state with full controls layout
+    - [x] Add glassmorphism/blur styling consistent with reader aesthetic
 
 - [ ] Task: Implement panel animation and gestures
     - [ ] Write tests for panel open/close state transitions
