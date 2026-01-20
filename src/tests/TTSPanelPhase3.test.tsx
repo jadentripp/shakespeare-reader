@@ -50,9 +50,12 @@ describe("TTSPanel Phase 3 - Enhanced Playback Controls", () => {
   describe("Playback Speed Control", () => {
     beforeEach(() => setupMock());
 
-    it("displays speed selector button with current speed", async () => {
+    it("displays speed selector button with current speed when settings open", async () => {
       const { TTSPanel } = await import("../components/reader/TTSPanel");
       render(<TTSPanel />);
+
+      const settingsToggle = screen.getByLabelText("Toggle settings");
+      fireEvent.click(settingsToggle);
 
       // Default is 1x
       expect(screen.getByText("1x")).toBeInTheDocument();
@@ -61,6 +64,9 @@ describe("TTSPanel Phase 3 - Enhanced Playback Controls", () => {
     it("opens speed selector popover when clicked and selects speed", async () => {
       const { TTSPanel } = await import("../components/reader/TTSPanel");
       render(<TTSPanel />);
+
+      const settingsToggle = screen.getByLabelText("Toggle settings");
+      fireEvent.click(settingsToggle);
 
       const speedButton = screen.getByText("1x").closest('button');
       fireEvent.click(speedButton!);
@@ -103,11 +109,6 @@ describe("TTSPanel Phase 3 - Enhanced Playback Controls", () => {
         // Actually, easier: I'll use the icons to identify.
         // But `lucide-react` icons render as SVGs.
         
-        // Use aria-labels? I didn't add explicit aria-labels in the refactor instruction,
-        // but `Button` might not have them by default.
-        // Wait, looking at my code:
-        // <Button ... onClick={handleSkipBackward}><RotateCcw ... /></Button>
-        
         // I will trust that the skip back is the first RotateCcw
         const svgs = container.querySelectorAll("svg.lucide-rotate-ccw");
         const backButton = svgs[0].closest("button");
@@ -136,6 +137,9 @@ describe("TTSPanel Phase 3 - Enhanced Playback Controls", () => {
     it("opens volume slider in popover", async () => {
       const { TTSPanel } = await import("../components/reader/TTSPanel");
       render(<TTSPanel />);
+
+      const settingsToggle = screen.getByLabelText("Toggle settings");
+      fireEvent.click(settingsToggle);
 
       // Find volume button (has volume icon)
       const container = screen.getByTestId("tts-panel-container");

@@ -65,13 +65,13 @@ describe("TTSPanel", () => {
   it("renders the player bar when playing", async () => {
     render(<TTSPanel />);
 
-    // Should show pause button (since we mocked playing)
-    // In the new UI, the pause button is an icon button
+    // Should show pause button
     const pauseButton = await waitFor(() => screen.getByTestId("tts-panel-container").querySelector('button svg.lucide-pause')?.closest('button'));
     expect(pauseButton).toBeInTheDocument();
 
-    // Should show current voice name
-    expect(await screen.findByText("Voice 1")).toBeInTheDocument();
+    // Settings toggle should be present
+    const settingsToggle = screen.getByLabelText("Toggle settings");
+    expect(settingsToggle).toBeInTheDocument();
   });
 
   it("can toggle play/pause", async () => {
@@ -95,8 +95,16 @@ describe("TTSPanel", () => {
     expect(screen.getByText("1:40")).toBeInTheDocument(); // 100 seconds
   });
 
-  it("renders voice selector button", async () => {
+  it("renders voice selector button when settings toggled", async () => {
     render(<TTSPanel />);
+    
+    // Initially hidden
+    expect(screen.queryByText("Voice 1")).not.toBeInTheDocument();
+    
+    // Toggle settings
+    const settingsToggle = screen.getByLabelText("Toggle settings");
+    fireEvent.click(settingsToggle);
+    
     expect(await screen.findByText("Voice 1")).toBeInTheDocument();
   });
 
