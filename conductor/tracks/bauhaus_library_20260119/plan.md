@@ -1,13 +1,13 @@
 # Implementation Plan - Bauhaus-Inspired 2D Library Redesign
 
 ## Phase 1: Minimalist Book Card Component
-- [~] Task: Create `BookCardMinimal.tsx` with sharp edges and hover-only actions
-    - [ ] Create new component file `src/components/library/BookCardMinimal.tsx`
-    - [ ] Implement prop interface matching `BookCardProps`
-    - [ ] Add strict geometric styling (no border-radius)
-    - [ ] Implement hover overlay for "Read" and "Delete" actions
-    - [ ] Add unit tests in `src/tests/BookCardMinimal.test.tsx`
-- [ ] Task: Integrate `BookCardMinimal` into `LibraryGrid`
+- [x] Task: Create `BookCardMinimal.tsx` with sharp edges and hover-only actions [2c1c6a3]
+    - [x] Create new component file `src/components/library/BookCardMinimal.tsx`
+    - [x] Implement prop interface matching `BookCardProps`
+    - [x] Add strict geometric styling (no border-radius)
+    - [x] Implement hover overlay for "Read" and "Delete" actions
+    - [x] Add unit tests in `src/tests/BookCardMinimal.test.tsx`
+- [~] Task: Integrate `BookCardMinimal` into `LibraryGrid`
     - [ ] Update `LibraryGrid` to support the new card variant
     - [ ] Update tests to verify grid rendering with new cards
 - [ ] Task: Conductor - User Manual Verification 'Minimalist Book Card Component' (Protocol in workflow.md)
