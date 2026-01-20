@@ -85,6 +85,11 @@ describe("LibraryPage", () => {
     </QueryClientProvider>
   );
 
+  it("should display the Bauhaus LIBRARY header", async () => {
+    render(<LibraryPage />, { wrapper });
+    expect(screen.getByText("LIBRARY")).toBeInTheDocument();
+  });
+
   it("should display book title", async () => {
     const mockBook = { id: 1, title: "Test Book", authors: "Test Author", gutenberg_id: 12345 };
     currentMockValues.filteredBooks = [mockBook];
