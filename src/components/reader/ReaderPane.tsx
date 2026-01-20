@@ -78,16 +78,25 @@ export default function ReaderPane({
 
       {pendingHighlight ? (
         <div
-          className="absolute z-20 flex -translate-x-1/2 items-center gap-2 rounded-lg border bg-popover p-2 shadow-lg animate-in fade-in zoom-in-95 duration-200"
+          className="absolute z-20 flex -translate-x-1/2 items-center gap-2 rounded-none border-2 border-black dark:border-white bg-background p-2 shadow-xl animate-in fade-in zoom-in-95 duration-200"
           style={{
             top: Math.max(16, pendingHighlight.rect.top - 44),
             left: pendingHighlight.rect.left + pendingHighlight.rect.width / 2,
           }}
         >
-          <Button size="sm" onClick={onCreateHighlight} className="h-8">
+          <Button 
+            size="sm" 
+            onClick={onCreateHighlight} 
+            className="h-8 rounded-none bg-[#E02E2E] text-white hover:bg-black font-bold uppercase tracking-widest text-[10px]"
+          >
             Highlight
           </Button>
-          <Button variant="secondary" size="sm" onClick={onAddToChat} className="h-8">
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            onClick={onAddToChat} 
+            className="h-8 rounded-none border-2 border-black dark:border-white bg-background hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black font-bold uppercase tracking-widest text-[10px]"
+          >
             Chat
           </Button>
           {onReadAloud && (
@@ -95,14 +104,19 @@ export default function ReaderPane({
               variant="outline" 
               size="sm" 
               onClick={() => onReadAloud(pendingHighlight.text)}
-              className="h-8 gap-1.5"
+              className="h-8 rounded-none border-2 border-black dark:border-white bg-background hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black font-bold uppercase tracking-widest text-[10px] gap-1.5"
             >
               <Headphones className="h-3.5 w-3.5" />
               <span>Read</span>
             </Button>
           )}
-          <div className="w-px h-4 bg-border/60 mx-0.5" />
-          <Button variant="ghost" size="sm" onClick={onCancelHighlight} className="h-8 px-2 text-muted-foreground hover:text-foreground">
+          <div className="w-0.5 h-4 bg-black/20 dark:bg-white/20 mx-0.5" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onCancelHighlight} 
+            className="h-8 px-2 rounded-none font-bold uppercase tracking-widest text-[10px] text-muted-foreground hover:text-foreground"
+          >
             Cancel
           </Button>
         </div>

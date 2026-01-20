@@ -78,24 +78,24 @@ export default function HighlightsList({
           <div
             key={highlight.id}
             className={cn(
-              "group relative rounded-lg p-3 transition-all cursor-pointer border",
+              "group relative rounded-none p-3 transition-all cursor-pointer border-2",
               isSelected
-                ? "bg-amber-500/10 border-amber-500/30"
+                ? "bg-[#E02E2E]/10 border-[#E02E2E]"
                 : "border-transparent hover:bg-muted/50 hover:border-border/50"
             )}
             onClick={() => onSelectHighlight(highlight.id)}
           >
             <div
               className={cn(
-                "absolute left-0 top-3 bottom-3 w-0.5 rounded-full transition-colors",
-                isSelected ? "bg-amber-500" : "bg-amber-500/30"
+                "absolute left-0 top-0 bottom-0 w-1 transition-colors",
+                isSelected ? "bg-[#E02E2E]" : "bg-[#E02E2E]/30"
               )}
             />
 
             <div className="pl-2 pr-5">
               <p
                 className={cn(
-                  "text-sm leading-relaxed line-clamp-3",
+                  "text-sm leading-relaxed line-clamp-3 font-medium",
                   isSelected ? "text-foreground" : "text-foreground/80"
                 )}
               >
@@ -104,19 +104,19 @@ export default function HighlightsList({
 
               <div className="mt-2 flex items-center gap-2">
                 {hasNote && !isSelected && (
-                  <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
                     <FileText className="h-3 w-3" />
                     Note
                   </span>
                 )}
                 {isAttached && (
-                  <span className="flex items-center gap-1 text-[10px] text-primary font-medium">
+                  <span className="flex items-center gap-1 text-[10px] text-primary font-bold uppercase tracking-wider">
                     <MessageSquare className="h-3 w-3" />
                     In Chat
                   </span>
                 )}
                 {page && (
-                  <span className="text-[10px] text-muted-foreground/70">
+                  <span className="text-[10px] text-muted-foreground/70 font-bold uppercase tracking-wider">
                     p. {page}
                   </span>
                 )}
@@ -127,10 +127,10 @@ export default function HighlightsList({
                 <div className="mt-3 space-y-2" onClick={(e) => e.stopPropagation()}>
                   <Textarea
                     className={cn(
-                      "min-h-[60px] max-h-24 resize-none text-sm",
-                      "border-border/40 bg-background/80",
-                      "focus:border-amber-500/40 focus:ring-1 focus:ring-amber-500/20",
-                      "placeholder:text-muted-foreground/50"
+                      "min-h-[60px] max-h-24 resize-none text-sm rounded-none",
+                      "border-2 border-black/20 dark:border-white/20 bg-background/80",
+                      "focus:border-[#E02E2E] focus:ring-0",
+                      "placeholder:text-muted-foreground/50 font-medium"
                     )}
                     value={noteDraft}
                     onChange={(e) => onNoteDraftChange(e.currentTarget.value)}
@@ -143,7 +143,7 @@ export default function HighlightsList({
                           <button
                             type="button"
                             onClick={onSaveNote}
-                            className="flex items-center gap-1.5 rounded-md bg-amber-500 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-600"
+                            className="flex items-center gap-1.5 rounded-none bg-[#E02E2E] px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-black"
                           >
                             <Check className="h-3 w-3" />
                             Save
@@ -151,7 +151,7 @@ export default function HighlightsList({
                           <button
                             type="button"
                             onClick={() => onNoteDraftChange(selectedHighlight?.note ?? "")}
-                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+                            className="flex items-center gap-1.5 rounded-none px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-2 border-border/40 transition-colors hover:bg-muted"
                           >
                             <X className="h-3 w-3" />
                             Cancel
@@ -164,14 +164,14 @@ export default function HighlightsList({
                       type="button"
                       onClick={() => onToggleContext?.(highlight.id)}
                       className={cn(
-                        "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                        "flex items-center gap-1.5 rounded-none px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors",
                         isAttached
-                          ? "bg-primary/10 text-primary hover:bg-primary/20"
-                          : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                          ? "bg-black text-white dark:bg-white dark:text-black"
+                          : "bg-muted text-muted-foreground hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
                       )}
                     >
                       {isAttached ? <X className="h-3 w-3" /> : <MessageSquarePlus className="h-3 w-3" />}
-                      {isAttached ? "Remove from Chat" : "Add to Chat"}
+                      {isAttached ? "Remove" : "Chat"}
                     </button>
                   </div>
                 </div>
@@ -182,8 +182,10 @@ export default function HighlightsList({
               <button
                 type="button"
                 className={cn(
-                  "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
-                  isAttached ? "text-primary bg-primary/10" : "text-muted-foreground/60 hover:text-primary hover:bg-primary/10"
+                  "flex h-7 w-7 items-center justify-center rounded-none transition-colors border border-transparent",
+                  isAttached 
+                    ? "bg-black text-white dark:bg-white dark:text-black" 
+                    : "text-muted-foreground/60 hover:text-black hover:border-black dark:hover:text-white dark:hover:border-white"
                 )}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -199,25 +201,25 @@ export default function HighlightsList({
                   <button
                     type="button"
                     className={cn(
-                      "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
-                      "text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10"
+                      "flex h-7 w-7 items-center justify-center rounded-none transition-colors border border-transparent",
+                      "text-muted-foreground/60 hover:text-[#E02E2E] hover:border-[#E02E2E]"
                     )}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </AlertDialogTrigger>
-                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()} className="rounded-none border-2 border-black dark:border-white">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete highlight?</AlertDialogTitle>
-                    <AlertDialogDescription>
+                    <AlertDialogTitle className="font-bold uppercase tracking-tight">Delete highlight?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-sm">
                       This will permanently delete this highlight and any associated notes.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel className="rounded-none font-bold uppercase tracking-widest text-[10px]">Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      className="rounded-none bg-[#E02E2E] text-white hover:bg-black font-bold uppercase tracking-widest text-[10px]"
                       onClick={() => onDeleteHighlight(highlight.id)}
                     >
                       Delete
