@@ -31,8 +31,8 @@
     - [x] Define Bauhaus accent color (e.g., #E02E2E) in Tailwind config (or CSS variables)
     - [x] Enforce geometric sans-serif for UI elements in the library view
     - [x] Update `LibraryGrid` spacing to be uniform and generous
-- [~] Task: Final Polish & cleanup
-    - [ ] Remove unused sidebar components if no longer needed
-    - [ ] Ensure responsive behavior (grid adapts, header scales)
-    - [ ] Verify accessibility (contrast, focus states)
-- [ ] Task: Conductor - User Manual Verification 'Global Bauhaus Styling & Polish' (Protocol in workflow.md)
+- [x] Task: Final Polish & cleanup [2982b65]
+    - [x] Remove unused sidebar components if no longer needed
+    - [x] Ensure responsive behavior (grid adapts, header scales)
+    - [x] Verify accessibility (contrast, focus states)
+- [~] Task: Conductor - User Manual Verification 'Global Bauhaus Styling & Polish' (Protocol in workflow.md)
