@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, Volume2, Gauge } from "lucide-react";
+import { Play, Pause, Volume2, Gauge, ChevronUp } from "lucide-react";
 import { useTTS } from "@/lib/hooks/useTTS";
 import { cn } from "@/lib/utils";
 
@@ -20,13 +20,44 @@ export function TTSPanel({ className }: TTSPanelProps) {
     setVolume,
   } = useTTS({
     getDoc: () => null,
-    getPageMetrics: () => ({ pageWidth: 0, gap: 0 }),
+    getPageMetrics: () => ({ 
+      pageWidth: 0, 
+      gap: 0, 
+      stride: 0, 
+      scrollLeft: 0, 
+      rootRect: { x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0, toJSON: () => "" } as DOMRect 
+    }),
     currentPage: 0,
   });
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [playbackRate, setPlaybackRateLocal] = useState(1);
   const [volume, setVolumeLocal] = useState(1);
+
+  const touchStartY = useRef<number>(0);
+  const touchStartExpanded = useRef<boolean>(false);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    touchStartY.current = e.clientY;
+    touchStartExpanded.current = isExpanded;
+  }, [isExpanded]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!touchStartExpanded.current) return;
+    
+    const deltaY = e.clientY - touchStartY.current;
+    
+    if (deltaY > 50) {
+      setIsExpanded(false);
+      touchStartY.current = 0;
+      touchStartExpanded.current = false;
+    }
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    touchStartY.current = 0;
+    touchStartExpanded.current = false;
+  }, []);
 
   const isPlaying = state === "playing";
   const isPaused = state === "paused";
@@ -68,10 +99,16 @@ export function TTSPanel({ className }: TTSPanelProps) {
     <div
       data-testid="tts-panel-container"
       onClick={() => !isExpanded && setIsExpanded(true)}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
       className={cn(
         "fixed bottom-0 left-0 right-0 z-50",
         "bg-background/80 backdrop-blur-xl border-t border-border/50",
         "shadow-lg transition-all duration-300 ease-out",
+        "animate-in slide-in-from-bottom-0",
+        "touch-none",
         isExpanded ? "h-48" : "h-16",
         className
       )}
@@ -117,8 +154,9 @@ export function TTSPanel({ className }: TTSPanelProps) {
 
         {/* Expand indicator */}
         {!isExpanded && (
-          <div className="text-muted-foreground text-xs">
-            Tap to expand
+          <div className="flex items-center gap-1 text-muted-foreground text-xs">
+            <span>Tap to expand</span>
+            <ChevronUp className="h-3 w-3" />
           </div>
         )}
       </div>
