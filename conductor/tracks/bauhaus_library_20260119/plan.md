@@ -13,13 +13,13 @@
 - [x] Task: Conductor - User Manual Verification 'Minimalist Book Card Component' (Protocol in workflow.md) [ff0c9c8]
 
 ## Phase 2: Top-Down Navigation & Header
-- [ ] Task: Create `BauhausHeader.tsx`
-    - [ ] Create `src/components/library/BauhausHeader.tsx`
-    - [ ] Implement massive typographic header ("LIBRARY")
-    - [ ] Add horizontal filter bar for "Collections"
-    - [ ] Integrate search input as a bold, underlined field
-    - [ ] Add unit tests for header interactions and rendering
-- [ ] Task: Refactor `LibraryPage` layout
+- [x] Task: Create `BauhausHeader.tsx` [42f3591]
+    - [x] Create `src/components/library/BauhausHeader.tsx`
+    - [x] Implement massive typographic header ("LIBRARY")
+    - [x] Add horizontal filter bar for "Collections"
+    - [x] Integrate search input as a bold, underlined field
+    - [x] Add unit tests for header interactions and rendering
+- [~] Task: Refactor `LibraryPage` layout
     - [ ] Remove `LibraryCollections` sidebar
     - [ ] Replace `LibraryHeader` with `BauhausHeader`
     - [ ] Ensure full-width layout for the main content area
