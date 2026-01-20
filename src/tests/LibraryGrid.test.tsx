@@ -16,6 +16,7 @@ describe("LibraryGrid", () => {
     );
     const container = screen.getByTestId("child").parentElement;
     expect(container?.className).toContain("grid");
+    expect(container?.className).toContain("gap-6");
   });
 
   it("should render children in list variant", () => {
@@ -26,5 +27,17 @@ describe("LibraryGrid", () => {
     );
     const container = screen.getByTestId("child").parentElement;
     expect(container?.className).toContain("flex-col");
+  });
+
+  it("should render children in minimal variant with generous spacing", () => {
+    render(
+      <LibraryGrid variant="minimal">
+        <div data-testid="child">Child</div>
+      </LibraryGrid>
+    );
+    const container = screen.getByTestId("child").parentElement;
+    expect(container?.className).toContain("grid");
+    // Expect larger gap for minimal/Bauhaus look
+    expect(container?.className).toContain("gap-10");
   });
 });

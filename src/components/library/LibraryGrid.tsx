@@ -2,12 +2,20 @@ import React from "react";
 
 interface LibraryGridProps {
   children: React.ReactNode;
-  variant?: "grid" | "list";
+  variant?: "grid" | "list" | "minimal";
 }
 
 export function LibraryGrid({ children, variant = "grid" }: LibraryGridProps) {
   if (variant === "list") {
     return <div className="flex flex-col gap-4">{children}</div>;
+  }
+
+  if (variant === "minimal") {
+    return (
+      <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        {children}
+      </div>
+    );
   }
 
   return (
@@ -17,7 +25,7 @@ export function LibraryGrid({ children, variant = "grid" }: LibraryGridProps) {
   );
 }
 
-export function LibrarySkeleton({ count = 4, variant = "grid" }: { count?: number; variant?: "grid" | "list" }) {
+export function LibrarySkeleton({ count = 4, variant = "grid" }: { count?: number; variant?: "grid" | "list" | "minimal" }) {
   if (variant === "list") {
     return (
       <div className="flex flex-col gap-4">
@@ -31,6 +39,22 @@ export function LibrarySkeleton({ count = 4, variant = "grid" }: { count?: numbe
                 <div className="h-5 w-16 rounded-full bg-stone-100 dark:bg-stone-900" />
                 <div className="h-5 w-16 rounded-full bg-stone-100 dark:bg-stone-900" />
               </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (variant === "minimal") {
+    return (
+      <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} className="animate-pulse space-y-4">
+            <div className="aspect-[2/3] w-full bg-stone-100 dark:bg-stone-800" />
+            <div className="space-y-2">
+              <div className="h-5 w-full bg-stone-200 dark:bg-stone-800" />
+              <div className="h-3 w-2/3 bg-stone-100 dark:bg-stone-900" />
             </div>
           </div>
         ))}
