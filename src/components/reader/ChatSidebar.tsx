@@ -6,13 +6,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import type { BookChatThread, ChatPrompt, LocalChatMessage } from "@/lib/readerTypes";
+import type { BookChatThread, ChatPrompt, LocalChatMessage, StagedSnippet } from "@/lib/readerTypes";
 import type { Highlight } from "@/lib/tauri";
 import { Check, PanelRightClose, PlusSquare, History, MessageSquare, X, Eraser, Trash2, MapPin, BookOpen, Feather, Quote, Lightbulb } from "lucide-react";
 import { ChatModelSelector } from "./ChatModelSelector";
 import { ChatThreadItem } from "./ChatThreadItem";
 import { ChatMessageList } from "./ChatMessageList";
 import { ChatInputArea } from "./ChatInputArea";
+import { ContextTray } from "./ContextTray";
 
 type ChatSidebarProps = {
   contextHint: string;
@@ -42,6 +43,9 @@ type ChatSidebarProps = {
   isHighlightContext?: boolean;
   attachedContext?: Highlight[];
   onRemoveContext?: (id: number) => void;
+  stagedSnippets?: StagedSnippet[];
+  onRemoveSnippet?: (id: string) => void;
+  onClearSnippets?: () => void;
   onCitationClick?: (index: number, snippet?: string) => void;
 };
 
@@ -73,6 +77,9 @@ export default function ChatSidebar({
   isHighlightContext = false,
   attachedContext = [],
   onRemoveContext,
+  stagedSnippets = [],
+  onRemoveSnippet,
+  onClearSnippets,
   onCitationClick,
 }: ChatSidebarProps) {
   return (
@@ -203,24 +210,15 @@ export default function ChatSidebar({
               </Popover>
             )}
           </div>
-          <div className="flex items-center gap-3">
-            <div className={cn(
-              "relative flex h-10 w-10 items-center justify-center rounded-none transition-all duration-300 border-[3px]",
-              chatSending 
-                ? "bg-[#FFD700] text-black border-black" 
-                : (isHighlightContext ? "bg-[#E02E2E] text-white border-black" : "bg-black text-white dark:bg-white dark:text-black border-black dark:border-white")
-            )}>
-              {isHighlightContext ? (
-                <MessageSquare className="h-5 w-5" />
-              ) : (
-                <span className="text-lg font-black leading-none mt-0.5">A</span>
-              )}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-baseline gap-2">
+              <h2 className="font-sans text-2xl font-black uppercase tracking-tighter leading-none text-foreground select-none">AI</h2>
+              <span className="font-sans text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground select-none">ASSISTANT</span>
             </div>
-            <div className="flex flex-col">
-              <div className="bg-black dark:bg-white px-1.5 py-0.5 self-start">
-                <h2 className="font-sans text-[11px] font-black uppercase tracking-tighter text-white dark:text-black leading-none">AI ASSISTANT</h2>
-              </div>
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-1">{contextHint}</p>
+            <div className="bg-[#E02E2E] px-2 py-0.5 self-start">
+              <p className="text-[8px] font-black uppercase tracking-[0.2em] text-white leading-none whitespace-nowrap">
+                {isHighlightContext ? "SELECTION CONTEXT" : "PAGE CONTEXT"}
+              </p>
             </div>
           </div>
 
@@ -266,6 +264,15 @@ export default function ChatSidebar({
           onDeleteMessage={onDeleteMessage} 
           onCitationClick={onCitationClick}
         />
+
+        {onRemoveSnippet && onClearSnippets && (
+          <ContextTray 
+            snippets={stagedSnippets} 
+            onRemove={onRemoveSnippet} 
+            onClear={onClearSnippets}
+            className="border-x-0 border-t-2 border-b-0 mb-0"
+          />
+        )}
 
         {/* Context Shelf */}
         {attachedContext.length > 0 && (

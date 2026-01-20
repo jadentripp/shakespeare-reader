@@ -152,6 +152,9 @@ export function ReaderContent({ reader }: ReaderContentProps) {
             isHighlightContext={!!highlights.selectedHighlight}
             attachedContext={highlights.attachedHighlights}
             onRemoveContext={highlights.toggleAttachment}
+            stagedSnippets={highlights.stagedSnippets}
+            onRemoveSnippet={highlights.removeSnippetFromContext}
+            onClearSnippets={highlights.clearStagedSnippets}
             onCitationClick={chat.handleCitationClick}
           />
         )}
