@@ -1,5 +1,8 @@
 # Active Tracks
 
+- [~] **Track: AI Context Visibility & Multi-Segment Selection**
+*Link: [./tracks/ai_context_visibility_20260119/](./tracks/ai_context_visibility_20260119/)*
+
 ---
 
 # Archived Tracks

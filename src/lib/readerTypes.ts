@@ -7,6 +7,10 @@ export type PendingHighlight = {
   rect: { top: number; left: number; width: number; height: number };
 };
 
+export type StagedSnippet = PendingHighlight & {
+  id: string;
+};
+
 export type LocalChatMessage = {
   id: string;
   role: "user" | "assistant" | "system";

@@ -6,7 +6,7 @@ import {
   listHighlights,
   updateHighlightNote,
 } from "@/lib/tauri";
-import type { PendingHighlight } from "@/lib/readerTypes";
+import type { PendingHighlight, StagedSnippet } from "@/lib/readerTypes";
 import {
   findTextRange,
   resolveNodePath,
@@ -37,6 +37,10 @@ export interface UseHighlightsResult {
   setActiveAiQuote: (q: string | null) => void;
   activeAiBlockIndex: number | null;
   setActiveAiBlockIndex: (i: number | null) => void;
+  stagedSnippets: StagedSnippet[];
+  addSnippetToContext: () => void;
+  removeSnippetFromContext: (id: string) => void;
+  clearStagedSnippets: () => void;
   handleCreate: () => Promise<void>;
   handleSaveNote: () => Promise<void>;
   handleAddToChat: () => Promise<void>;
@@ -59,6 +63,7 @@ export function useHighlights(options: UseHighlightsOptions): UseHighlightsResul
   const [attachedHighlightIds, setAttachedHighlightIds] = useState<number[]>([]);
   const [activeAiQuote, setActiveAiQuote] = useState<string | null>(null);
   const [activeAiBlockIndex, setActiveAiBlockIndex] = useState<number | null>(null);
+  const [stagedSnippets, setStagedSnippets] = useState<StagedSnippet[]>([]);
 
   const selectedHighlight = useMemo(() => {
     return (highlightsQ.data as any[] | undefined)?.find((h: any) => h.id === selectedHighlightId) ?? null;
@@ -81,6 +86,24 @@ export function useHighlights(options: UseHighlightsOptions): UseHighlightsResul
         ? prev.filter((id) => id !== highlightId)
         : [...prev, highlightId]
     );
+  }, []);
+
+  const addSnippetToContext = useCallback(() => {
+    if (!pendingHighlight) return;
+    const snippet: StagedSnippet = {
+      ...pendingHighlight,
+      id: crypto.randomUUID(),
+    };
+    setStagedSnippets((prev) => [...prev, snippet]);
+    setPendingHighlight(null);
+  }, [pendingHighlight]);
+
+  const removeSnippetFromContext = useCallback((id: string) => {
+    setStagedSnippets((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  const clearStagedSnippets = useCallback(() => {
+    setStagedSnippets([]);
   }, []);
 
   const handleCreate = useCallback(async () => {
@@ -205,6 +228,10 @@ export function useHighlights(options: UseHighlightsOptions): UseHighlightsResul
     setActiveAiQuote,
     activeAiBlockIndex,
     setActiveAiBlockIndex,
+    stagedSnippets,
+    addSnippetToContext,
+    removeSnippetFromContext,
+    clearStagedSnippets,
     handleCreate,
     handleSaveNote,
     handleAddToChat,
