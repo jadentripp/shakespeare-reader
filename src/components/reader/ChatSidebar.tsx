@@ -83,7 +83,7 @@ export default function ChatSidebar({
   onCitationClick,
 }: ChatSidebarProps) {
   return (
-    <aside className="min-h-0 flex flex-col">
+    <aside className="h-full min-h-0 flex flex-col">
       <div className="flex h-full flex-col overflow-hidden rounded-none border-2 border-black dark:border-white bg-background shadow-xl">
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between gap-2 border-b-2 border-black dark:border-white bg-background px-4 py-3">
@@ -210,15 +210,17 @@ export default function ChatSidebar({
               </Popover>
             )}
           </div>
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-baseline gap-2">
-              <h2 className="font-sans text-2xl font-black uppercase tracking-tighter leading-none text-foreground select-none">AI</h2>
-              <span className="font-sans text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground select-none">ASSISTANT</span>
+          <div className="flex flex-col">
+            <div className="bg-black dark:bg-white px-1.5 py-0.5 self-start mb-1">
+              <h2 className="font-sans text-[11px] font-black uppercase tracking-tighter text-white dark:text-black leading-none">AI ASSISTANT</h2>
             </div>
-            <div className="bg-[#E02E2E] px-2 py-0.5 self-start">
-              <p className="text-[8px] font-black uppercase tracking-[0.2em] text-white leading-none whitespace-nowrap">
-                {isHighlightContext ? "SELECTION CONTEXT" : "PAGE CONTEXT"}
-              </p>
+            <div className="flex items-center gap-1.5">
+              <div className="bg-[#E02E2E] px-1 py-0.5">
+                <p className="text-[7px] font-black uppercase tracking-widest text-white leading-none">
+                  {isHighlightContext ? "SELECTION" : "PAGE"}
+                </p>
+              </div>
+              <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground truncate max-w-[100px]">{contextHint}</p>
             </div>
           </div>
 

@@ -46,7 +46,7 @@ export function ReaderContent({ reader }: ReaderContentProps) {
         !leftPanelCollapsed && !rightPanelCollapsed && "grid-cols-[280px_minmax(0,1fr)_400px]"
       )}
     >
-      <div className="relative flex min-h-0">
+      <div className="relative flex h-full min-h-0">
         {leftPanelCollapsed ? (
           <div className="flex h-full items-start pt-2">
             <Button
@@ -110,7 +110,7 @@ export function ReaderContent({ reader }: ReaderContentProps) {
         onActiveCitationChange={setActiveCitation}
       />
 
-      <div className="relative flex min-h-0">
+      <div className="relative flex h-full min-h-0">
         {rightPanelCollapsed ? (
           <div className="flex h-full items-start pt-2">
             <Button

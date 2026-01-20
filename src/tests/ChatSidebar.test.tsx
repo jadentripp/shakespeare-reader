@@ -35,15 +35,13 @@ describe("ChatSidebar Bauhaus Alignment", () => {
     expect(sidebar?.className).toContain('border-2');
   });
 
-  it("should use bold geometric sans-serif for the header", () => {
+  it("should use bold geometric sans-serif for the header in a black box", () => {
     render(<ChatSidebar {...defaultProps} />);
-    const aiPart = screen.getByText(/^AI$/i);
-    expect(aiPart.className).toContain('font-black');
-    expect(aiPart.className).toContain('uppercase');
-    
-    const contextBox = screen.getByText(/PAGE CONTEXT/i);
-    expect(contextBox.className).toContain('font-black');
-    expect(contextBox.parentElement?.className).toContain('bg-[#E02E2E]');
+    const header = screen.getByText(/AI ASSISTANT/i);
+    expect(header.className).toContain('font-black');
+    expect(header.className).toContain('uppercase');
+    // Check if parent has black background (boxed header)
+    expect(header.parentElement?.className).toContain('bg-black');
   });
 
   it("should have sharp corners on input area", () => {
