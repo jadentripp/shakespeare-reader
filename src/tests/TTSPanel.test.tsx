@@ -21,6 +21,7 @@ mock.module("@/lib/elevenlabs", () => {
         { voice_id: "v1", name: "Voice 1" },
         { voice_id: "v2", name: "Voice 2" }
       ])),
+      textToSpeech: mock(() => Promise.resolve(new ReadableStream())),
     },
     audioPlayer: {
       subscribe: mock(() => () => {}),
