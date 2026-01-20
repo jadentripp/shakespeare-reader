@@ -18,30 +18,32 @@ export default function AppLayout() {
   return (
     <LibraryProvider>
       <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
-        <header className="shrink-0 h-12 z-30 bg-background/80 backdrop-blur-md border-b border-border/40">
-          <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-4">
-            <div className="flex items-center gap-6">
-              <Link to="/" className="flex items-center gap-2 group">
-                <div className="h-7 w-7 rounded-lg bg-foreground flex items-center justify-center">
-                  <span className="text-background text-xs font-bold">AI</span>
+        <header className="shrink-0 h-14 z-30 bg-background border-b-2 border-black dark:border-white">
+          <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-6">
+            <div className="flex items-center gap-10">
+              <Link to="/" className="flex items-center gap-3">
+                <div className="h-8 w-8 bg-black flex items-center justify-center dark:bg-white">
+                  <span className="text-white text-[10px] font-black uppercase dark:text-black">AI</span>
                 </div>
-                <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors">
+                <span className="font-sans text-xs font-black uppercase tracking-[0.3em] text-foreground">
                   Reader
                 </span>
               </Link>
-              <Link
-                to="/3d-library"
-                className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-              >
-                <Box className="h-3.5 w-3.5" />
-                3D Library
-              </Link>
+              <nav className="flex items-center gap-8">
+                <Link
+                  to="/3d-library"
+                  className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-amber-500 transition-colors flex items-center gap-2"
+                >
+                  <Box className="h-3.5 w-3.5" />
+                  3D SPACE
+                </Link>
+              </nav>
             </div>
             <Link to="/settings">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                className="h-10 w-10 rounded-none p-0 text-foreground hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
               >
                 <Settings className="h-4 w-4" />
               </Button>

@@ -25,3 +25,6 @@ dist-ssr
 *.sw?
 
 tmp/
+.gemini-clipboard/
+coverage/
+Thumbs.db

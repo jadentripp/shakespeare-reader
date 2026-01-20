@@ -1,8 +1,9 @@
 import React from "react";
-import { Search, X, Loader2 } from "lucide-react";
+import { Search, X, Loader2, Box, Settings } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { type CatalogEntry, CATALOG_BY_KEY } from "../../lib/gutenberg";
+import { type CatalogEntry } from "../../lib/gutenberg";
 
 const FEATURED_COLLECTIONS = [
   { key: "collection-all", label: "All Books" },
@@ -46,7 +47,7 @@ export function BauhausHeader({
               PROJECT GUTENBERG COLLECTION
             </p>
             <div className="font-mono text-xs font-bold uppercase tracking-widest text-foreground">
-              Est. 1971
+              {activeCatalog.label}
             </div>
           </div>
         </div>
