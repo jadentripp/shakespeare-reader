@@ -60,28 +60,33 @@ export default function ReaderTopBar({
   onTtsSettings,
 }: ReaderTopBarProps) {
   return (
-    <div className="shrink-0 flex items-center gap-4 px-2 py-1.5">
-      {/* Left: Back + Title */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onBack}
-          className="h-8 w-8 p-0 shrink-0 rounded-full hover:bg-muted/60"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <p className="truncate text-sm font-medium text-foreground/90">{title}</p>
+    <div role="banner" className="relative shrink-0 flex items-center gap-4 px-4 py-3 border-b-2 border-black dark:border-white bg-background">
+      {/* Left: Brand + Back + Title */}
+      <div className="flex items-center gap-4 min-w-0 flex-1">
+        <div className="hidden md:flex items-center gap-1 bg-black dark:bg-white px-2 py-0.5 shrink-0">
+          <span className="font-sans text-[10px] font-black tracking-tighter text-white dark:text-black uppercase">AI READER</span>
+        </div>
+        <div className="flex items-center gap-2 min-w-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="h-8 w-8 p-0 shrink-0 rounded-none border border-foreground/10 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <p className="truncate text-sm font-bold uppercase tracking-tight text-foreground">{title}</p>
+        </div>
       </div>
 
       {/* TTS Controls */}
-      <div className="flex items-center gap-1 rounded-full border bg-card/60 backdrop-blur-sm p-1 shadow-sm">
+      <div className="flex items-center border-2 border-black dark:border-white bg-background p-0.5">
         <Button
           variant="ghost"
           size="sm"
           onClick={onTtsSettings}
           aria-label="TTS Settings"
-          className="h-8 w-8 p-0 rounded-full hover:bg-muted/60"
+          className="h-8 w-8 p-0 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
         >
           <SlidersHorizontal className="h-3.5 w-3.5 fill-current opacity-70" />
         </Button>
@@ -92,7 +97,7 @@ export default function ReaderTopBar({
             size="sm"
             onClick={onTtsPause}
             aria-label="Pause Narration"
-            className="h-8 w-8 p-0 rounded-full hover:bg-muted/60 text-primary"
+            className="h-8 w-8 p-0 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors text-[#E02E2E]"
           >
             <Pause className="h-4 w-4 fill-current" />
           </Button>
@@ -103,7 +108,7 @@ export default function ReaderTopBar({
             onClick={onTtsPlay}
             aria-label="Play Narration"
             disabled={ttsState === 'buffering'}
-            className="h-8 w-8 p-0 rounded-full hover:bg-muted/60"
+            className="h-8 w-8 p-0 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
           >
             {ttsState === 'buffering' ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -119,7 +124,7 @@ export default function ReaderTopBar({
             size="sm"
             onClick={onTtsStop}
             aria-label="Stop Narration"
-            className="h-8 w-8 p-0 rounded-full hover:bg-muted/60"
+            className="h-8 w-8 p-0 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
           >
             <Square className="h-3.5 w-3.5 fill-current" />
           </Button>
@@ -127,18 +132,18 @@ export default function ReaderTopBar({
       </div>
 
       {/* Center: Navigation */}
-      <div className="flex items-center rounded-full border bg-card/60 backdrop-blur-sm shadow-sm">
+      <div className="flex items-center border-2 border-black dark:border-white bg-background">
         <Button
           variant="ghost"
           size="sm"
           onClick={onPrev}
-          className="h-9 w-9 p-0 rounded-full hover:bg-muted/60"
+          className="h-9 w-9 p-0 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <div className="flex items-center gap-0.5 px-1">
+        <div className="flex items-center gap-0.5 px-2 border-x-2 border-black dark:border-white h-9">
           <Input
-            className="h-7 w-12 text-center text-sm font-medium border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 tabular-nums"
+            className="h-7 w-12 text-center text-sm font-bold border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 tabular-nums rounded-none"
             value={jumpPage}
             onChange={(e) => onJumpPageChange(e.currentTarget.value)}
             onKeyDown={(e) => {
@@ -147,8 +152,8 @@ export default function ReaderTopBar({
             }}
             placeholder={String(currentPage)}
           />
-          <span className="text-muted-foreground/60 text-sm">/</span>
-          <span className="text-sm text-muted-foreground tabular-nums pr-1">
+          <span className="text-black/30 dark:text-white/30 text-sm font-bold">/</span>
+          <span className="text-sm text-black dark:text-white font-bold tabular-nums pr-1">
             {totalPages}
           </span>
         </div>
@@ -156,7 +161,7 @@ export default function ReaderTopBar({
           variant="ghost"
           size="sm"
           onClick={onNext}
-          className="h-9 w-9 p-0 rounded-full hover:bg-muted/60"
+          className="h-9 w-9 p-0 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -165,14 +170,14 @@ export default function ReaderTopBar({
       {/* Right: View controls */}
       <div className="flex items-center gap-3">
         {/* Page layout toggle */}
-        <div className="flex items-center rounded-lg border bg-muted/30 p-0.5">
+        <div className="flex items-center border-2 border-black dark:border-white p-0.5 bg-background">
           <button
             type="button"
             onClick={columns === 1 ? undefined : onToggleColumns}
-            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all ${
               columns === 1
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                : "text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5"
             }`}
           >
             <BookOpen className="h-3.5 w-3.5" />
@@ -181,10 +186,10 @@ export default function ReaderTopBar({
           <button
             type="button"
             onClick={columns === 2 ? undefined : onToggleColumns}
-            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all ${
               columns === 2
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                : "text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5"
             }`}
           >
             <Columns2 className="h-3.5 w-3.5" />
@@ -197,13 +202,13 @@ export default function ReaderTopBar({
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-1.5 rounded-lg border bg-muted/30 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+              className="flex items-center gap-1.5 border-2 border-black dark:border-white bg-background px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-foreground transition-all hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
             >
               <Settings2 className="h-3.5 w-3.5" />
               <span>Display</span>
             </button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-auto p-0">
+          <PopoverContent align="end" className="w-auto p-0 rounded-none border-2 border-black dark:border-white">
             <AppearancePanel
               fontFamily={fontFamily}
               lineHeight={lineHeight}
@@ -214,6 +219,16 @@ export default function ReaderTopBar({
             />
           </PopoverContent>
         </Popover>
+      </div>
+
+      {/* Reading Progress Bar (Absolute bottom) */}
+      <div className="absolute -bottom-[2px] left-0 h-1 w-full bg-black/5 dark:bg-white/10 overflow-hidden">
+        <div 
+          role="progressbar"
+          aria-label="Reading progress"
+          className="h-full bg-[#E02E2E] transition-all duration-300 ease-out" 
+          style={{ width: `${(currentPage / (totalPages || 1)) * 100}%` }}
+        />
       </div>
     </div>
   );
