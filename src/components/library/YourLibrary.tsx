@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LibraryGrid, LibrarySkeleton } from "./LibraryGrid";
-import { BookCard } from "./BookCard";
+import { BookCardMinimal } from "./BookCardMinimal";
 import { LibraryEmptyState } from "./LibraryEmptyState";
 
 interface YourLibraryProps {
@@ -27,21 +27,21 @@ export function YourLibrary({
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border/40 pb-4">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-black pb-4 dark:border-white">
         <div className="space-y-1">
-          <h2 className="font-serif text-2xl font-semibold tracking-tight text-foreground">Your Library</h2>
-          <p className="text-sm text-muted-foreground">
-            {totalBooks} {totalBooks === 1 ? "book" : "books"} in your collection
+          <h2 className="font-sans text-3xl font-black uppercase tracking-tighter text-foreground">Your Library</h2>
+          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+            {totalBooks} {totalBooks === 1 ? "book" : "books"}
           </p>
         </div>
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/40" />
           <Input
             type="search"
-            placeholder="Filter by title or author..."
+            placeholder="Search collection..."
             value={libraryQuery}
             onChange={(e) => setLibraryQuery(e.target.value)}
-            className="h-10 border-border/40 bg-background/50 pl-9 pr-9 focus:bg-background"
+            className="h-10 rounded-none border-2 border-black bg-background pl-9 pr-9 focus:ring-0 dark:border-white"
           />
           {libraryQuery && (
             <Button
@@ -57,15 +57,15 @@ export function YourLibrary({
       </div>
 
       {booksQ.isLoading ? (
-        <LibrarySkeleton count={8} />
+        <LibrarySkeleton count={8} variant="minimal" />
       ) : totalBooks === 0 ? (
         <LibraryEmptyState type="library" />
       ) : filteredBooks.length === 0 ? (
         <LibraryEmptyState type="search" />
       ) : (
-        <LibraryGrid>
+        <LibraryGrid variant="minimal">
           {filteredBooks.map((b) => (
-            <BookCard
+            <BookCardMinimal
               key={b.id}
               id={b.id}
               gutenbergId={b.gutenberg_id}
