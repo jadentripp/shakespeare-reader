@@ -1,11 +1,11 @@
 # Active Tracks
 
-- [x] **Track: Reader UI Bauhaus Alignment**
-*Link: [./tracks/reader_ui_bauhaus_20260119/](./tracks/reader_ui_bauhaus_20260119/)*
-
 ---
 
 # Archived Tracks
+
+- [x] **Track: Reader UI Bauhaus Alignment**
+*Link: [./archive/reader_ui_bauhaus_20260119/](./archive/reader_ui_bauhaus_20260119/)*
 
 - [x] **Track: Bauhaus-Inspired 2D Library Redesign**
 *Link: [./archive/bauhaus_library_20260119/](./archive/bauhaus_library_20260119/)*
