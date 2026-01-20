@@ -37,11 +37,18 @@ export function ChatMessageList({
                     isUser ? "flex-row-reverse" : "flex-row"
                   )}>
                     <div className={cn(
-                      "h-3 w-3 rounded-none",
+                      "px-1.5 py-0.5",
                       isUser ? "bg-[#E02E2E]" : "bg-black dark:bg-white"
-                    )} />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/50">
-                      {isUser ? "READER" : "ASSISTANT"}
+                    )}>
+                      <span className={cn(
+                        "text-[9px] font-black uppercase tracking-tighter leading-none",
+                        isUser ? "text-white" : "text-white dark:text-black"
+                      )}>
+                        {isUser ? "READER" : "AI"}
+                      </span>
+                    </div>
+                    <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-foreground/30">
+                      {isUser ? "USER" : "ASSISTANT"}
                     </span>
                   </div>
 
@@ -98,7 +105,7 @@ export function ChatMessageList({
             )}
           </>
         ) : (
-          <div className="flex h-full items-center justify-center py-12">
+          <div className="flex flex-1 h-full items-center justify-center py-12">
             <div className="relative text-left w-full max-w-[320px]">
               {/* Bauhaus Composition Empty State */}
               <div className="relative mb-12 h-48 border-4 border-black dark:border-white">
@@ -106,7 +113,7 @@ export function ChatMessageList({
                 <div className="absolute bottom-0 left-0 w-full h-1/3 border-t-4 border-black dark:border-white" />
                 <div className="absolute top-6 left-6 h-12 w-12 bg-[#E02E2E]" />
                 <div className="absolute bottom-6 right-6 h-16 w-16 rounded-none bg-[#007FFF]" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-[#FFD700]" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 rounded-none bg-[#FFD700] border-4 border-black dark:border-white" />
               </div>
               
               <div className="space-y-4">

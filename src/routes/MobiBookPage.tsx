@@ -24,7 +24,7 @@ export default function MobiBookPage(props: { bookId: number }) {
 
     return (
 
-      <div className="mx-auto flex h-screen max-w-[1800px] flex-col overflow-hidden border-x-2 border-black dark:border-white bg-background">
+      <div className="mx-auto flex h-full max-w-[1800px] flex-col overflow-hidden border-x-2 border-black dark:border-white bg-background">
 
         <ReaderToolbar 
 

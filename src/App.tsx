@@ -50,7 +50,7 @@ export default function AppLayout() {
             </Link>
           </div>
         </header>
-        <main className="flex-1 min-h-0 bg-muted/20 relative overflow-y-auto">
+        <main className="flex-1 min-h-0 bg-muted/20 relative overflow-hidden">
           <Outlet />
         </main>
       </div>

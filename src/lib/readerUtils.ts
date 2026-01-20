@@ -308,7 +308,7 @@ export function getPageContent(
  * Clear all existing highlight spans from the document.
  */
 export function clearExistingHighlights(doc: Document): void {
-    const spans = Array.from(doc.querySelectorAll("span.readerHighlight"));
+    const spans = Array.from(doc.querySelectorAll("span.readerHighlight, span.readerContextSnippet"));
     for (const span of spans) {
         const parent = span.parentNode;
         if (!parent) continue;
@@ -323,60 +323,88 @@ export function clearExistingHighlights(doc: Document): void {
 /**
  * Apply a highlight to a range by wrapping text nodes in highlight spans.
  */
-export function applyHighlightToRange(range: Range, highlightId: number): void {
+export function applyHighlightToRange(
+    range: Range, 
+    highlightId: number | string, 
+    className = "readerHighlight",
+    explicitStartOffset?: number,
+    explicitEndOffset?: number,
+    explicitStartNode?: Node,
+    explicitEndNode?: Node,
+    searchRootOverride?: Node
+): void {
     const doc = range.startContainer.ownerDocument;
     if (!doc) return;
 
-    // Fix: If commonAncestorContainer is a text node, TreeWalker won't find it as a child.
-    // Use the parent element as the search root in that case.
-    const searchRoot = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
-        ? range.commonAncestorContainer.parentNode!
-        : range.commonAncestorContainer;
+    const startNode = explicitStartNode ?? range.startContainer;
+    const startOffset = explicitStartOffset ?? range.startOffset;
+    const endNode = explicitEndNode ?? range.endContainer;
+    const endOffset = explicitEndOffset ?? range.endOffset;
+
+    const common = range.commonAncestorContainer;
+    const searchRoot = searchRootOverride ?? (common.nodeType === Node.TEXT_NODE ? common.parentNode! : common);
 
     const walker = doc.createTreeWalker(
         searchRoot,
         NodeFilter.SHOW_TEXT,
-        {
-            acceptNode: (node) => {
-                if (!range.intersectsNode(node)) return NodeFilter.FILTER_REJECT;
-                const text = node.nodeValue;
-                if (!text || !text.trim()) return NodeFilter.FILTER_REJECT;
-                return NodeFilter.FILTER_ACCEPT;
-            }
-        }
+        null
     );
 
-    const nodes: Text[] = [];
-    // If the search root itself is a text node and it's in range, add it
-    if (searchRoot.nodeType === Node.TEXT_NODE && range.intersectsNode(searchRoot)) {
-        nodes.push(searchRoot as Text);
+    const targetNodes: Array<{ node: Text; start: number; end: number }> = [];
+    let currentNode = walker.nextNode() as Text | null;
+    let inRange = false;
+
+    // Single text node case
+    if (startNode === endNode && startNode.nodeType === Node.TEXT_NODE) {
+        targetNodes.push({
+            node: startNode as Text,
+            start: startOffset,
+            end: endOffset
+        });
     } else {
-        while (walker.nextNode()) {
-            nodes.push(walker.currentNode as Text);
+        while (currentNode) {
+            if (currentNode === startNode) {
+                inRange = true;
+            }
+            
+            if (inRange) {
+                const text = currentNode.nodeValue || "";
+                if (text.length > 0) {
+                    const nodeStart = (currentNode === startNode) ? startOffset : 0;
+                    const nodeEnd = (currentNode === endNode) ? endOffset : text.length;
+                    
+                    if (nodeStart < nodeEnd) {
+                        targetNodes.push({
+                            node: currentNode,
+                            start: nodeStart,
+                            end: nodeEnd
+                        });
+                    }
+                }
+            }
+
+            if (currentNode === endNode) {
+                inRange = false;
+            }
+            currentNode = walker.nextNode() as Text | null;
         }
     }
 
-    console.log(`[Highlight] Applying ID ${highlightId} to ${nodes.length} text nodes`);
-
-    for (const node of nodes) {
+    for (const { node, start, end } of targetNodes) {
         const text = node.nodeValue ?? "";
-        let start = 0;
-        let end = text.length;
-        if (node === range.startContainer) start = range.startOffset;
-        if (node === range.endContainer) end = range.endOffset;
-        if (start >= end) continue;
-
         const before = text.slice(0, start);
         const middle = text.slice(start, end);
         const after = text.slice(end);
+        
         const fragment = doc.createDocumentFragment();
-
         if (before) fragment.appendChild(doc.createTextNode(before));
+        
         const span = doc.createElement("span");
-        span.className = "readerHighlight";
+        span.className = className;
         span.dataset.highlightId = String(highlightId);
         span.textContent = middle;
         fragment.appendChild(span);
+        
         if (after) fragment.appendChild(doc.createTextNode(after));
 
         if (node.parentNode) {

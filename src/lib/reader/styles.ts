@@ -124,14 +124,25 @@ export function buildReaderCss(options: ReaderStyleOptions): string {
     th { background: rgba(31, 27, 22, 0.04); font-weight: 600; }
     ::selection { background: var(--page-mark); }
     .readerHighlight {
-      background-color: rgba(255, 235, 59, 0.35);
-      border-radius: 2px;
+      background-color: rgba(224, 46, 46, 0.25);
+      border-radius: 0;
       cursor: pointer;
       transition: background-color 0.15s ease;
       scroll-margin: 40px;
     }
-    .readerHighlight:hover { background-color: rgba(255, 235, 59, 0.55); }
-    .readerHighlightActive { background-color: rgba(255, 193, 7, 0.5) !important; animation: pulse-highlight 1.5s ease-in-out; }
-    @keyframes pulse-highlight { 0%, 100% { background-color: rgba(255, 193, 7, 0.5); } 50% { background-color: rgba(255, 193, 7, 0.8); } }
+    .readerHighlight:hover { background-color: rgba(224, 46, 46, 0.4); }
+    .readerHighlightActive { 
+      background-color: rgba(224, 46, 46, 0.45) !important; 
+      outline: 2px solid #E02E2E;
+      animation: pulse-highlight 1.5s ease-in-out; 
+    }
+    .readerContextSnippet {
+      background-color: rgba(0, 85, 164, 0.35);
+      border-radius: 0;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    .readerContextSnippet:hover { background-color: rgba(0, 85, 164, 0.5); }
+    @keyframes pulse-highlight { 0%, 100% { background-color: rgba(224, 46, 46, 0.45); } 50% { background-color: rgba(224, 46, 46, 0.6); } }
   `;
 }

@@ -132,20 +132,8 @@ export function useHighlights(options: UseHighlightsOptions): UseHighlightsResul
   }, [selectedHighlight, noteDraft, bookId, queryClient]);
 
   const handleAddToChat = useCallback(async () => {
-    if (!pendingHighlight) return;
-    const highlight = await createHighlight({
-      bookId,
-      startPath: JSON.stringify(pendingHighlight.startPath),
-      startOffset: pendingHighlight.startOffset,
-      endPath: JSON.stringify(pendingHighlight.endPath),
-      endOffset: pendingHighlight.endOffset,
-      text: pendingHighlight.text,
-      note: "",
-    });
-    setPendingHighlight(null);
-    await queryClient.invalidateQueries({ queryKey: ["bookHighlights", bookId] });
-    toggleAttachment(highlight.id);
-  }, [pendingHighlight, bookId, queryClient, toggleAttachment]);
+    addSnippetToContext();
+  }, [addSnippetToContext]);
 
   const handleDelete = useCallback(async (highlightId: number) => {
     await deleteHighlight(highlightId);
@@ -178,7 +166,7 @@ export function useHighlights(options: UseHighlightsOptions): UseHighlightsResul
         const range = doc.createRange();
         range.setStart(startNode, highlight.start_offset);
         range.setEnd(endNode, highlight.end_offset);
-        applyHighlightToRange(range, highlight.id);
+        applyHighlightToRange(range, highlight.id, "readerHighlight", highlight.start_offset, highlight.end_offset, startNode, endNode, root);
         if (activeId === highlight.id) {
           const activeEls = doc.querySelectorAll(
             `span.readerHighlight[data-highlight-id="${highlight.id}"]`
@@ -189,6 +177,21 @@ export function useHighlights(options: UseHighlightsOptions): UseHighlightsResul
         }
       } catch (e) {
         console.error("Failed to render highlight", e);
+      }
+    }
+
+    // Render staged context snippets
+    for (const snippet of stagedSnippets) {
+      try {
+        const startNode = resolveNodePath(root, snippet.startPath);
+        const endNode = resolveNodePath(root, snippet.endPath);
+        if (!startNode || !endNode) continue;
+        const range = doc.createRange();
+        range.setStart(startNode, snippet.startOffset);
+        range.setEnd(endNode, snippet.endOffset);
+        applyHighlightToRange(range, snippet.id, "readerContextSnippet", snippet.startOffset, snippet.endOffset, startNode, endNode, root);
+      } catch (e) {
+        console.error("Failed to render staged snippet", e);
       }
     }
 
@@ -209,7 +212,7 @@ export function useHighlights(options: UseHighlightsOptions): UseHighlightsResul
         });
       }
     }
-  }, [getDoc, getScrollRoot, highlightsQ.data, activeAiQuote, activeAiBlockIndex]);
+  }, [getDoc, getScrollRoot, highlightsQ.data, stagedSnippets, activeAiQuote, activeAiBlockIndex]);
 
   return {
     highlights: highlightsQ.data as any[] | undefined,

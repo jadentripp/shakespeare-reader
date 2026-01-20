@@ -37,7 +37,7 @@ export default function ReaderPane({
   onActiveCitationChange,
 }: ReaderPaneProps) {
   return (
-    <main className="relative min-h-0" ref={containerRef}>
+    <main className="relative h-full min-h-0" ref={containerRef}>
       <ReaderLayout columns={columns} style={{ width: readerWidth, maxWidth: "100%", margin: "0 auto" }}>
         <iframe
           ref={iframeRef}
@@ -97,7 +97,7 @@ export default function ReaderPane({
             onClick={onAddToChat} 
             className="h-8 rounded-none border-2 border-black dark:border-white bg-background hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black font-bold uppercase tracking-widest text-[10px]"
           >
-            Chat
+            Add to Chat
           </Button>
           {onReadAloud && (
             <Button 
