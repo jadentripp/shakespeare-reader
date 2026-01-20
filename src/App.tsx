@@ -17,7 +17,7 @@ export default function AppLayout() {
 
   return (
     <LibraryProvider>
-      <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+      <div className="h-screen min-h-screen w-full flex flex-col bg-background text-foreground overflow-hidden">
         <header className="shrink-0 h-14 z-30 bg-background border-b-2 border-black dark:border-white">
           <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-6">
             <div className="flex items-center gap-10">
