@@ -18,7 +18,7 @@ describe("buildChatSystemPrompt Context Integration", () => {
     });
 
     const promptStr = prompt.join("\n");
-    expect(promptStr).toContain("CRITICAL CONTEXT: SPECIFIC TEXT SEGMENTS UNDER DISCUSSION");
+    expect(promptStr).toContain("### CONTEXT: STAGED TEXT SEGMENTS");
     expect(promptStr).toContain('"Snippet 1"');
     expect(promptStr).toContain('"Snippet 2"');
   });
@@ -34,14 +34,14 @@ describe("buildChatSystemPrompt Context Integration", () => {
     });
 
     const promptStr = prompt.join("\n");
-    expect(promptStr).toContain("CRITICAL CONTEXT: SPECIFIC TEXT SEGMENTS UNDER DISCUSSION");
+    expect(promptStr).toContain("### CONTEXT: STAGED TEXT SEGMENTS");
     expect(promptStr).toContain('"Staged 1"');
-    expect(promptStr).toContain("Additional Attached Highlights:");
+    expect(promptStr).toContain("### CONTEXT: ADDITIONAL ATTACHED HIGHLIGHTS");
     expect(promptStr).toContain('"Permanent 1"');
   });
 
   it("should prioritize selectedHighlight if provided", () => {
-    const selectedHighlight = { text: "Selected" };
+    const selectedHighlight = { id: 1, text: "Selected" };
     const stagedSnippets = [{ text: "Staged", id: "1", startPath: [], startOffset: 0, endPath: [], endOffset: 0, rect: { top: 0, left: 0, width: 0, height: 0 } }];
 
     const prompt = buildChatSystemPrompt({
@@ -51,8 +51,9 @@ describe("buildChatSystemPrompt Context Integration", () => {
     });
 
     const promptStr = prompt.join("\n");
-    expect(promptStr).toContain('Currently Focused Highlight: "Selected"');
-    expect(promptStr).toContain('CRITICAL CONTEXT: SPECIFIC TEXT SEGMENTS UNDER DISCUSSION');
+    expect(promptStr).toContain('### PRIMARY FOCUS: SELECTED HIGHLIGHT');
+    expect(promptStr).toContain('"Selected"');
+    expect(promptStr).toContain('### CONTEXT: STAGED TEXT SEGMENTS');
     expect(promptStr).toContain('"Staged"');
   });
 });

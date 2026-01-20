@@ -155,7 +155,7 @@ export function useChat(
       }
 
       const contextBlocks = buildChatSystemPrompt({
-        selectedHighlight: selectedHighlight ? { text: selectedHighlight.text, note: selectedHighlight.note } : null,
+        selectedHighlight: selectedHighlight ? { id: selectedHighlight.id, text: selectedHighlight.text, note: selectedHighlight.note } : null,
         attachedHighlights: attachedHighlights.map((h) => ({ id: h.id, text: h.text, note: h.note })),
         stagedSnippets: stagedSnippets.map((s) => ({ text: s.text })),
         pageContent,

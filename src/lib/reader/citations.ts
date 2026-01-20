@@ -6,7 +6,7 @@ export interface CitationMapping {
 }
 
 export const buildChatSystemPrompt = (options: {
-  selectedHighlight?: { text: string; note?: string } | null;
+  selectedHighlight?: { id?: number; text: string; note?: string } | null;
   attachedHighlights?: Array<{ id: number; text: string; note?: string }>;
   stagedSnippets?: Array<{ text: string }>;
   pageContent?: Array<{ text: string; blockIndex: number; pageNumber: number }>;
@@ -45,15 +45,16 @@ export const buildChatSystemPrompt = (options: {
   ];
 
   if (selectedHighlight) {
-    contextBlocks.push(`Currently Focused Highlight: "${selectedHighlight.text}"`);
+    contextBlocks.push("### PRIMARY FOCUS: SELECTED HIGHLIGHT");
+    contextBlocks.push(`"${selectedHighlight.text}"`);
     if (selectedHighlight.note) {
-      contextBlocks.push(`User's Note on Highlight: "${selectedHighlight.note}"`);
+      contextBlocks.push(`User's Note: "${selectedHighlight.note}"`);
     }
     contextBlocks.push("");
   }
 
   if (stagedSnippets.length > 0) {
-    contextBlocks.push("## CRITICAL CONTEXT: SPECIFIC TEXT SEGMENTS UNDER DISCUSSION");
+    contextBlocks.push("### CONTEXT: STAGED TEXT SEGMENTS");
     contextBlocks.push("The user has explicitly selected the following segments for focused analysis:");
     stagedSnippets.forEach((s) => {
       contextBlocks.push(`- "${s.text}"`);
@@ -62,16 +63,16 @@ export const buildChatSystemPrompt = (options: {
   }
 
   if (attachedHighlights.length > 0) {
-    contextBlocks.push("Additional Attached Highlights:");
+    contextBlocks.push("### CONTEXT: ADDITIONAL ATTACHED HIGHLIGHTS");
     attachedHighlights.forEach((h) => {
-      if (selectedHighlight && h.id === (selectedHighlight as any).id) return;
-      contextBlocks.push(`"${h.text}"${h.note ? ` (Note: ${h.note})` : ""}`);
+      if (selectedHighlight && h.id === selectedHighlight.id) return;
+      contextBlocks.push(`- "${h.text}"${h.note ? ` (Note: ${h.note})` : ""}`);
     });
     contextBlocks.push("");
   }
 
   if (pageContent.length > 0) {
-    contextBlocks.push("Current View Content:");
+    contextBlocks.push("### CONTEXT: CURRENT PAGE VIEW");
     pageContent.forEach(block => {
       contextBlocks.push(block.text);
       contextBlocks.push("");
