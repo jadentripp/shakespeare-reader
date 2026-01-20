@@ -159,16 +159,16 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
     <div
       data-testid="tts-panel-container"
       className={cn(
-        "fixed bottom-6 left-1/2 -translate-x-1/2 z-50",
-        "w-[95%] max-w-3xl", // Floating island look
-        "bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl",
-        "shadow-lg shadow-black/5",
+        "fixed bottom-8 left-1/2 -translate-x-1/2 z-50",
+        "w-[95%] max-w-3xl", 
+        "bg-background border-2 border-black dark:border-white rounded-none",
+        "shadow-2xl",
         "transition-all duration-300 ease-out",
         "animate-in slide-in-from-bottom-4 fade-in",
         className
       )}
     >
-      <div className="flex flex-col p-2 gap-1">
+      <div className="flex flex-col p-3 gap-2">
         {/* Progress Bar Row */}
         <div className="px-2 pt-1">
           <Slider
@@ -177,15 +177,25 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
             step={1}
             onValueChange={handleSeek}
             className="w-full cursor-pointer py-1"
+            // Custom slider track styling via class naming or inline is difficult with Radix without wrapping
+            // but we can target it in CSS if needed. For now, we use standard slider and assume global BAUHAUS alignment
           />
-          <div className="flex justify-between px-1 mt-1 text-[10px] font-medium text-muted-foreground/70 select-none">
+          {/* Bauhaus Red Custom Progress Indicator Overlay (Simulated) */}
+          <div className="h-1.5 w-full bg-black/10 dark:bg-white/10 mt-[-10px] pointer-events-none relative overflow-hidden">
+             <div 
+              className="h-full bg-[#E02E2E] transition-all duration-100 ease-linear"
+              style={{ width: `${(progress.currentTime / (progress.duration || 1)) * 100}%` }}
+             />
+          </div>
+
+          <div className="flex justify-between px-1 mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-foreground select-none">
             <span>{formatTime(progress.currentTime)}</span>
             <span>{formatTime(progress.duration)}</span>
           </div>
         </div>
 
         {/* Controls Row */}
-        <div className="flex items-center justify-between px-2 pb-1 gap-4">
+        <div className="flex items-center justify-between px-2 pb-1 gap-4 border-t-2 border-black/10 dark:border-white/10 pt-3">
           
           {/* Left: Info & Voice (Conditional) */}
           <div className="flex items-center gap-3 flex-1 min-w-0 justify-start">
@@ -195,27 +205,27 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 gap-2 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors animate-in fade-in slide-in-from-left-2 duration-200"
+                    className="h-9 gap-2 px-3 border-2 border-black/20 dark:border-white/20 rounded-none text-foreground hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all animate-in fade-in slide-in-from-left-2 duration-200"
                   >
                     <Mic2 className="h-4 w-4" />
-                    <span className="text-xs font-medium truncate max-w-[100px] sm:max-w-[140px]">
+                    <span className="text-[10px] font-black uppercase tracking-widest truncate max-w-[100px] sm:max-w-[140px]">
                       {currentVoiceName}
                     </span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-2" side="top" align="start">
+                <PopoverContent className="w-64 p-2 rounded-none border-2 border-black dark:border-white bg-background" side="top" align="start">
                   <div className="space-y-2">
-                    <h4 className="font-medium text-xs text-muted-foreground px-2 mb-1">Select Voice</h4>
+                    <h4 className="font-black text-[10px] uppercase tracking-widest text-muted-foreground px-2 mb-1 border-b-2 border-black/10 dark:border-white/10 pb-1">SELECT VOICE</h4>
                     <div className="max-h-[200px] overflow-y-auto space-y-1 pr-1">
                       {voices.map((voice) => (
                         <button
                           key={voice.voice_id}
                           onClick={() => changeVoice(voice.voice_id)}
                           className={cn(
-                            "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors",
+                            "w-full text-left px-3 py-2 rounded-none text-[10px] font-bold uppercase tracking-widest transition-colors",
                             voiceId === voice.voice_id 
-                              ? "bg-primary/10 text-primary font-medium" 
-                              : "hover:bg-muted text-foreground/80"
+                              ? "bg-black text-white dark:bg-white dark:text-black" 
+                              : "hover:bg-black/10 dark:hover:bg-white/10 text-foreground"
                           )}
                         >
                           {voice.name}
@@ -229,26 +239,26 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
           </div>
 
           {/* Center: Transport */}
-          <div className="flex items-center justify-center gap-2 flex-[2]">
+          <div className="flex items-center justify-center gap-4 flex-[2]">
             <Button
               variant="ghost"
               size="icon"
               onClick={handleSkipBackward}
-              className="h-9 w-9 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/50"
+              className="h-10 w-10 text-foreground border-2 border-black/10 dark:border-white/10 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black rounded-none transition-all"
             >
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw className="h-5 w-5" />
             </Button>
 
             <Button
               variant="default"
               size="icon"
               onClick={handleTogglePlayPause}
-              className="h-10 w-10 rounded-full shadow-md hover:scale-105 transition-transform"
+              className="h-12 w-12 rounded-none bg-black text-white dark:bg-white dark:text-black hover:bg-[#E02E2E] hover:text-white transition-all shadow-xl border-2 border-black dark:border-white"
             >
               {isPlaying ? (
-                <Pause className="h-5 w-5 fill-current" />
+                <Pause className="h-6 w-6 fill-current" />
               ) : (
-                <Play className="h-5 w-5 fill-current ml-0.5" />
+                <Play className="h-6 w-6 fill-current ml-1" />
               )}
             </Button>
 
@@ -256,9 +266,9 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
               variant="ghost"
               size="icon"
               onClick={handleSkipForward}
-              className="h-9 w-9 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/50"
+              className="h-10 w-10 text-foreground border-2 border-black/10 dark:border-white/10 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black rounded-none transition-all"
             >
-              <RotateCcw className="h-4 w-4 scale-x-[-1]" />
+              <RotateCcw className="h-5 w-5 scale-x-[-1]" />
             </Button>
 
             <Button
@@ -266,43 +276,45 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
               size="icon"
               onClick={() => setShowSettings(!showSettings)}
               className={cn(
-                "h-9 w-9 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/50 transition-colors",
-                showSettings && "bg-muted text-foreground"
+                "h-10 w-10 text-foreground border-2 rounded-none transition-all",
+                showSettings 
+                  ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white" 
+                  : "border-black/10 dark:border-white/10 hover:border-black dark:hover:border-white"
               )}
               aria-label="Toggle settings"
             >
-              <Settings2 className="h-4 w-4" />
+              <Settings2 className="h-5 w-5" />
             </Button>
           </div>
 
           {/* Right: Settings & Volume */}
-          <div className="flex items-center gap-1 flex-1 justify-end">
+          <div className="flex items-center gap-2 flex-1 justify-end">
             
             {showSettings && (
               <>
                 {/* Speed Popover */}
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-12 gap-0.5 px-0 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md animate-in fade-in slide-in-from-right-2 duration-200">
-                       <Gauge className="h-3.5 w-3.5 mr-1" />
-                       <span className="text-xs font-medium">{getSpeedLabel(playbackRate)}</span>
+                    <Button variant="ghost" size="sm" className="h-9 w-14 gap-1 px-0 border-2 border-black/20 dark:border-white/20 rounded-none text-foreground hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all animate-in fade-in slide-in-from-right-2 duration-200">
+                       <Gauge className="h-4 w-4" />
+                       <span className="text-[10px] font-black uppercase tracking-widest">{getSpeedLabel(playbackRate)}</span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-40 p-1" side="top" align="center">
-                    <div className="grid grid-cols-1 gap-0.5">
+                  <PopoverContent className="w-40 p-1 rounded-none border-2 border-black dark:border-white bg-background" side="top" align="center">
+                    <div className="grid grid-cols-1 gap-1">
                       {SPEED_OPTIONS.map((speed) => (
                         <button
                           key={speed}
                           onClick={() => handleSpeedSelect(speed)}
                           className={cn(
-                            "flex items-center justify-between px-2 py-1.5 rounded-sm text-xs transition-colors",
+                            "flex items-center justify-between px-3 py-2 rounded-none text-[10px] font-bold uppercase tracking-widest transition-colors",
                             playbackRate === speed
-                              ? "bg-primary/10 text-primary font-medium"
-                              : "hover:bg-muted text-foreground/80"
+                              ? "bg-black text-white dark:bg-white dark:text-black"
+                              : "hover:bg-black/10 dark:hover:bg-white/10 text-foreground"
                           )}
                         >
-                          <span>{speed}x</span>
-                          {playbackRate === speed && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                          <span>{speed}X</span>
+                          {playbackRate === speed && <Check className="h-3 w-3" />}
                         </button>
                       ))}
                     </div>
@@ -312,11 +324,11 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
                 {/* Volume Popover */}
                 <Popover>
                    <PopoverTrigger asChild>
-                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md animate-in fade-in slide-in-from-right-2 duration-200">
+                     <Button variant="ghost" size="icon" className="h-9 w-9 text-foreground border-2 border-black/20 dark:border-white/20 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all animate-in fade-in slide-in-from-right-2 duration-200">
                         <VolumeIcon volume={volume} />
                      </Button>
                    </PopoverTrigger>
-                   <PopoverContent className="w-12 h-32 p-0 flex justify-center py-4" side="top" align="center">
+                   <PopoverContent className="w-12 h-32 p-0 flex justify-center py-4 rounded-none border-2 border-black dark:border-white bg-background" side="top" align="center">
                       <Slider
                         orientation="vertical"
                         value={[volume]}
@@ -328,7 +340,7 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
                    </PopoverContent>
                 </Popover>
 
-                <div className="w-px h-4 bg-border/50 mx-1 animate-in fade-in duration-200" />
+                <div className="w-0.5 h-6 bg-black/20 dark:bg-white/20 mx-1 animate-in fade-in duration-200" />
               </>
             )}
 
@@ -336,9 +348,9 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
               variant="ghost"
               size="icon"
               onClick={() => setIsExpanded(false)}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-destructive/10 hover:text-destructive rounded-full"
+              className="h-9 w-9 text-foreground border-2 border-black/10 dark:border-white/10 hover:bg-[#E02E2E] hover:text-white hover:border-[#E02E2E] rounded-none transition-all"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </Button>
           </div>
         </div>
