@@ -2,9 +2,9 @@
 
 ## Visual Identity & UX
 - **Focused & Minimal:** The interface should prioritize the text, with UI elements receding when not in use.
-- **Classic Typography:** Use high-quality serif fonts for reading and clean sans-serif fonts for the interface.
-- **Soft Palette:** Use a "paper" or "sepia" toned background by default to reduce eye strain during long reading sessions.
-- **Material Design Principles:** Utilize clean lines, subtle shadows, and intuitive interactions for a modern feel.
+- **Bauhaus Aesthetic:** Embrace a "Modern Minimalist" look characterized by bold geometric shapes, sharp corners (no border-radius), and massive sans-serif typography for navigation and headers.
+- **Monochromatic Palette:** Use a strict black, white, and gray UI base, allowing colorful book covers and specific bold accents (like Bauhaus Red) to pop.
+- **Functional Grid:** Maintain a strict, uniform layout with generous whitespace and clear hierarchy.
 
 ## Tone & Voice
 - **Approachable Expertise:** The AI assistant should be knowledgeable but speak in clear, modern English.
