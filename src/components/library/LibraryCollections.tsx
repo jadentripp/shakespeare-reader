@@ -28,6 +28,7 @@ interface LibraryCollectionsProps {
   setCatalogKey: (key: string) => void;
   showAllCategories: boolean;
   setShowAllCategories: (show: boolean) => void;
+  variant?: "default" | "sidebar";
 }
 
 export function LibraryCollections({
@@ -35,13 +36,18 @@ export function LibraryCollections({
   setCatalogKey,
   showAllCategories,
   setShowAllCategories,
+  variant = "default",
 }: LibraryCollectionsProps) {
+  const isSidebar = variant === "sidebar";
+
   return (
-    <section className="relative">
-      <div className="mb-6 flex items-end justify-between">
+    <section className={`relative ${isSidebar ? "rounded-2xl border border-border/40 bg-card/60 p-5 shadow-sm" : ""}`}>
+      <div className={`flex items-end justify-between ${isSidebar ? "mb-4" : "mb-6"}`}>
         <div>
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-600/80 dark:text-amber-400/70">Browse by</p>
-          <h2 className="font-serif text-2xl font-medium tracking-tight text-foreground">Collections</h2>
+          <h2 className={`font-serif font-medium tracking-tight text-foreground ${isSidebar ? "text-lg" : "text-2xl"}`}>
+            Collections
+          </h2>
         </div>
         <button
           onClick={() => setShowAllCategories(!showAllCategories)}
@@ -55,7 +61,7 @@ export function LibraryCollections({
       </div>
 
       {/* Collection Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+      <div className={`grid gap-3 ${isSidebar ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3 md:grid-cols-5"}`}>
         {/* All Books */}
         <button
           onClick={() => setCatalogKey("collection-all")}
@@ -102,9 +108,9 @@ export function LibraryCollections({
 
       {/* Categories Panel */}
       {showAllCategories && (
-        <div className="mt-6 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className={`animate-in fade-in slide-in-from-top-4 duration-300 ${isSidebar ? "mt-4" : "mt-6"}`}>
           <div className="rounded-2xl border border-border/60 bg-gradient-to-b from-card to-background p-6 shadow-sm">
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className={`grid gap-6 ${isSidebar ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-3"}`}>
               {CATALOG_GROUPS.slice(1).map((group) => (
                 <div key={group.label} className="space-y-3">
                   <div className="flex items-center gap-2">
