@@ -18,7 +18,7 @@ AI Reader transforms the experience of reading public domain literature from a p
 - **The Reading Room:** An immersive 3D bookshelf experience using Three.js and WebGPU, featuring tactile book meshes, reactive animations, and theme-synced ambient lighting for a premium "private library" feel.
 - **Premium Reading Experience:** A paginated, customizable reader supporting single or two-column layouts.
 - **Rich Media Support:** Integrated inline illustration and image extraction from MOBI files, providing a more faithful and visually engaging reading experience for classic literature.
-- **Audiobook Narration:** High-quality AI-powered text-to-speech using ElevenLabs, allowing users to listen to books seamlessly with automatic page-turning or hear specific selections read aloud.
+- **Audiobook Narration:** High-quality AI-powered text-to-speech using ElevenLabs with a dedicated bottom sheet TTS panel. Users can control playback with seekable progress bar, playback speed (0.5x-2x), skip forward/backward (15s), and volume sliders. Panel features smooth slide-up animations, swipe gestures for collapse, and responsive design matching the reader aesthetic.
 - **Active Reading Tools:** Robust highlighting and note-taking capabilities with easy browsing.
 - **AI-Powered Insights:** Context-aware chat assistant for summaries, explanations, and analysis. Features include interactive citations that link directly to the source text, reasoning traces for transparent AI logic, and persistent thread-specific reading positions for seamless continuity.
 - **Premium Settings Experience:** A sidebar-driven, desktop-class settings interface with card-based organization and interactive live previews for appearance customization.
