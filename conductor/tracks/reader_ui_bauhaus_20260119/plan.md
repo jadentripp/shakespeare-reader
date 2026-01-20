@@ -26,12 +26,12 @@
 - [ ] Task: Conductor - User Manual Verification 'Sidebars & Floating Panels' (Protocol in workflow.md)
 
 ## Phase 3: TTS Panel & Final Polish
-- [ ] Task: Refactor TTS Bottom Sheet
+- [x] Task: Refactor TTS Bottom Sheet 0d58960
     - [ ] Create/Update tests in `src/tests/TTSPanelPhase3.test.tsx` to verify Bauhaus design
     - [ ] Remove border-radius and add bold 2px borders to the TTS panel
     - [ ] Update TTS progress bar to Bauhaus Red and sharp edges
     - [ ] Apply bold geometric sans-serif to all labels and controls
-- [ ] Task: Final Global Polish & Cleanup
+- [x] Task: Final Global Polish & Cleanup 641266a
     - [ ] Ensure all hover states use bold monochromatic color inversions
     - [ ] Verify that all remaining "soft" UI elements in the reader are sharpened
     - [ ] Run full test suite to ensure no regressions in reading functionality
