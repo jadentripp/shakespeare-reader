@@ -39,7 +39,7 @@ export function ReaderContent({ reader }: ReaderContentProps) {
   return (
     <div
       className={cn(
-        "grid flex-1 min-h-0 gap-2",
+        "grid h-full flex-1 min-h-0 gap-2",
         leftPanelCollapsed && rightPanelCollapsed && "grid-cols-[40px_minmax(0,1fr)_40px]",
         leftPanelCollapsed && !rightPanelCollapsed && "grid-cols-[40px_minmax(0,1fr)_400px]",
         !leftPanelCollapsed && rightPanelCollapsed && "grid-cols-[280px_minmax(0,1fr)_40px]",

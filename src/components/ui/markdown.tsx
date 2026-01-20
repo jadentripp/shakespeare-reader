@@ -17,7 +17,8 @@ export type MarkdownProps = {
 function parseMarkdownIntoBlocks(markdown: string): string[] {
   // Pre-process <cite> tags into a unique format that won't be mangled by Markdown
   // Use a more flexible regex that handles attribute order and optional self-closing
-  const processed = markdown.replace(/<cite\s+([^>]*)\/?>([\s\S]*?)(?:<\/cite>)?/g, (match, attrs, body) => {
+  const processed = markdown.replace(/<br\s*\/?>|<\/br>/gi, "\n")
+    .replace(/<cite\s+([^>]*)\/?>([\s\S]*?)(?:<\/cite>)?/g, (match, attrs, body) => {
     const snippetMatch = attrs.match(/snippet="([^"]*)"/);
     const indexMatch = attrs.match(/index="([^"]*)"/);
     const pageMatch = attrs.match(/page="([^"]*)"/);

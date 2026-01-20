@@ -60,7 +60,7 @@ export default function LibraryPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-full bg-background">
         <BauhausHeader
           catalogQuery={catalogQuery}
           setCatalogQuery={setCatalogQuery}

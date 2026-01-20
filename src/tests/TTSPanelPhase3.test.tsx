@@ -15,6 +15,23 @@ mock.module("../lib/tauri", () => ({
   getSetting: mock(() => Promise.resolve("")),
 }));
 
+// Mock useTTS
+mock.module("@/lib/hooks/useTTS", () => ({
+  useTTS: () => ({
+    state: "playing",
+    progress: { currentTime: 0, duration: 120, isBuffering: false },
+    playCurrentPage: mock(() => {}),
+    pause: mock(() => {}),
+    resume: mock(() => {}),
+    stop: mock(() => {}),
+    seek: mock(() => {}),
+    setPlaybackRate: mock(() => {}),
+    setVolume: mock(() => {}),
+    voiceId: "v1",
+    changeVoice: mock(() => {}),
+  }),
+}));
+
 describe("TTSPanel Bauhaus Alignment", () => {
   const defaultProps: any = {
     expanded: true,

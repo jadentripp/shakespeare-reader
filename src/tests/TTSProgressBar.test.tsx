@@ -41,7 +41,7 @@ describe("TTSProgressBar", () => {
   it("displays page context information", () => {
     render(<TTSProgressBar currentPage={42} totalPages={380} />);
 
-    expect(screen.getByText("Page 42 of 380")).toBeInTheDocument();
+    expect(screen.getByText("PAGE 42 / 380")).toBeInTheDocument();
   });
 
   it("shows correct progress percentage", () => {

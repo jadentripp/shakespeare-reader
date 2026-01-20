@@ -23,29 +23,17 @@ export default function MobiBookPage(props: { bookId: number }) {
   }
 
     return (
-
-      <div className="mx-auto flex h-full max-w-[1800px] flex-col overflow-hidden border-x-2 border-black dark:border-white bg-background">
-
+      <div className="mx-auto flex h-full max-w-[1800px] flex-col overflow-hidden border-x-2 border-b-2 border-black dark:border-white bg-background">
         <ReaderToolbar 
-
           reader={reader} 
-
           onTtsSettings={() => setTtsExpanded(true)}
-
         />
-
-        <div className="flex-1 min-h-0 p-4">
-
+        <div className="flex flex-col flex-1 min-h-0 p-4">
           <ReaderContent reader={reader} />
-
         </div>
-
         <TTSPanel 
-
           expanded={ttsExpanded} 
-
           onExpandChange={setTtsExpanded}
-
         />
 
         {lightboxImage && (

@@ -23,7 +23,8 @@ import {
   Mic2, 
   Settings2,
   X,
-  Gauge
+  Gauge,
+  Check
 } from "lucide-react";
 import { useTTS } from "@/lib/hooks/useTTS";
 import { elevenLabsService, Voice } from "@/lib/elevenlabs";

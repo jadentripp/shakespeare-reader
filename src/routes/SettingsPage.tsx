@@ -374,7 +374,7 @@ export default function SettingsPage() {
   }, [voices]);
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-full bg-background overflow-hidden">
       <SettingsSidebar activeTab={activeTab} onTabChange={setActiveTab} />
       
       <main className="flex-1 overflow-y-auto" key={activeTab}>
