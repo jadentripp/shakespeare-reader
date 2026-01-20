@@ -294,7 +294,7 @@ const BookMesh: React.FC<BookMeshProps> = ({
     const isHype = isPopular(downloadCount);
 
     return (
-        <group position={position} rotation={rotation}>
+        <group position={position} rotation={rotation} data-testid="book-mesh-group">
             <group ref={outerGroupRef}>
                 <group ref={groupRef}>
                     {(hovered || isDragging) && (
@@ -326,6 +326,7 @@ const BookMesh: React.FC<BookMeshProps> = ({
                     <mesh
                         castShadow
                         receiveShadow
+                        data-testid="book-cover-mesh"
                         onPointerOver={(e) => {
                             e.stopPropagation();
                             setHovered(true);
@@ -367,7 +368,7 @@ const BookMesh: React.FC<BookMeshProps> = ({
                     </mesh>
 
                     {/* Page Block (internal visual) */}
-                    <mesh position={[0.02, 0, 0]} receiveShadow>
+                    <mesh position={[0.02, 0, 0]} receiveShadow data-testid="page-block-mesh">
                         <boxGeometry args={[width * 0.95, height * 0.96, depth * 0.9]} />
                         <meshStandardMaterial color="#fdfcf0" roughness={1} metalness={0} transparent opacity={materializeOpacity} />
                     </mesh>
