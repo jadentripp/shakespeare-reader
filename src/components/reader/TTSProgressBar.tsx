@@ -46,11 +46,11 @@ export function TTSProgressBar({ currentPage, totalPages, className }: TTSProgre
   }, [seek, progress.duration]);
 
   return (
-    <div className={cn("space-y-1", className)}>
+    <div className={cn("space-y-2", className)}>
       {/* Page context */}
-      <div className="flex justify-between text-xs text-muted-foreground">
+      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-foreground">
         <span data-testid="elapsed-time">{formatTime(progress.currentTime)}</span>
-        <span className="font-medium">Page {currentPage} of {totalPages}</span>
+        <span className="font-black">PAGE {currentPage} / {totalPages}</span>
         <span data-testid="remaining-time">-{formatTime(remainingTime)}</span>
       </div>
 
@@ -63,16 +63,16 @@ export function TTSProgressBar({ currentPage, totalPages, className }: TTSProgre
         aria-valuemax={progress.duration}
         aria-valuenow={progress.currentTime}
         aria-valuetext={`${formatTime(progress.currentTime)} of ${formatTime(progress.duration)}`}
-        className="relative h-2 bg-muted rounded-full cursor-pointer overflow-hidden group"
+        className="relative h-2 bg-black/10 dark:bg-white/10 rounded-none cursor-pointer overflow-hidden group border border-black/5 dark:border-white/5"
         onClick={handleSeek}
       >
         {/* Background track */}
-        <div className="absolute inset-0 bg-muted rounded-full" />
+        <div className="absolute inset-0 bg-transparent" />
 
         {/* Progress fill */}
         <div
           data-testid="progress-fill"
-          className="absolute left-0 top-0 h-full bg-primary rounded-full transition-all duration-100 ease-linear group-hover:bg-primary/80"
+          className="absolute left-0 top-0 h-full bg-[#E02E2E] rounded-none transition-all duration-100 ease-linear group-hover:bg-[#E02E2E]/80"
           style={{ width: `${progressPercent}%` }}
         />
 
@@ -80,9 +80,9 @@ export function TTSProgressBar({ currentPage, totalPages, className }: TTSProgre
         {progress.isBuffering && (
           <div
             data-testid="buffering-indicator"
-            className="absolute inset-0 flex items-center justify-center"
+            className="absolute inset-0 flex items-center justify-center bg-white/20 dark:bg-black/20"
           >
-            <Loader2 className="h-3 w-3 animate-spin text-primary" />
+            <Loader2 className="h-3 w-3 animate-spin text-white" />
           </div>
         )}
 

@@ -117,45 +117,31 @@ function TocItem({
       type="button"
       onClick={() => onNavigate(entry)}
       className={cn(
-        "group relative flex w-full items-start gap-2 rounded-md px-2.5 py-2 text-left transition-all",
-        "hover:bg-muted/50",
-        isActive && "bg-primary/10"
+        "group relative flex w-full items-start gap-3 rounded-none px-2.5 py-2.5 text-left transition-all",
+        "hover:bg-black/5 dark:hover:bg-white/5",
+        isActive && "bg-[#E02E2E]/10 border-l-4 border-[#E02E2E]"
       )}
       style={{ paddingLeft: `${0.625 + indent * 0.75}rem` }}
     >
-      {indent > 0 && (
-        <div
-          className={cn(
-            "absolute left-2 top-0 bottom-0 w-px",
-            isActive ? "bg-primary/40" : "bg-border/40"
-          )}
-        />
-      )}
-
       <div
         className={cn(
-          "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full transition-colors",
+          "mt-1.5 h-2 w-2 shrink-0 rounded-none transition-colors",
           isActive
-            ? "bg-primary"
-            : "bg-muted-foreground/25 group-hover:bg-muted-foreground/40"
+            ? "bg-[#E02E2E]"
+            : "bg-black/20 dark:bg-white/20 group-hover:bg-black dark:group-hover:bg-white"
         )}
       />
 
       <span
         className={cn(
-          "flex-1 text-sm leading-snug transition-colors line-clamp-2",
+          "flex-1 text-[11px] font-bold uppercase tracking-wider leading-snug transition-colors line-clamp-2",
           isActive
-            ? "font-medium text-primary"
-            : "text-foreground/75 group-hover:text-foreground",
-          entry.level === 1 && "font-medium"
+            ? "text-[#E02E2E]"
+            : "text-foreground group-hover:text-foreground"
         )}
       >
         {entry.text}
       </span>
-
-      {isActive && (
-        <div className="absolute right-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-l-full bg-primary" />
-      )}
     </button>
   );
 }
@@ -175,33 +161,33 @@ function CollapsibleGroup({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded || hasActiveChild);
 
   return (
-    <div>
+    <div className="border-b-2 border-black/5 dark:border-white/5 last:border-b-0">
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
-          "group flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left transition-all",
-          "hover:bg-muted/50",
-          hasActiveChild && !isExpanded && "bg-primary/5"
+          "group flex w-full items-center gap-2 rounded-none px-2 py-3 text-left transition-all",
+          "hover:bg-black/5 dark:hover:bg-white/5",
+          hasActiveChild && !isExpanded && "bg-[#E02E2E]/5"
         )}
       >
-        <div className="flex h-4 w-4 items-center justify-center text-muted-foreground/60">
+        <div className="flex h-4 w-4 items-center justify-center text-foreground">
           {isExpanded ? (
-            <ChevronDown className="h-3.5 w-3.5" />
+            <ChevronDown className="h-4 w-4" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="h-4 w-4" />
           )}
         </div>
         <span
           className={cn(
-            "flex-1 text-sm font-medium leading-snug",
-            hasActiveChild ? "text-primary" : "text-foreground/80"
+            "flex-1 text-[11px] font-black uppercase tracking-[0.1em] leading-snug",
+            hasActiveChild ? "text-[#E02E2E]" : "text-foreground"
           )}
         >
           {group.label}
         </span>
-        <span className="text-xs text-muted-foreground/60">
-          ({group.entries.length})
+        <span className="text-[10px] font-black tabular-nums bg-black/10 dark:bg-white/10 px-1 text-muted-foreground">
+          {group.entries.length}
         </span>
       </button>
 
@@ -211,14 +197,14 @@ function CollapsibleGroup({
           isExpanded ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        <div className="ml-2 border-l border-border/40 pl-1">
+        <div className="ml-4 border-l-2 border-black/10 dark:border-white/10">
           {group.entries.map((entry) => (
             <TocItem
               key={entry.id}
               entry={entry}
               isActive={entry.id === currentEntryId}
               onNavigate={onNavigate}
-              indent={1}
+              indent={0}
             />
           ))}
         </div>
@@ -236,11 +222,11 @@ export default function TocPanel({
 
   if (entries.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-center">
-        <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-muted/50">
-          <List className="h-5 w-5 text-muted-foreground/50" />
+      <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-black/10 dark:border-white/10">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-none bg-black/5 dark:bg-white/5 border-2 border-black/10 dark:border-white/10">
+          <List className="h-6 w-6 text-muted-foreground/50" />
         </div>
-        <p className="text-xs text-muted-foreground">No chapters found</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">NO CHAPTERS FOUND</p>
       </div>
     );
   }
