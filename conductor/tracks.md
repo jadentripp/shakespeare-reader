@@ -1,11 +1,11 @@
 # Active Tracks
 
-- [x] **Track: switch db to postgres**
-*Link: [./tracks/switch_db_to_postgres_20260119/](./tracks/switch_db_to_postgres_20260119/)*
-
 ---
 
 # Archived Tracks
+
+- [x] **Track: switch db to postgres**
+*Link: [./archive/switch_db_to_postgres_20260119/](./archive/switch_db_to_postgres_20260119/)*
 
 - [x] **Track: Remove global application header from App.tsx**
 *Link: [./archive/remove_global_header_20260119/](./archive/remove_global_header_20260119/)*
