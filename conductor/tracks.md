@@ -1,5 +1,8 @@
 # Active Tracks
 
+- [x] **Track: switch db to postgres**
+*Link: [./tracks/switch_db_to_postgres_20260119/](./tracks/switch_db_to_postgres_20260119/)*
+
 ---
 
 # Archived Tracks
