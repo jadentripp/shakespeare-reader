@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { audioPlayer, VoiceSettings } from '@/lib/elevenlabs';
-import { getPageContent, PageMetrics } from '@/lib/readerUtils';
+import { audioPlayer, VoiceSettings, EndReason, WordTiming } from '@/lib/elevenlabs';
+import { getPageContent, PageMetrics, CharacterMapping } from '@/lib/readerUtils';
 import { getSetting } from '@/lib/tauri';
 
 interface UseTTSOptions {
@@ -24,6 +24,20 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
     () => audioPlayer.getProgress(),
     () => INITIAL_PROGRESS
   );
+
+  const [currentWord, setCurrentWord] = useState<WordTiming | null>(null);
+  const [currentWordIndex, setCurrentWordIndex] = useState(-1);
+  const [currentPageText, setCurrentPageText] = useState<string>("");
+  const [currentCharMap, setCurrentCharMap] = useState<CharacterMapping[]>([]);
+
+  // Subscribe to word timing updates
+  useEffect(() => {
+    return audioPlayer.subscribeWordTiming((index, word) => {
+      console.log(`[useTTS] Word timing update received: index=${index}, word="${word?.word}", startChar=${word?.startChar}, endChar=${word?.endChar}`);
+      setCurrentWordIndex(index);
+      setCurrentWord(word);
+    });
+  }, []);
 
   const [autoNext, setAutoNext] = useState(false);
   const [voiceId, setVoiceId] = useState<string | undefined>();
@@ -62,8 +76,15 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
   // Track state transitions for auto-advance
   const prevStateRef = useRef(state);
   useEffect(() => {
+    console.log(`[useTTS] State transition: ${prevStateRef.current} -> ${state}`);
     if (state === 'idle' && prevStateRef.current === 'playing') {
-      if (autoNext) {
+      const reason = audioPlayer.getLastEndReason();
+      const duration = audioPlayer.getDuration();
+      const currentTime = audioPlayer.getCurrentTime();
+      console.log(`[useTTS] Playback ended. Reason: ${reason}, Duration: ${duration.toFixed(2)}s, CurrentTime: ${currentTime.toFixed(2)}s, AutoNext: ${autoNext}`);
+      // Only auto-advance when audio naturally ended, not when stopped/replaced
+      if (autoNext && reason === 'ended') {
+        console.log(`[useTTS] Auto-advancing to next page`);
         onPageTurnNeeded?.();
       }
     }
@@ -71,26 +92,41 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
   }, [state, autoNext, onPageTurnNeeded]);
 
   // When currentPage changes, if autoNext is true, start playing
+  // Use a ref to track if we just started playback manually to avoid double-calling
+  const justStartedRef = useRef(false);
   useEffect(() => {
+    console.log(`[useTTS] currentPage changed to ${currentPage}. AutoNext: ${autoNext}, State: ${state}, justStarted: ${justStartedRef.current}`);
+    if (justStartedRef.current) {
+      justStartedRef.current = false;
+      return;
+    }
     if (autoNext && state === 'idle') {
+      console.log(`[useTTS] Auto-playing new page ${currentPage}`);
       playCurrentPage();
     }
-  }, [currentPage, autoNext]);
+  }, [currentPage]);
 
   const getPageText = useCallback((pageIndex: number) => {
     const doc = getDoc();
-    if (!doc) return "";
+    if (!doc) return { text: "", charMap: [] as CharacterMapping[] };
 
     const metrics = getPageMetrics();
     const content = getPageContent(doc, pageIndex, metrics);
-    return content.text;
+    return { text: content.text, charMap: content.charMap };
   }, [getDoc, getPageMetrics]);
 
   const playCurrentPage = useCallback(async () => {
-    const text = getPageText(currentPage);
+    const { text, charMap } = getPageText(currentPage);
+    console.log(`[useTTS] playCurrentPage called. Page: ${currentPage}, Text length: ${text.length}, CharMap length: ${charMap.length}`);
+    console.log(`[useTTS] Text preview (first 200 chars): "${text.substring(0, 200)}"`);
+    console.log(`[useTTS] Text preview (last 200 chars): "${text.substring(text.length - 200)}"`);
     if (text) {
+      justStartedRef.current = true; // Prevent double-call from currentPage effect
       setAutoNext(true);
-      await audioPlayer.play(text, voiceId, voiceSettings);
+      setCurrentPageText(text); // Store the text for precise word highlighting
+      setCurrentCharMap(charMap); // Store the character-to-DOM mapping
+      // Use playWithTimestamps for word-level highlighting
+      await audioPlayer.playWithTimestamps(text, voiceId, voiceSettings);
     }
   }, [currentPage, getPageText, voiceId, voiceSettings]);
 
@@ -152,5 +188,10 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
     seek,
     voiceId,
     changeVoice,
+    currentWord,
+    currentWordIndex,
+    currentPageText,
+    currentCharMap,
+    wordTimings: audioPlayer.getWordTimings(),
   };
 }

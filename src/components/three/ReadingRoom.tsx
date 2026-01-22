@@ -10,7 +10,7 @@ export const ReadingRoom: React.FC = () => {
   return (
     <group>
       {/* Floor - darkened stone/wood */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow data-testid="floor">
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
         <planeGeometry args={[40, 40]} />
         <meshStandardMaterial
           color={floorColor}
@@ -20,7 +20,7 @@ export const ReadingRoom: React.FC = () => {
       </mesh>
 
       {/* Back Wall */}
-      <mesh position={[0, 10, -12]} receiveShadow data-testid="back-wall">
+      <mesh position={[0, 10, -12]} receiveShadow>
         <planeGeometry args={[40, 25]} />
         <meshStandardMaterial
           color={wallColor}
@@ -30,7 +30,7 @@ export const ReadingRoom: React.FC = () => {
       </mesh>
 
       {/* Left Wall */}
-      <mesh rotation={[0, Math.PI / 2, 0]} position={[-15, 10, 0]} receiveShadow data-testid="left-wall">
+      <mesh rotation={[0, Math.PI / 2, 0]} position={[-15, 10, 0]} receiveShadow>
         <planeGeometry args={[40, 25]} />
         <meshStandardMaterial
           color={wallColor}
@@ -39,7 +39,7 @@ export const ReadingRoom: React.FC = () => {
       </mesh>
 
       {/* Right Wall */}
-      <mesh rotation={[0, -Math.PI / 2, 0]} position={[15, 10, 0]} receiveShadow data-testid="right-wall">
+      <mesh rotation={[0, -Math.PI / 2, 0]} position={[15, 10, 0]} receiveShadow>
         <planeGeometry args={[40, 25]} />
         <meshStandardMaterial
           color={wallColor}
@@ -48,13 +48,13 @@ export const ReadingRoom: React.FC = () => {
       </mesh>
 
       {/* Ceiling - even darker */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 20, 0]} receiveShadow data-testid="ceiling">
+      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 20, 0]} receiveShadow>
         <planeGeometry args={[40, 40]} />
         <meshStandardMaterial color="#0a0908" roughness={1} />
       </mesh>
 
       {/* Decorative rug with subtle elevation */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 4]} receiveShadow data-testid="rug">
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 4]} receiveShadow>
         <planeGeometry args={[14, 9]} />
         <meshStandardMaterial
           color={rugColor}

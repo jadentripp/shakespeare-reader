@@ -15,6 +15,19 @@ export interface VoiceSettings {
   use_speaker_boost: boolean;
 }
 
+export interface WordTiming {
+  word: string;
+  start: number;
+  end: number;
+  startChar: number;
+  endChar: number;
+}
+
+export interface TTSWithTimestamps {
+  audioBase64: string;
+  wordTimings: WordTiming[];
+}
+
 export async function resolveElevenLabsApiKey(): Promise<string> {
   const saved = await getSetting('elevenlabs_api_key');
   if (saved && saved.trim()) {
@@ -64,6 +77,97 @@ export class ElevenLabsService {
     }
   }
 
+  async textToSpeechWithTimestamps(text: string, voiceId: string, settings?: VoiceSettings): Promise<TTSWithTimestamps> {
+    console.log(`[ElevenLabs] textToSpeechWithTimestamps called for text length: ${text.length}`);
+    const client = await this.getClient();
+    try {
+      const response = await client.textToSpeech.convertWithTimestamps(voiceId, {
+        text,
+        modelId: "eleven_flash_v2_5",
+        voiceSettings: settings ? {
+          stability: settings.stability,
+          similarityBoost: settings.similarity_boost,
+          style: settings.style,
+          useSpeakerBoost: settings.use_speaker_boost,
+        } : undefined,
+      });
+
+      console.log(`[ElevenLabs] textToSpeechWithTimestamps successful`);
+
+      // Convert character-level alignment to word-level timings
+      const wordTimings = this.extractWordTimings(
+        text,
+        response.alignment?.characters || [],
+        response.alignment?.characterStartTimesSeconds || [],
+        response.alignment?.characterEndTimesSeconds || []
+      );
+
+      return {
+        audioBase64: response.audioBase64 || "",
+        wordTimings,
+      };
+    } catch (e: any) {
+      if (e.message?.includes("famous_voice_not_permitted")) {
+        console.error(`[ElevenLabs] VOICE RESTRICTED: The selected voice is restricted by ElevenLabs and cannot be used via API.`);
+        throw new Error("This voice is restricted by ElevenLabs for API use. Please try a different voice.");
+      }
+      console.error(`[ElevenLabs] textToSpeechWithTimestamps failed:`, e);
+      throw e;
+    }
+  }
+
+  private extractWordTimings(
+    originalText: string,
+    characters: string[],
+    startTimes: number[],
+    endTimes: number[]
+  ): WordTiming[] {
+    const words: WordTiming[] = [];
+    let currentWord = "";
+    let wordStartChar = 0;
+    let wordStartTime = 0;
+    let wordEndTime = 0;
+
+    for (let i = 0; i < characters.length; i++) {
+      const char = characters[i];
+      const isWordBoundary = /\s/.test(char);
+
+      if (isWordBoundary) {
+        if (currentWord.length > 0) {
+          words.push({
+            word: currentWord,
+            start: wordStartTime,
+            end: wordEndTime,
+            startChar: wordStartChar,
+            endChar: wordStartChar + currentWord.length,
+          });
+        }
+        currentWord = "";
+        wordStartChar = i + 1;
+      } else {
+        if (currentWord.length === 0) {
+          wordStartTime = startTimes[i] || 0;
+          wordStartChar = i;
+        }
+        currentWord += char;
+        wordEndTime = endTimes[i] || 0;
+      }
+    }
+
+    // Don't forget the last word
+    if (currentWord.length > 0) {
+      words.push({
+        word: currentWord,
+        start: wordStartTime,
+        end: wordEndTime,
+        startChar: wordStartChar,
+        endChar: wordStartChar + currentWord.length,
+      });
+    }
+
+    return words;
+  }
+
   async getVoices(): Promise<Voice[]> {
     console.log(`[ElevenLabs] getVoices called`);
     const client = await this.getClient();
@@ -101,6 +205,7 @@ export class ElevenLabsService {
 export const elevenLabsService = new ElevenLabsService();
 
 export type PlaybackState = 'idle' | 'playing' | 'paused' | 'buffering' | 'error';
+export type EndReason = 'ended' | 'stopped' | 'replaced' | 'error' | 'unknown';
 
 export interface AudioProgress {
   currentTime: number;
@@ -117,6 +222,7 @@ export class AudioPlayer {
   private queue: Array<{ text: string; audioBuffer: AudioBuffer }> = [];
   private listeners = new Set<(state: PlaybackState) => void>();
   private progressListeners = new Set<(progress: AudioProgress) => void>();
+  private wordTimingListeners = new Set<(wordIndex: number, word: WordTiming | null) => void>();
 
   // Playback state tracking
   private _playbackRate: number = 1;
@@ -125,6 +231,9 @@ export class AudioPlayer {
   private _startOffset: number = 0; // Position in audio buffer when playback started
   private _pausedAt: number = 0;    // Position where playback was paused
   private progressInterval: ReturnType<typeof setInterval> | null = null;
+  private _lastEndReason: EndReason = 'unknown';
+  private _wordTimings: WordTiming[] = [];
+  private _currentWordIndex: number = -1;
 
   constructor() {
     // Context is lazily initialized on first play
@@ -147,6 +256,10 @@ export class AudioPlayer {
 
   getState(): PlaybackState {
     return this.state;
+  }
+
+  getLastEndReason(): EndReason {
+    return this._lastEndReason;
   }
 
   setState(state: PlaybackState) {
@@ -181,6 +294,56 @@ export class AudioPlayer {
     this.updateProgressCache();
     const progress = this.getProgress();
     this.progressListeners.forEach(l => l(progress));
+    // Log every ~1 second (every 10th call since interval is 100ms)
+    if (Math.floor(progress.currentTime * 10) % 10 === 0 && progress.currentTime > 0) {
+      console.log(`[AudioPlayer] Progress: ${progress.currentTime.toFixed(2)}s, wordTimings: ${this._wordTimings.length}`);
+    }
+    this.updateCurrentWord(progress.currentTime);
+  }
+
+  private updateCurrentWord(currentTime: number) {
+    if (this._wordTimings.length === 0) {
+      return;
+    }
+
+    // Find the word being spoken at currentTime
+    let newIndex = -1;
+    for (let i = 0; i < this._wordTimings.length; i++) {
+      const w = this._wordTimings[i];
+      if (currentTime >= w.start && currentTime < w.end) {
+        newIndex = i;
+        break;
+      }
+      // If we're past this word's end but before next word's start, stick with previous
+      if (currentTime >= w.end && (i === this._wordTimings.length - 1 || currentTime < this._wordTimings[i + 1].start)) {
+        newIndex = i;
+        break;
+      }
+    }
+
+    if (newIndex !== this._currentWordIndex) {
+      this._currentWordIndex = newIndex;
+      const word = newIndex >= 0 ? this._wordTimings[newIndex] : null;
+      console.log(`[AudioPlayer] Word changed: index=${newIndex}, word="${word?.word}", time=${currentTime.toFixed(2)}s`);
+      this.wordTimingListeners.forEach(l => l(newIndex, word));
+    }
+  }
+
+  subscribeWordTiming(listener: (wordIndex: number, word: WordTiming | null) => void): () => void {
+    this.wordTimingListeners.add(listener);
+    return () => this.wordTimingListeners.delete(listener);
+  }
+
+  getCurrentWordIndex(): number {
+    return this._currentWordIndex;
+  }
+
+  getCurrentWord(): WordTiming | null {
+    return this._currentWordIndex >= 0 ? this._wordTimings[this._currentWordIndex] : null;
+  }
+
+  getWordTimings(): WordTiming[] {
+    return this._wordTimings;
   }
 
   async play(text: string, voiceId?: string, settings?: VoiceSettings) {
@@ -239,17 +402,90 @@ export class AudioPlayer {
       const audioBuffer = await ctx.decodeAudioData(audioData);
       console.log(`[AudioPlayer] Audio decoded successfully, duration: ${audioBuffer.duration.toFixed(2)}s`);
 
-      this.stop(); // Stop any current playback
+      // Stop any current playback (marked as 'replaced', not natural end)
+      this._lastEndReason = 'replaced';
+      this.stopInternal();
 
       // Store the buffer for seeking
       this.currentBuffer = audioBuffer;
       this._startOffset = 0;
       this._pausedAt = 0;
 
+      this._wordTimings = [];
+      this._currentWordIndex = -1;
       this.startPlayback(audioBuffer, 0);
       this.setState('playing');
     } catch (e) {
       console.error('[AudioPlayer] Audio playback error:', e);
+      this._lastEndReason = 'error';
+      this.setState('error');
+    }
+  }
+
+  async playWithTimestamps(text: string, voiceId?: string, settings?: VoiceSettings) {
+    console.log(`[AudioPlayer] playWithTimestamps requested for text length: ${text.length}`);
+    const ctx = this.initContext();
+    if (ctx.state === 'suspended') {
+      console.log(`[AudioPlayer] Resuming suspended AudioContext`);
+      await ctx.resume();
+    }
+
+    this.setState('buffering');
+
+    try {
+      let finalVoiceId = voiceId;
+      if (!finalVoiceId) {
+        finalVoiceId = await getSetting("elevenlabs_voice_id") || undefined;
+      }
+      if (!finalVoiceId) {
+        finalVoiceId = "21m00Tcm4TbcDqnu8SRw";
+      }
+
+      let finalSettings = settings;
+      if (!finalSettings) {
+        const stability = await getSetting("elevenlabs_stability");
+        const similarity = await getSetting("elevenlabs_similarity");
+        const style = await getSetting("elevenlabs_style");
+        const boost = await getSetting("elevenlabs_speaker_boost");
+
+        if (stability !== null) {
+          finalSettings = {
+            stability: parseFloat(stability) || 0.5,
+            similarity_boost: parseFloat(similarity ?? "0.75") || 0.75,
+            style: parseFloat(style ?? "0") || 0,
+            use_speaker_boost: boost === "true"
+          };
+        }
+      }
+
+      console.log(`[AudioPlayer] Calling textToSpeechWithTimestamps`);
+      const result = await elevenLabsService.textToSpeechWithTimestamps(text, finalVoiceId, finalSettings);
+
+      // Decode base64 audio
+      const binaryString = atob(result.audioBase64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const audioBuffer = await ctx.decodeAudioData(bytes.buffer);
+      console.log(`[AudioPlayer] Audio decoded, duration: ${audioBuffer.duration.toFixed(2)}s, words: ${result.wordTimings.length}`);
+
+      // Stop any current playback
+      this._lastEndReason = 'replaced';
+      this.stopInternal();
+
+      // Store buffer and word timings
+      this.currentBuffer = audioBuffer;
+      this._startOffset = 0;
+      this._pausedAt = 0;
+      this._wordTimings = result.wordTimings;
+      this._currentWordIndex = -1;
+
+      this.startPlayback(audioBuffer, 0);
+      this.setState('playing');
+    } catch (e) {
+      console.error('[AudioPlayer] playWithTimestamps error:', e);
+      this._lastEndReason = 'error';
       this.setState('error');
     }
   }
@@ -259,6 +495,8 @@ export class AudioPlayer {
 
     // Disconnect and clean up previous source
     if (this.currentSource) {
+      // Detach onended BEFORE stopping to prevent spurious 'ended' events
+      this.currentSource.onended = null;
       try {
         this.currentSource.stop();
       } catch (e) {
@@ -279,11 +517,18 @@ export class AudioPlayer {
     }
 
     this.currentSource.onended = () => {
-      console.log(`[AudioPlayer] Playback ended`);
+      const currentTime = this.getCurrentTime();
+      const duration = buffer.duration;
+      const percentPlayed = duration > 0 ? (currentTime / duration * 100).toFixed(1) : 'N/A';
+      console.log(`[AudioPlayer] onended fired. State: ${this.state}, CurrentTime: ${currentTime.toFixed(2)}s, Duration: ${duration.toFixed(2)}s, Played: ${percentPlayed}%`);
       if (this.state === 'playing') {
+        this._lastEndReason = 'ended';
+        console.log(`[AudioPlayer] Setting EndReason to 'ended' and transitioning to idle`);
         this._pausedAt = 0;
         this._startOffset = 0;
         this.setState('idle');
+      } else {
+        console.log(`[AudioPlayer] onended fired but state was ${this.state}, not 'playing' - ignoring`);
       }
     };
 
@@ -312,10 +557,12 @@ export class AudioPlayer {
     }
   }
 
-  stop() {
+  private stopInternal() {
     this.stopProgressUpdates();
     if (this.currentSource) {
       console.log(`[AudioPlayer] Stopping current source`);
+      // Detach onended BEFORE stopping to prevent spurious 'ended' events
+      this.currentSource.onended = null;
       try {
         this.currentSource.stop();
       } catch (e) {
@@ -326,6 +573,11 @@ export class AudioPlayer {
     this._startOffset = 0;
     this._pausedAt = 0;
     this.setState('idle');
+  }
+
+  stop() {
+    this._lastEndReason = 'stopped';
+    this.stopInternal();
   }
 
   /**

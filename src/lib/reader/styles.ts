@@ -143,6 +143,11 @@ export function buildReaderCss(options: ReaderStyleOptions): string {
       transition: background-color 0.15s ease;
     }
     .readerContextSnippet:hover { background-color: rgba(0, 85, 164, 0.5); }
+    .ttsCurrentWord {
+      background-color: rgba(59, 130, 246, 0.4);
+      border-radius: 2px;
+      transition: background-color 0.1s ease;
+    }
     @keyframes pulse-highlight { 0%, 100% { background-color: rgba(224, 46, 46, 0.45); } 50% { background-color: rgba(224, 46, 46, 0.6); } }
   `;
 }
