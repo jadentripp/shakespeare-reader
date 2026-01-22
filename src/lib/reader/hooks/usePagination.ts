@@ -25,6 +25,7 @@ export interface UsePaginationResult {
   getPageMetrics: () => PageMetricsResult;
   syncPageMetrics: () => void;
   scrollToPage: (page: number) => void;
+  scrollToPageInstant: (page: number) => void;
   lockToPage: (page?: number) => void;
   updatePagination: () => void;
   schedulePaginationUpdate: () => void;
@@ -81,6 +82,21 @@ export function usePagination(options: UsePaginationOptions): UsePaginationResul
 
     pageLockRef.current = page;
     root.scrollTo({ left: target, behavior: "smooth" });
+  }, [getScrollRoot, getPageMetrics]);
+
+  const scrollToPageInstant = useCallback((page: number) => {
+    const root = getScrollRoot();
+    if (!root) return;
+    const { pageWidth, gap } = getPageMetrics();
+    if (!pageWidth) return;
+    const stride = pageWidth + gap;
+    const target = computeScrollTarget(page, stride);
+
+    pageLockRef.current = page;
+    setCurrentPage(page);
+    root.style.scrollBehavior = "auto";
+    root.scrollLeft = target;
+    root.style.scrollBehavior = "";
   }, [getScrollRoot, getPageMetrics]);
 
   const updatePagination = useCallback(() => {
@@ -170,6 +186,7 @@ export function usePagination(options: UsePaginationOptions): UsePaginationResul
     getPageMetrics,
     syncPageMetrics,
     scrollToPage,
+    scrollToPageInstant,
     lockToPage,
     updatePagination,
     schedulePaginationUpdate,

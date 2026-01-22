@@ -41,82 +41,128 @@ fn init_schema() -> Result<(), anyhow::Error> {
     let rt = tokio::runtime::Runtime::new()?;
     
     rt.block_on(async {
+        // Settings table
         sqlx::query(
-            r#"
-CREATE TABLE IF NOT EXISTS settings (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS book (
-  id BIGSERIAL PRIMARY KEY,
-  gutenberg_id BIGINT NOT NULL UNIQUE,
-  title TEXT NOT NULL,
-  authors TEXT NOT NULL,
-  publication_year INTEGER,
-  cover_url TEXT,
-  mobi_path TEXT,
-  html_path TEXT,
-  first_image_index INTEGER,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_book_title ON book(title);
-
-CREATE TABLE IF NOT EXISTS book_position (
-  book_id BIGINT PRIMARY KEY REFERENCES book(id) ON DELETE CASCADE,
-  cfi TEXT NOT NULL,
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS highlight (
-  id BIGSERIAL PRIMARY KEY,
-  book_id BIGINT NOT NULL REFERENCES book(id) ON DELETE CASCADE,
-  start_path TEXT NOT NULL,
-  start_offset BIGINT NOT NULL,
-  end_path TEXT NOT NULL,
-  end_offset BIGINT NOT NULL,
-  text TEXT NOT NULL,
-  note TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_highlight_book ON highlight(book_id);
-
-CREATE TABLE IF NOT EXISTS highlight_message (
-  id BIGSERIAL PRIMARY KEY,
-  highlight_id BIGINT NOT NULL REFERENCES highlight(id) ON DELETE CASCADE,
-  role TEXT NOT NULL,
-  content TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_highlight_message_highlight ON highlight_message(highlight_id);
-
-CREATE TABLE IF NOT EXISTS book_chat_thread (
-  id BIGSERIAL PRIMARY KEY,
-  book_id BIGINT NOT NULL REFERENCES book(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  last_cfi TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_book_chat_thread_book ON book_chat_thread(book_id);
-
-CREATE TABLE IF NOT EXISTS book_message (
-  id BIGSERIAL PRIMARY KEY,
-  book_id BIGINT NOT NULL REFERENCES book(id) ON DELETE CASCADE,
-  thread_id BIGINT REFERENCES book_chat_thread(id) ON DELETE CASCADE,
-  role TEXT NOT NULL,
-  content TEXT NOT NULL,
-  reasoning_summary TEXT,
-  context_map TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_book_message_book ON book_message(book_id);
-CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id);
-"#
+            "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
         )
         .execute(pool)
-        .await
+        .await?;
+
+        // Book table
+        sqlx::query(
+            r#"CREATE TABLE IF NOT EXISTS book (
+                id BIGSERIAL PRIMARY KEY,
+                gutenberg_id BIGINT NOT NULL UNIQUE,
+                title TEXT NOT NULL,
+                authors TEXT NOT NULL,
+                publication_year INTEGER,
+                cover_url TEXT,
+                mobi_path TEXT,
+                html_path TEXT,
+                first_image_index INTEGER,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )"#
+        )
+        .execute(pool)
+        .await?;
+        
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_book_title ON book(title)")
+            .execute(pool)
+            .await?;
+
+        // Book position table
+        sqlx::query(
+            r#"CREATE TABLE IF NOT EXISTS book_position (
+                book_id BIGINT PRIMARY KEY REFERENCES book(id) ON DELETE CASCADE,
+                cfi TEXT NOT NULL,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )"#
+        )
+        .execute(pool)
+        .await?;
+
+        // Highlight table
+        sqlx::query(
+            r#"CREATE TABLE IF NOT EXISTS highlight (
+                id BIGSERIAL PRIMARY KEY,
+                book_id BIGINT NOT NULL REFERENCES book(id) ON DELETE CASCADE,
+                start_path TEXT NOT NULL,
+                start_offset BIGINT NOT NULL,
+                end_path TEXT NOT NULL,
+                end_offset BIGINT NOT NULL,
+                text TEXT NOT NULL,
+                note TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )"#
+        )
+        .execute(pool)
+        .await?;
+        
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_highlight_book ON highlight(book_id)")
+            .execute(pool)
+            .await?;
+
+        // Highlight message table
+        sqlx::query(
+            r#"CREATE TABLE IF NOT EXISTS highlight_message (
+                id BIGSERIAL PRIMARY KEY,
+                highlight_id BIGINT NOT NULL REFERENCES highlight(id) ON DELETE CASCADE,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )"#
+        )
+        .execute(pool)
+        .await?;
+        
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_highlight_message_highlight ON highlight_message(highlight_id)")
+            .execute(pool)
+            .await?;
+
+        // Book chat thread table
+        sqlx::query(
+            r#"CREATE TABLE IF NOT EXISTS book_chat_thread (
+                id BIGSERIAL PRIMARY KEY,
+                book_id BIGINT NOT NULL REFERENCES book(id) ON DELETE CASCADE,
+                title TEXT NOT NULL,
+                last_cfi TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )"#
+        )
+        .execute(pool)
+        .await?;
+        
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_book_chat_thread_book ON book_chat_thread(book_id)")
+            .execute(pool)
+            .await?;
+
+        // Book message table
+        sqlx::query(
+            r#"CREATE TABLE IF NOT EXISTS book_message (
+                id BIGSERIAL PRIMARY KEY,
+                book_id BIGINT NOT NULL REFERENCES book(id) ON DELETE CASCADE,
+                thread_id BIGINT REFERENCES book_chat_thread(id) ON DELETE CASCADE,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                reasoning_summary TEXT,
+                context_map TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )"#
+        )
+        .execute(pool)
+        .await?;
+        
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_book_message_book ON book_message(book_id)")
+            .execute(pool)
+            .await?;
+        
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_book_message_thread ON book_message(thread_id)")
+            .execute(pool)
+            .await?;
+
+        Ok::<(), sqlx::Error>(())
     })?;
 
     Ok(())

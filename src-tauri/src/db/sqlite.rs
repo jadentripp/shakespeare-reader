@@ -12,83 +12,15 @@
 
 use anyhow::Context;
 use rusqlite::{params, Connection, OptionalExtension};
-use serde::{Deserialize, Serialize};
 use tauri::{path::BaseDirectory, Manager};
 
-// ============================================================================
-// DATA STRUCTURES
-// ============================================================================
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Book {
-    pub id: i64,
-    pub gutenberg_id: i64,
-    pub title: String,
-    pub authors: String,
-    pub publication_year: Option<i32>,
-    pub cover_url: Option<String>,
-    pub mobi_path: Option<String>,
-    pub html_path: Option<String>,
-    pub first_image_index: Option<i32>,
-    pub created_at: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BookPosition {
-    pub cfi: String,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Highlight {
-    pub id: i64,
-    pub book_id: i64,
-    pub start_path: String,
-    pub start_offset: i64,
-    pub end_path: String,
-    pub end_offset: i64,
-    pub text: String,
-    pub note: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HighlightMessage {
-    pub id: i64,
-    pub highlight_id: i64,
-    pub role: String,
-    pub content: String,
-    pub created_at: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BookMessage {
-    pub id: i64,
-    pub book_id: i64,
-    pub thread_id: Option<i64>,
-    pub role: String,
-    pub content: String,
-    pub reasoning_summary: Option<String>,
-    pub context_map: Option<String>,
-    pub created_at: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BookChatThread {
-    pub id: i64,
-    pub book_id: i64,
-    pub title: String,
-    pub last_cfi: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-}
+use super::{Book, BookChatThread, BookMessage, BookPosition, Highlight, HighlightMessage};
 
 // ============================================================================
 // CORE: Database Connection & Initialization
 // ============================================================================
 
-fn db_path<R: tauri::Runtime>(
+pub fn db_path<R: tauri::Runtime>(
     app_handle: &tauri::AppHandle<R>,
 ) -> Result<std::path::PathBuf, anyhow::Error> {
     #[cfg(test)]
@@ -108,7 +40,7 @@ fn db_path<R: tauri::Runtime>(
     Ok(base.join("tmp").join("ai-reader.sqlite"))
 }
 
-fn open<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<Connection, anyhow::Error> {
+pub fn open<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> Result<Connection, anyhow::Error> {
     let path = db_path(app_handle)?;
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
@@ -254,7 +186,7 @@ pub fn upsert_book<R: tauri::Runtime>(
     let id: i64 = conn.query_row(
         "SELECT id FROM book WHERE gutenberg_id = ?1",
         params![gutenberg_id],
-        |row| row.get(0),
+        |row| row.get::<_, i64>(0),
     )?;
     Ok(id)
 }
@@ -270,16 +202,16 @@ pub fn list_books<R: tauri::Runtime>(
     let rows = stmt
         .query_map([], |row| {
             Ok(Book {
-                id: row.get(0)?,
-                gutenberg_id: row.get(1)?,
-                title: row.get(2)?,
-                authors: row.get(3)?,
-                publication_year: row.get(4)?,
-                cover_url: row.get(5)?,
-                mobi_path: row.get(6)?,
-                html_path: row.get(7)?,
-                first_image_index: row.get(8)?,
-                created_at: row.get(9)?,
+                id: row.get::<_, i64>(0)?,
+                gutenberg_id: row.get::<_, i64>(1)?,
+                title: row.get::<_, String>(2)?,
+                authors: row.get::<_, String>(3)?,
+                publication_year: row.get::<_, Option<i32>>(4)?,
+                cover_url: row.get::<_, Option<String>>(5)?,
+                mobi_path: row.get::<_, Option<String>>(6)?,
+                html_path: row.get::<_, Option<String>>(7)?,
+                first_image_index: row.get::<_, Option<i32>>(8)?,
+                created_at: row.get::<_, String>(9)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -297,16 +229,16 @@ pub fn get_book<R: tauri::Runtime>(
         params![book_id],
         |row| {
             Ok(Book {
-                id: row.get(0)?,
-                gutenberg_id: row.get(1)?,
-                title: row.get(2)?,
-                authors: row.get(3)?,
-                publication_year: row.get(4)?,
-                cover_url: row.get(5)?,
-                mobi_path: row.get(6)?,
-                html_path: row.get(7)?,
-                first_image_index: row.get(8)?,
-                created_at: row.get(9)?,
+                id: row.get::<_, i64>(0)?,
+                gutenberg_id: row.get::<_, i64>(1)?,
+                title: row.get::<_, String>(2)?,
+                authors: row.get::<_, String>(3)?,
+                publication_year: row.get::<_, Option<i32>>(4)?,
+                cover_url: row.get::<_, Option<String>>(5)?,
+                mobi_path: row.get::<_, Option<String>>(6)?,
+                html_path: row.get::<_, Option<String>>(7)?,
+                first_image_index: row.get::<_, Option<i32>>(8)?,
+                created_at: row.get::<_, String>(9)?,
             })
         },
     )
@@ -366,8 +298,8 @@ pub fn get_book_position<R: tauri::Runtime>(
         params![book_id],
         |row| {
             Ok(BookPosition {
-                cfi: row.get(0)?,
-                updated_at: row.get(1)?,
+                cfi: row.get::<_, String>(0)?,
+                updated_at: row.get::<_, String>(1)?,
             })
         },
     )
@@ -401,7 +333,7 @@ pub fn get_setting<R: tauri::Runtime>(
     conn.query_row(
         "SELECT value FROM settings WHERE key = ?1",
         params![key],
-        |row| row.get(0),
+        |row| row.get::<_, String>(0),
     )
     .optional()
     .context("failed to read setting")
@@ -423,16 +355,16 @@ pub fn list_highlights<R: tauri::Runtime>(
     let rows = stmt
         .query_map(params![book_id], |row| {
             Ok(Highlight {
-                id: row.get(0)?,
-                book_id: row.get(1)?,
-                start_path: row.get(2)?,
-                start_offset: row.get(3)?,
-                end_path: row.get(4)?,
-                end_offset: row.get(5)?,
-                text: row.get(6)?,
-                note: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
+                id: row.get::<_, i64>(0)?,
+                book_id: row.get::<_, i64>(1)?,
+                start_path: row.get::<_, String>(2)?,
+                start_offset: row.get::<_, i64>(3)?,
+                end_path: row.get::<_, String>(4)?,
+                end_offset: row.get::<_, i64>(5)?,
+                text: row.get::<_, String>(6)?,
+                note: row.get::<_, Option<String>>(7)?,
+                created_at: row.get::<_, String>(8)?,
+                updated_at: row.get::<_, String>(9)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -470,16 +402,16 @@ pub fn create_highlight<R: tauri::Runtime>(
         params![id],
         |row| {
             Ok(Highlight {
-                id: row.get(0)?,
-                book_id: row.get(1)?,
-                start_path: row.get(2)?,
-                start_offset: row.get(3)?,
-                end_path: row.get(4)?,
-                end_offset: row.get(5)?,
-                text: row.get(6)?,
-                note: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
+                id: row.get::<_, i64>(0)?,
+                book_id: row.get::<_, i64>(1)?,
+                start_path: row.get::<_, String>(2)?,
+                start_offset: row.get::<_, i64>(3)?,
+                end_path: row.get::<_, String>(4)?,
+                end_offset: row.get::<_, i64>(5)?,
+                text: row.get::<_, String>(6)?,
+                note: row.get::<_, Option<String>>(7)?,
+                created_at: row.get::<_, String>(8)?,
+                updated_at: row.get::<_, String>(9)?,
             })
         },
     )
@@ -502,16 +434,16 @@ pub fn update_highlight_note<R: tauri::Runtime>(
         params![highlight_id],
         |row| {
             Ok(Highlight {
-                id: row.get(0)?,
-                book_id: row.get(1)?,
-                start_path: row.get(2)?,
-                start_offset: row.get(3)?,
-                end_path: row.get(4)?,
-                end_offset: row.get(5)?,
-                text: row.get(6)?,
-                note: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
+                id: row.get::<_, i64>(0)?,
+                book_id: row.get::<_, i64>(1)?,
+                start_path: row.get::<_, String>(2)?,
+                start_offset: row.get::<_, i64>(3)?,
+                end_path: row.get::<_, String>(4)?,
+                end_offset: row.get::<_, i64>(5)?,
+                text: row.get::<_, String>(6)?,
+                note: row.get::<_, Option<String>>(7)?,
+                created_at: row.get::<_, String>(8)?,
+                updated_at: row.get::<_, String>(9)?,
             })
         },
     )
@@ -543,11 +475,11 @@ pub fn list_highlight_messages<R: tauri::Runtime>(
     let rows = stmt
         .query_map(params![highlight_id], |row| {
             Ok(HighlightMessage {
-                id: row.get(0)?,
-                highlight_id: row.get(1)?,
-                role: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
+                id: row.get::<_, i64>(0)?,
+                highlight_id: row.get::<_, i64>(1)?,
+                role: row.get::<_, String>(2)?,
+                content: row.get::<_, String>(3)?,
+                created_at: row.get::<_, String>(4)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -571,11 +503,11 @@ pub fn add_highlight_message<R: tauri::Runtime>(
         params![id],
         |row| {
             Ok(HighlightMessage {
-                id: row.get(0)?,
-                highlight_id: row.get(1)?,
-                role: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
+                id: row.get::<_, i64>(0)?,
+                highlight_id: row.get::<_, i64>(1)?,
+                role: row.get::<_, String>(2)?,
+                content: row.get::<_, String>(3)?,
+                created_at: row.get::<_, String>(4)?,
             })
         },
     )
@@ -598,12 +530,12 @@ pub fn list_book_chat_threads<R: tauri::Runtime>(
     let rows = stmt
         .query_map(params![book_id], |row| {
             Ok(BookChatThread {
-                id: row.get(0)?,
-                book_id: row.get(1)?,
-                title: row.get(2)?,
-                last_cfi: row.get(3)?,
-                created_at: row.get(4)?,
-                updated_at: row.get(5)?,
+                id: row.get::<_, i64>(0)?,
+                book_id: row.get::<_, i64>(1)?,
+                title: row.get::<_, String>(2)?,
+                last_cfi: row.get::<_, Option<String>>(3)?,
+                created_at: row.get::<_, String>(4)?,
+                updated_at: row.get::<_, String>(5)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -626,12 +558,12 @@ pub fn create_book_chat_thread<R: tauri::Runtime>(
         params![id],
         |row| {
             Ok(BookChatThread {
-                id: row.get(0)?,
-                book_id: row.get(1)?,
-                title: row.get(2)?,
-                last_cfi: row.get(3)?,
-                created_at: row.get(4)?,
-                updated_at: row.get(5)?,
+                id: row.get::<_, i64>(0)?,
+                book_id: row.get::<_, i64>(1)?,
+                title: row.get::<_, String>(2)?,
+                last_cfi: row.get::<_, Option<String>>(3)?,
+                created_at: row.get::<_, String>(4)?,
+                updated_at: row.get::<_, String>(5)?,
             })
         },
     )
@@ -699,14 +631,14 @@ pub fn list_book_messages<R: tauri::Runtime>(
     let rows = stmt
         .query_map(params![book_id, thread_id], |row| {
             Ok(BookMessage {
-                id: row.get(0)?,
-                book_id: row.get(1)?,
-                thread_id: row.get(2)?,
-                role: row.get(3)?,
-                content: row.get(4)?,
-                reasoning_summary: row.get(5)?,
-                context_map: row.get(6)?,
-                created_at: row.get(7)?,
+                id: row.get::<_, i64>(0)?,
+                book_id: row.get::<_, i64>(1)?,
+                thread_id: row.get::<_, Option<i64>>(2)?,
+                role: row.get::<_, String>(3)?,
+                content: row.get::<_, String>(4)?,
+                reasoning_summary: row.get::<_, Option<String>>(5)?,
+                context_map: row.get::<_, Option<String>>(6)?,
+                created_at: row.get::<_, String>(7)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -742,14 +674,14 @@ pub fn add_book_message<R: tauri::Runtime>(
         params![id],
         |row| {
             Ok(BookMessage {
-                id: row.get(0)?,
-                book_id: row.get(1)?,
-                thread_id: row.get(2)?,
-                role: row.get(3)?,
-                content: row.get(4)?,
-                reasoning_summary: row.get(5)?,
-                context_map: row.get(6)?,
-                created_at: row.get(7)?,
+                id: row.get::<_, i64>(0)?,
+                book_id: row.get::<_, i64>(1)?,
+                thread_id: row.get::<_, Option<i64>>(2)?,
+                role: row.get::<_, String>(3)?,
+                content: row.get::<_, String>(4)?,
+                reasoning_summary: row.get::<_, Option<String>>(5)?,
+                context_map: row.get::<_, Option<String>>(6)?,
+                created_at: row.get::<_, String>(7)?,
             })
         },
     )
@@ -805,14 +737,14 @@ pub fn get_thread_max_citation_index<R: tauri::Runtime>(
             let mut stmt = conn.prepare(
                 "SELECT context_map FROM book_message WHERE book_id = ?1 AND thread_id = ?2 AND context_map IS NOT NULL"
             )?;
-            let rows = stmt.query_map(params![book_id, tid], |row| row.get(0))?;
+            let rows = stmt.query_map(params![book_id, tid], |row| row.get::<_, String>(0))?;
             rows.filter_map(|r| r.ok()).collect()
         }
         None => {
             let mut stmt = conn.prepare(
                 "SELECT context_map FROM book_message WHERE book_id = ?1 AND thread_id IS NULL AND context_map IS NOT NULL"
             )?;
-            let rows = stmt.query_map(params![book_id], |row| row.get(0))?;
+            let rows = stmt.query_map(params![book_id], |row| row.get::<_, String>(0))?;
             rows.filter_map(|r| r.ok()).collect()
         }
     };

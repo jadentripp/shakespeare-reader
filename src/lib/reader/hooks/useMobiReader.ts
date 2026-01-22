@@ -132,6 +132,8 @@ export function useMobiReader(bookId: number) {
       getScrollRoot,
       getPageMetrics: pagination.getPageMetrics,
       currentPage: pagination.currentPage,
+      totalPages: pagination.totalPages,
+      columns,
       selectedHighlight: highlightsHook.selectedHighlight,
       attachedHighlights: highlightsHook.attachedHighlights,
       stagedSnippets: highlightsHook.stagedSnippets,
@@ -327,7 +329,18 @@ export function useMobiReader(bookId: number) {
     }
   };
 
-  const toggleColumns = () => setColumns(prev => prev === 1 ? 2 : 1);
+  const toggleColumns = () => {
+    const currentPageNum = pagination.currentPage;
+    setColumns(prev => {
+      const newColumns = prev === 1 ? 2 : 1;
+      requestAnimationFrame(() => {
+        pagination.syncPageMetrics();
+        pagination.scrollToPageInstant(currentPageNum);
+        pagination.updatePagination();
+      });
+      return newColumns;
+    });
+  };
 
   return {
     // State

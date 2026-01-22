@@ -29,6 +29,10 @@ export type GutendexBook = {
   copyright: boolean | null;
   formats: Record<string, string>;
   download_count?: number;
+  summaries?: string[];
+  subjects?: string[];
+  bookshelves?: string[];
+  languages?: string[];
 };
 
 export type GutendexResponse = {

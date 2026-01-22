@@ -151,7 +151,7 @@ export default function ReaderTopBar({
               if (e.key !== "Enter") return;
               onJumpPageGo();
             }}
-            placeholder={String(currentPage)}
+            placeholder={columns === 2 ? `${currentPage}–${Math.min(currentPage + 1, totalPages)}` : String(currentPage)}
           />
           <span className="text-black/30 dark:text-white/30 text-sm font-bold">/</span>
           <span className="text-sm text-black dark:text-white font-bold tabular-nums pr-1">

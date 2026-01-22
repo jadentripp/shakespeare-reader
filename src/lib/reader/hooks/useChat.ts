@@ -22,6 +22,8 @@ export interface UseChatOptions {
   getScrollRoot: () => HTMLElement | null;
   getPageMetrics: () => { pageWidth: number; gap: number };
   currentPage: number;
+  totalPages: number;
+  columns: 1 | 2;
   selectedHighlight: { id?: number; text: string; note?: string } | null;
   attachedHighlights: Array<{ id: number; text: string; note?: string }>;
   stagedSnippets: Array<{ text: string }>;
@@ -73,6 +75,8 @@ export function useChat(
     getScrollRoot,
     getPageMetrics,
     currentPage,
+    totalPages,
+    columns,
     selectedHighlight,
     attachedHighlights,
     stagedSnippets,
@@ -149,8 +153,14 @@ export function useChat(
           rootRect,
         };
 
-        const pageContentResult = getPageContent(doc, currentPage, metrics);
-        pageContent = pageContentResult.blocks;
+        const pagesToExtract: number[] = columns === 2
+          ? [currentPage, Math.min(currentPage + 1, totalPages)]
+          : [currentPage];
+
+        for (const pageNum of pagesToExtract) {
+          const pageContentResult = getPageContent(doc, pageNum, metrics);
+          pageContent.push(...pageContentResult.blocks);
+        }
         pageContent.forEach((block) => blockIndexLookup.push(block));
       }
 
@@ -248,6 +258,8 @@ export function useChat(
     getScrollRoot,
     getPageMetrics,
     currentPage,
+    totalPages,
+    columns,
     selectedHighlight,
     attachedHighlights,
     stagedSnippets,
@@ -389,11 +401,15 @@ export function useChat(
 
   const contextHint = selectedHighlight
     ? "Using selected highlight as context"
-    : "Using current page as context";
+    : columns === 2
+      ? `Using pages ${currentPage}–${Math.min(currentPage + 1, totalPages)} as context`
+      : "Using current page as context";
 
   const placeholder = selectedHighlight
     ? "Ask about this highlight..."
-    : "Ask about the current page...";
+    : columns === 2
+      ? "Ask about these pages..."
+      : "Ask about the current page...";
 
   return {
     threads: bookChatThreadsQ.data,
