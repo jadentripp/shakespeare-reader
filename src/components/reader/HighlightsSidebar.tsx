@@ -60,7 +60,7 @@ export default function HighlightsSidebar({
   ];
 
   return (
-    <aside className="h-full min-h-0 flex flex-col">
+    <aside className="h-full min-h-0 min-w-0 w-full flex flex-col overflow-hidden">
       <div className="flex h-full flex-col overflow-hidden rounded-none border-2 border-black dark:border-white bg-background shadow-xl">
         {/* Tab Navigation - Bauhaus Style */}
         <div className="shrink-0 border-b-2 border-black dark:border-white">

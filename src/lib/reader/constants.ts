@@ -14,3 +14,8 @@ export const DEBOUNCE_LOCK_PAGE = 250;
 export const DEBOUNCE_SELECTION = 40;
 
 export const TWO_COLUMN_GAP = 80;
+
+export const SIDEBAR_GUTTER = 24;
+
+export const SIDEBAR_WIDTH = 340;
+export const SIDEBAR_COLLAPSED_WIDTH = 40;

@@ -5,7 +5,7 @@ import ChatSidebar from "./ChatSidebar";
 import { Button } from "@/components/ui/button";
 import { PanelLeftOpen, PanelRightOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CHAT_PROMPTS } from "@/lib/reader/constants";
+import { CHAT_PROMPTS, SIDEBAR_GUTTER, SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from "@/lib/reader/constants";
 import { useMobiReader } from "@/lib/reader/hooks/useMobiReader";
 
 type ReaderContentProps = {
@@ -36,17 +36,23 @@ export function ReaderContent({ reader }: ReaderContentProps) {
   const [highlightLibraryExpanded, setHighlightLibraryExpanded] = useState(false);
   const [highlightPageMap] = useState<Record<number, number>>({});
 
+  const leftCol = leftPanelCollapsed 
+    ? `${SIDEBAR_COLLAPSED_WIDTH}px` 
+    : `minmax(0, ${SIDEBAR_WIDTH}px)`;
+  const rightCol = rightPanelCollapsed 
+    ? `${SIDEBAR_COLLAPSED_WIDTH}px` 
+    : `minmax(0, ${SIDEBAR_WIDTH}px)`;
+
   return (
     <div
-      className={cn(
-        "grid h-full flex-1 min-h-0 gap-2",
-        leftPanelCollapsed && rightPanelCollapsed && "grid-cols-[40px_minmax(0,1fr)_40px]",
-        leftPanelCollapsed && !rightPanelCollapsed && "grid-cols-[40px_minmax(0,1fr)_400px]",
-        !leftPanelCollapsed && rightPanelCollapsed && "grid-cols-[280px_minmax(0,1fr)_40px]",
-        !leftPanelCollapsed && !rightPanelCollapsed && "grid-cols-[280px_minmax(0,1fr)_400px]"
-      )}
+      className="grid h-full flex-1 min-h-0 min-w-0 w-full"
+      style={{
+        gridTemplateColumns: `${leftCol} minmax(0, 1fr) ${rightCol}`,
+        gap: SIDEBAR_GUTTER,
+        padding: SIDEBAR_GUTTER,
+      }}
     >
-      <div className="relative flex h-full min-h-0">
+      <div className="relative flex h-full min-h-0 min-w-0 w-full overflow-hidden">
         {leftPanelCollapsed ? (
           <div className="flex h-full items-start pt-2">
             <Button
@@ -91,26 +97,28 @@ export function ReaderContent({ reader }: ReaderContentProps) {
         )}
       </div>
 
-      <ReaderPane
-        columns={columns}
-        readerWidth={readerWidth}
-        iframeRef={iframe.iframeRef}
-        containerRef={iframe.containerRef}
-        srcDoc={srcDoc}
-        onLoad={handleIframeLoad}
-        pendingHighlight={highlights.pendingHighlight}
-        onCreateHighlight={highlights.handleCreate}
-        onCancelHighlight={() => highlights.setPendingHighlight(null)}
-        onAddToChat={highlights.handleAddToChat}
-        onReadAloud={(text) => {
-          tts.playText(text);
-          highlights.setPendingHighlight(null);
-        }}
-        activeCitation={activeCitation}
-        onActiveCitationChange={setActiveCitation}
-      />
+      <div className="min-w-0 overflow-hidden h-full">
+        <ReaderPane
+          columns={columns}
+          readerWidth={readerWidth}
+          iframeRef={iframe.iframeRef}
+          containerRef={iframe.containerRef}
+          srcDoc={srcDoc}
+          onLoad={handleIframeLoad}
+          pendingHighlight={highlights.pendingHighlight}
+          onCreateHighlight={highlights.handleCreate}
+          onCancelHighlight={() => highlights.setPendingHighlight(null)}
+          onAddToChat={highlights.handleAddToChat}
+          onReadAloud={(text) => {
+            tts.playText(text);
+            highlights.setPendingHighlight(null);
+          }}
+          activeCitation={activeCitation}
+          onActiveCitationChange={setActiveCitation}
+        />
+      </div>
 
-      <div className="relative flex h-full min-h-0">
+      <div className="relative flex h-full min-h-0 min-w-0 w-full overflow-hidden">
         {rightPanelCollapsed ? (
           <div className="flex h-full items-start pt-2">
             <Button

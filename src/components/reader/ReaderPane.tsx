@@ -37,8 +37,11 @@ export default function ReaderPane({
   onActiveCitationChange,
 }: ReaderPaneProps) {
   return (
-    <main className="relative h-full min-h-0 min-w-0 overflow-hidden" ref={containerRef}>
-      <ReaderLayout columns={columns} style={{ width: "100%", maxWidth: readerWidth, margin: "0 auto" }}>
+    <main 
+      className="relative h-full min-h-0 min-w-0 overflow-hidden" 
+      ref={containerRef}
+    >
+      <ReaderLayout columns={columns} style={{ width: "100%", maxWidth: "100%", margin: "0 auto" }}>
         <iframe
           ref={iframeRef}
           title="mobi"

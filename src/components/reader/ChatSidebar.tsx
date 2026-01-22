@@ -83,154 +83,157 @@ export default function ChatSidebar({
   onCitationClick,
 }: ChatSidebarProps) {
   return (
-    <aside className="h-full min-h-0 flex flex-col">
+    <aside className="h-full min-h-0 min-w-0 w-full flex flex-col overflow-hidden">
       <div className="flex h-full flex-col overflow-hidden rounded-none border-2 border-black dark:border-white bg-background shadow-xl">
-        {/* Header */}
-        <div className="shrink-0 flex items-center justify-between gap-2 border-b-2 border-black dark:border-white bg-background px-4 py-3">
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
-              onClick={onCollapse}
-              title="Collapse right panel"
-            >
-              <PanelRightClose className="h-4 w-4" />
-            </Button>
-            {onNewChat && (
+        {/* Header - Compact stacked layout */}
+        <div className="shrink-0 border-b-2 border-black dark:border-white bg-background">
+          {/* Top row: actions + model */}
+          <div className="flex items-center justify-between px-2 py-1.5 border-b border-black/10 dark:border-white/10">
+            <div className="flex items-center gap-0.5">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 rounded-none text-muted-foreground hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
-                onClick={onNewChat}
-                disabled={chatSending}
-                title="Start new chat thread"
+                className="h-7 w-7 p-0 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+                onClick={onCollapse}
+                title="Collapse right panel"
               >
-                <PlusSquare className="h-4 w-4" />
+                <PanelRightClose className="h-3.5 w-3.5" />
               </Button>
-            )}
-            {onSelectThread && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 rounded-none text-muted-foreground hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
-                    title="Chat history"
-                  >
-                    <History className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-64 p-2 rounded-none border-2 border-black dark:border-white">
-                  <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Chat History
-                  </div>
-                  <div className="max-h-64 overflow-y-auto space-y-1">
-                    <div
-                      className={cn(
-                        "group flex items-center gap-1 rounded-none px-2 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors",
-                        currentThreadId === null && "bg-black text-white dark:bg-white dark:text-black"
-                      )}
+              {onNewChat && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 rounded-none text-muted-foreground hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+                  onClick={onNewChat}
+                  disabled={chatSending}
+                  title="Start new chat thread"
+                >
+                  <PlusSquare className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              {onSelectThread && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 rounded-none text-muted-foreground hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+                      title="Chat history"
                     >
-                      <button
-                        onClick={() => onSelectThread(null)}
-                        className="flex-1 text-left"
-                      >
-                        Default Chat
-                      </button>
-                      {onClearDefaultChat && currentThreadId === null && messages.length > 0 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onClearDefaultChat();
-                          }}
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all"
-                          title="Clear default chat"
-                        >
-                          <Eraser className="h-3 w-3" />
-                        </button>
-                      )}
-                      {currentThreadId === null && <Check className="h-3 w-3 shrink-0" />}
+                      <History className="h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-64 p-2 rounded-none border-2 border-black dark:border-white">
+                    <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      Chat History
                     </div>
-                    {threads.map((thread) => (
+                    <div className="max-h-64 overflow-y-auto space-y-1">
                       <div
-                        key={thread.id}
                         className={cn(
-                          "group flex flex-col gap-0.5 rounded-none px-2 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors",
-                          currentThreadId === thread.id && "bg-black text-white dark:bg-white dark:text-black"
+                          "group flex items-center gap-1 rounded-none px-2 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors",
+                          currentThreadId === null && "bg-black text-white dark:bg-white dark:text-black"
                         )}
                       >
-                        <div className="flex items-center gap-1">
-                          {onRenameThread ? (
-                            <ChatThreadItem
-                              title={thread.title}
-                              onRename={(newTitle) => onRenameThread(thread.id, newTitle)}
-                            />
-                          ) : (
-                            <button
-                              onClick={() => onSelectThread(thread.id)}
-                              className="flex-1 text-left truncate"
-                            >
-                              {thread.title}
-                            </button>
-                          )}
-                          {thread.last_cfi && (
-                            <MapPin className="h-2.5 w-2.5" />
-                          )}
-                          {onClearThreadChat && currentThreadId === thread.id && messages.length > 0 && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onClearThreadChat(thread.id);
-                              }}
-                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all"
-                              title="Clear thread messages"
-                            >
-                              <Eraser className="h-3 w-3" />
-                            </button>
-                          )}
-                          {onDeleteThread && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteThread(thread.id);
-                              }}
-                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all"
-                              title="Delete thread"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          )}
-                          {currentThreadId === thread.id && <Check className="h-3 w-3 shrink-0" />}
-                        </div>
+                        <button
+                          onClick={() => onSelectThread(null)}
+                          className="flex-1 text-left"
+                        >
+                          Default Chat
+                        </button>
+                        {onClearDefaultChat && currentThreadId === null && messages.length > 0 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onClearDefaultChat();
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all"
+                            title="Clear default chat"
+                          >
+                            <Eraser className="h-3 w-3" />
+                          </button>
+                        )}
+                        {currentThreadId === null && <Check className="h-3 w-3 shrink-0" />}
                       </div>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-          </div>
-          <div className="flex flex-col">
-            <div className="bg-black dark:bg-white px-1.5 py-0.5 self-start mb-1">
-              <h2 className="font-sans text-[11px] font-black uppercase tracking-tighter text-white dark:text-black leading-none">AI ASSISTANT</h2>
+                      {threads.map((thread) => (
+                        <div
+                          key={thread.id}
+                          className={cn(
+                            "group flex flex-col gap-0.5 rounded-none px-2 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors",
+                            currentThreadId === thread.id && "bg-black text-white dark:bg-white dark:text-black"
+                          )}
+                        >
+                          <div className="flex items-center gap-1">
+                            {onRenameThread ? (
+                              <ChatThreadItem
+                                title={thread.title}
+                                onRename={(newTitle) => onRenameThread(thread.id, newTitle)}
+                              />
+                            ) : (
+                              <button
+                                onClick={() => onSelectThread(thread.id)}
+                                className="flex-1 text-left truncate"
+                              >
+                                {thread.title}
+                              </button>
+                            )}
+                            {thread.last_cfi && (
+                              <MapPin className="h-2.5 w-2.5" />
+                            )}
+                            {onClearThreadChat && currentThreadId === thread.id && messages.length > 0 && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onClearThreadChat(thread.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all"
+                                title="Clear thread messages"
+                              >
+                                <Eraser className="h-3 w-3" />
+                              </button>
+                            )}
+                            {onDeleteThread && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteThread(thread.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-all"
+                                title="Delete thread"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            )}
+                            {currentThreadId === thread.id && <Check className="h-3 w-3 shrink-0" />}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="bg-[#E02E2E] px-1 py-0.5">
-                <p className="text-[7px] font-black uppercase tracking-widest text-white leading-none">
-                  {isHighlightContext ? "SELECTION" : "PAGE"}
-                </p>
+            <ChatModelSelector
+              currentModel={currentModel}
+              availableModels={availableModels}
+              onModelChange={onModelChange}
+              modelsLoading={modelsLoading}
+              disabled={chatSending}
+            />
+          </div>
+          {/* Bottom row: title + context */}
+          <div className="flex items-center gap-2 px-3 py-1.5">
+            <div className="bg-black dark:bg-white px-1.5 py-0.5 shrink-0">
+              <span className="text-[9px] font-black uppercase tracking-tight text-white dark:text-black leading-none">AI</span>
+            </div>
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <div className="bg-[#E02E2E] px-1 py-0.5 shrink-0">
+                <span className="text-[7px] font-black uppercase tracking-widest text-white leading-none">
+                  {isHighlightContext ? "SEL" : "PG"}
+                </span>
               </div>
-              <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground truncate max-w-[100px]">{contextHint}</p>
+              <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground truncate">{contextHint}</span>
             </div>
           </div>
-
-          <ChatModelSelector
-            currentModel={currentModel}
-            availableModels={availableModels}
-            onModelChange={onModelChange}
-            modelsLoading={modelsLoading}
-            disabled={chatSending}
-          />
         </div>
 
         {/* Quick prompts */}
