@@ -167,6 +167,69 @@ export function useMobiReader(bookId: number) {
     },
   });
 
+  // TTS word highlighting effect
+  useEffect(() => {
+    const doc = getDoc();
+    if (!doc) return;
+
+    // Clear any existing TTS highlight
+    const clearHighlight = () => {
+      const existingHighlight = doc.querySelector(".ttsCurrentWord");
+      if (existingHighlight) {
+        const parent = existingHighlight.parentNode;
+        if (parent) {
+          while (existingHighlight.firstChild) {
+            parent.insertBefore(existingHighlight.firstChild, existingHighlight);
+          }
+          parent.removeChild(existingHighlight);
+          parent.normalize();
+        }
+      }
+    };
+
+    clearHighlight();
+
+    // If we have a current word and TTS is playing, highlight it using the character map
+    if (tts.currentWord && tts.state === 'playing' && tts.currentCharMap.length > 0) {
+      const { word, startChar, endChar } = tts.currentWord;
+      
+      // Use the character map to get the exact DOM positions
+      const startMapping = tts.currentCharMap[startChar];
+      const endMapping = tts.currentCharMap[endChar - 1];
+      
+      if (startMapping?.node && endMapping?.node) {
+        console.log(`[TTS Highlight] Highlighting word: "${word}" using charMap`);
+        
+        try {
+          const range = doc.createRange();
+          range.setStart(startMapping.node, startMapping.offset);
+          range.setEnd(endMapping.node, endMapping.offset + 1);
+          
+          const span = doc.createElement("span");
+          span.className = "ttsCurrentWord";
+          
+          try {
+            range.surroundContents(span);
+          } catch (e) {
+            // Range may cross element boundaries, use extractContents instead
+            const fragment = range.extractContents();
+            span.appendChild(fragment);
+            range.insertNode(span);
+          }
+        } catch (e) {
+          console.log(`[TTS Highlight] Failed to create range for word: "${word}"`, e);
+        }
+      } else {
+        console.log(`[TTS Highlight] No valid mapping for word: "${word}" at offset ${startChar}`);
+      }
+    }
+
+    // Cleanup on unmount or when TTS stops
+    return () => {
+      clearHighlight();
+    };
+  }, [tts.currentWord, tts.currentWordIndex, tts.state, tts.currentCharMap, pagination.currentPage]);
+
   const { handleIframeLoad } = useMobiIframe({
     iframeRef,
     rootRef,

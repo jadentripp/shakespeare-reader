@@ -7,9 +7,15 @@
 // Types
 // ============================================================================
 
+export interface CharacterMapping {
+    node: Text;
+    offset: number;
+}
+
 export interface PageContentResult {
     text: string;
     blocks: Array<{ text: string; blockIndex: number; pageNumber: number }>;
+    charMap: CharacterMapping[];
 }
 
 export interface PageMetrics {
@@ -223,17 +229,21 @@ export function getPageContent(
     metrics: PageMetrics
 ): PageContentResult {
     const { pageWidth, stride, scrollLeft, rootRect } = metrics;
+    console.log(`[getPageContent] Page: ${pageNumber}, Metrics:`, { pageWidth, stride, scrollLeft, rootRect: { left: rootRect.left, right: rootRect.right, width: rootRect.width } });
     const blocks = Array.from(doc.querySelectorAll("[data-block-index]")) as HTMLElement[];
-    const result: PageContentResult = { text: "", blocks: [] };
+    console.log(`[getPageContent] Found ${blocks.length} blocks in document`);
+    const result: PageContentResult = { text: "", blocks: [], charMap: [] };
     const textParts: string[] = [];
+    
+    // Global character map: maps each character position in result.text to its DOM location
+    const globalCharMap: CharacterMapping[] = [];
+    let globalCharOffset = 0;
 
     // Calculate the absolute x-coordinate range for the target page
-    // Page 1: 0 to stride, Page 2: stride to 2*stride, etc.
-    // (stride = pageWidth + gap)
     const pageStartX = (pageNumber - 1) * stride;
-    const pageEndX = pageStartX + pageWidth; // Don't include the gap
+    const pageEndX = pageStartX + pageWidth;
 
-    blocks.forEach((block) => {
+    blocks.forEach((block, blockArrayIndex) => {
         const indexAttr = block.getAttribute("data-block-index");
         if (!indexAttr) return;
         const blockIndex = parseInt(indexAttr, 10);
@@ -241,7 +251,6 @@ export function getPageContent(
         // Quick check: does this block have any rects that could be on the target page?
         const blockRects = Array.from(block.getClientRects());
         const blockMightBeOnPage = blockRects.some(rect => {
-            // Convert viewport-relative coords to absolute document coords
             const absLeft = rect.left - rootRect.left + scrollLeft;
             const absRight = rect.right - rootRect.left + scrollLeft;
             return absRight > pageStartX && absLeft < pageEndX;
@@ -249,18 +258,15 @@ export function getPageContent(
 
         if (!blockMightBeOnPage) return;
 
-        // Walk through text nodes and extract only characters on this page
-        const visibleTextParts: string[] = [];
+        // Collect visible characters with their DOM positions
+        const visibleChars: Array<{ char: string; node: Text; offset: number }> = [];
         const walker = doc.createTreeWalker(block, NodeFilter.SHOW_TEXT, null);
         let node: Node | null;
 
         while ((node = walker.nextNode())) {
-            const textContent = node.textContent || "";
+            const textNode = node as Text;
+            const textContent = textNode.textContent || "";
             if (!textContent.trim()) continue;
-
-            // Check each character to find the portion on this page
-            let visibleStart = -1;
-            let visibleEnd = -1;
 
             for (let i = 0; i < textContent.length; i++) {
                 const range = doc.createRange();
@@ -268,35 +274,85 @@ export function getPageContent(
                 range.setEnd(node, Math.min(i + 1, textContent.length));
                 const rect = range.getBoundingClientRect();
 
-                // Convert viewport-relative to absolute document coordinates
                 const absCharLeft = rect.left - rootRect.left + scrollLeft;
                 const absCharRight = rect.right - rootRect.left + scrollLeft;
-
-                // Character is on this page if it falls within the page's x-range
                 const isOnPage = absCharRight > pageStartX && absCharLeft < pageEndX;
 
                 if (isOnPage) {
-                    if (visibleStart === -1) visibleStart = i;
-                    visibleEnd = i + 1;
-                } else if (visibleStart !== -1 && absCharLeft >= pageEndX) {
-                    // We've passed this page, stop
+                    visibleChars.push({ char: textContent[i], node: textNode, offset: i });
+                } else if (visibleChars.length > 0 && absCharLeft >= pageEndX) {
                     break;
                 }
             }
-
-            if (visibleStart !== -1 && visibleEnd !== -1) {
-                visibleTextParts.push(textContent.slice(visibleStart, visibleEnd));
-            }
         }
 
-        const blockText = visibleTextParts.join(" ").replace(/\s+/g, " ").trim();
+        if (visibleChars.length === 0) return;
+
+        // Build block text with whitespace normalization, tracking char mappings
+        let blockText = "";
+        let lastWasSpace = true; // Start true to trim leading whitespace
+        
+        for (const { char, node, offset } of visibleChars) {
+            const isSpace = /\s/.test(char);
+            
+            if (isSpace) {
+                if (!lastWasSpace) {
+                    // Add single space, map to first whitespace char
+                    blockText += " ";
+                    globalCharMap.push({ node, offset });
+                    lastWasSpace = true;
+                }
+                // Skip additional whitespace
+            } else {
+                blockText += char;
+                globalCharMap.push({ node, offset });
+                lastWasSpace = false;
+            }
+        }
+        
+        // Trim trailing space
+        if (blockText.endsWith(" ")) {
+            blockText = blockText.slice(0, -1);
+            globalCharMap.pop();
+        }
+
         if (blockText) {
             result.blocks.push({ text: blockText, blockIndex, pageNumber });
             textParts.push(blockText);
+            globalCharOffset += blockText.length;
+            
+            // Add block separator "\n\n" (will be added between blocks in final text)
+            // We don't map these to DOM nodes since they're synthetic
         }
     });
 
+    // Now build final text with block separators and adjust charMap
+    // The globalCharMap was built per-block, we need to account for "\n\n" separators
+    result.charMap = [];
+    let finalCharOffset = 0;
+    let blockCharOffset = 0;
+    
+    for (let i = 0; i < textParts.length; i++) {
+        const blockLen = textParts[i].length;
+        
+        // Copy mappings for this block
+        for (let j = 0; j < blockLen; j++) {
+            result.charMap.push(globalCharMap[blockCharOffset + j]);
+        }
+        blockCharOffset += blockLen;
+        finalCharOffset += blockLen;
+        
+        // Add separator (not mapped to DOM)
+        if (i < textParts.length - 1) {
+            // "\n\n" - these won't have DOM mappings, push null placeholders
+            result.charMap.push({ node: null as any, offset: -1 }); // \n
+            result.charMap.push({ node: null as any, offset: -1 }); // \n
+            finalCharOffset += 2;
+        }
+    }
+
     result.text = textParts.join("\n\n");
+    console.log(`[getPageContent] Result: ${result.blocks.length} blocks, ${result.text.length} chars, ${result.charMap.length} mapped chars`);
     return result;
 }
 
