@@ -13,7 +13,16 @@ permissions:
 
 jobs:
   build-macos:
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'macos-latest'
+            args: '--target aarch64-apple-darwin'
+          - platform: 'macos-latest'
+            args: '--target x86_64-apple-darwin'
+
+    runs-on: ${{ matrix.platform }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,6 +34,8 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -41,6 +52,7 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: "AI Reader v__VERSION__"
-          releaseBody: "Automated macOS build for AI Reader."
+          releaseBody: "macOS builds for AI Reader. Download the x86_64 version for Intel Macs or aarch64 for Apple Silicon (M1/M2/M3)."
           releaseDraft: false
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          args: ${{ matrix.args }}
