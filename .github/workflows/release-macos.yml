@@ -26,6 +26,11 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -34,11 +39,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name || 'latest' }}
-          releaseName: "Release ${{ github.ref_name || 'Latest' }}"
+          tagName: v__VERSION__
+          releaseName: "AI Reader v__VERSION__"
           releaseBody: "Automated macOS build for AI Reader."
           releaseDraft: false
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          includeRelease: true
-          includeTagName: true
-          includeDocumentation: false
