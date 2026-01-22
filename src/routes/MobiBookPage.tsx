@@ -36,6 +36,7 @@ export default function MobiBookPage(props: { bookId: number }) {
         <TTSPanel 
           expanded={ttsExpanded} 
           onExpandChange={setTtsExpanded}
+          tts={reader.tts}
         />
 
         {lightboxImage && (

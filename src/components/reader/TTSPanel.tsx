@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -6,13 +6,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { 
   Play, 
   Pause, 
@@ -26,14 +19,28 @@ import {
   Gauge,
   Check
 } from "lucide-react";
-import { useTTS } from "@/lib/hooks/useTTS";
 import { elevenLabsService, Voice } from "@/lib/elevenlabs";
 import { cn } from "@/lib/utils";
+
+interface TTSHook {
+  state: 'idle' | 'playing' | 'paused' | 'buffering' | 'error';
+  progress: { currentTime: number; duration: number; isBuffering: boolean };
+  playCurrentPage: () => Promise<void>;
+  pause: () => void;
+  resume: () => void;
+  stop: () => void;
+  setPlaybackRate: (rate: number) => void;
+  setVolume: (volume: number) => void;
+  seek: (position: number) => void;
+  voiceId: string | undefined;
+  changeVoice: (voiceId: string) => void;
+}
 
 interface TTSPanelProps {
   className?: string;
   expanded?: boolean;
   onExpandChange?: (expanded: boolean) => void;
+  tts: TTSHook;
 }
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] as const;
@@ -47,29 +54,20 @@ const VolumeIcon = ({ volume }: { volume: number }) => {
   return <Volume2 className="h-4 w-4" />;
 };
 
-export function TTSPanel({ className, expanded: controlledExpanded, onExpandChange }: TTSPanelProps) {
+export function TTSPanel({ className, expanded: controlledExpanded, onExpandChange, tts }: TTSPanelProps) {
   const {
     state,
     progress,
     playCurrentPage,
     pause,
     resume,
+    stop,
     setPlaybackRate,
     setVolume,
     seek,
     voiceId,
     changeVoice,
-  } = useTTS({
-    getDoc: () => null,
-    getPageMetrics: () => ({ 
-      pageWidth: 0, 
-      gap: 0, 
-      stride: 0, 
-      scrollLeft: 0, 
-      rootRect: { x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0, toJSON: () => "" } as DOMRect 
-    }),
-    currentPage: 0,
-  });
+  } = tts;
 
   const [internalExpanded, setInternalExpanded] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -348,7 +346,10 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsExpanded(false)}
+              onClick={() => {
+                stop();
+                setIsExpanded(false);
+              }}
               className="h-9 w-9 text-foreground border-2 border-black/10 dark:border-white/10 hover:bg-[#E02E2E] hover:text-white hover:border-[#E02E2E] rounded-none transition-all"
             >
               <X className="h-5 w-5" />
