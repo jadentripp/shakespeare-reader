@@ -12,81 +12,49 @@ mock.module('lucide-react', () => ({
 
 describe('BauhausHeader', () => {
   const defaultProps = {
-    viewMode: 'discover' as const,
-    setViewMode: mock(),
-    libraryQuery: '',
-    setLibraryQuery: mock(),
     catalogQuery: '',
     setCatalogQuery: mock(),
     handleSearch: mock(),
     catalogQ: { isFetching: false },
-    activeCatalog: {
-      key: 'collection-popular',
-      label: 'Most Popular',
-      kind: 'collection',
-      description: '',
-      catalogKey: 'all',
-    },
+    activeCatalog: { key: 'collection-all', label: 'All Books', kind: 'all' },
     catalogSearch: '',
     setCatalogKey: mock(),
-    searchInputRef: { current: null } as any,
+    searchInputRef: { current: null },
   }
 
   beforeEach(() => {
     cleanup()
   })
 
-  it('should render the massive typographic header and view toggle', () => {
+  it('should render the massive typographic header', () => {
     render(<BauhausHeader {...defaultProps} />)
-    expect(screen.getByText('LIBRARY')).toBeDefined()
-    expect(screen.getByText('MY BOOKS')).toBeDefined()
-    expect(screen.getByText('DISCOVER')).toBeDefined()
+    const header = screen.getByText('LIBRARY')
+    expect(header).toBeDefined()
+    expect(header.className).toContain('font-black')
+    expect(header.className).toContain('uppercase')
   })
 
-  it('should call setViewMode when clicking toggle', () => {
-    const setViewMode = mock()
-    render(<BauhausHeader {...defaultProps} setViewMode={setViewMode} />)
-    fireEvent.click(screen.getByText('MY BOOKS'))
-    expect(setViewMode).toHaveBeenCalledWith('local')
-  })
-
-  it('should render the horizontal filter bar in discover mode', () => {
+  it('should render the horizontal filter bar with collections', () => {
     render(<BauhausHeader {...defaultProps} />)
-    expect(screen.getAllByText('Most Popular').length).toBeGreaterThan(0)
+    // "All Books" is present in subtitle AND horizontal nav
+    expect(screen.getAllByText('All Books').length).toBeGreaterThan(0)
+    // Featured collections like "Shakespeare" should be there
     expect(screen.getByText('Shakespeare')).toBeDefined()
-    expect(screen.getByText('Gothic Horror')).toBeDefined()
   })
 
-  it('should hide horizontal filter bar in local mode', () => {
-    render(<BauhausHeader {...defaultProps} viewMode="local" />)
-    expect(screen.queryByText('Shakespeare')).toBeNull()
-  })
-
-  it('should use libraryQuery in local mode', () => {
-    render(<BauhausHeader {...defaultProps} viewMode="local" libraryQuery="My Local Search" />)
-    const input = screen.getByDisplayValue('My Local Search')
+  it('should render the bold search input', () => {
+    render(<BauhausHeader {...defaultProps} />)
+    const input = screen.getByPlaceholderText(/Search collection/i)
     expect(input).toBeDefined()
-    expect(screen.getByPlaceholderText(/SEARCH YOUR BOOKS/i)).toBeDefined()
+    // Bauhaus style: bold, sharp edges (rounded-none)
+    expect(input.className).toContain('rounded-none')
+    expect(input.className).toContain('border-b-4')
   })
 
-  it('should use catalogQuery in discover mode', () => {
-    render(<BauhausHeader {...defaultProps} viewMode="discover" catalogQuery="Kafka" />)
-    const input = screen.getByDisplayValue('Kafka')
-    expect(input).toBeDefined()
-    expect(screen.getByPlaceholderText(/SEARCH GUTENBERG/i)).toBeDefined()
-  })
-
-  it('should call handleSearch on Enter in discover mode', () => {
+  it('should call handleSearch on Enter', () => {
     const handleSearch = mock()
-    render(
-      <BauhausHeader
-        {...defaultProps}
-        viewMode="discover"
-        catalogQuery="Kafka"
-        handleSearch={handleSearch}
-      />,
-    )
-    const input = screen.getByPlaceholderText(/SEARCH GUTENBERG/i)
+    render(<BauhausHeader {...defaultProps} catalogQuery="Kafka" handleSearch={handleSearch} />)
+    const input = screen.getByPlaceholderText(/Search collection/i)
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' })
     expect(handleSearch).toHaveBeenCalledWith('Kafka')
   })

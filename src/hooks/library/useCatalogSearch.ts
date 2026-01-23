@@ -15,40 +15,22 @@ import {
   sortResults,
 } from '@/lib/gutenbergUtils'
 import { gutendexCatalogPage } from '@/lib/tauri'
-import type { LibraryViewMode } from '../LibraryContext'
 
 export function useCatalogSearch() {
   const routerState = useRouterState()
   const currentPath = routerState.location.pathname
   const isOnIndexRoute = currentPath === '/'
-  const urlSearchParams = routerState.location.search as {
-    q?: string
-    category?: string
-    view?: LibraryViewMode
-  }
+  const urlSearchParams = routerState.location.search as { q?: string; category?: string }
 
   const navigate = useNavigate()
 
-  const [localViewMode, setLocalViewMode] = React.useState<LibraryViewMode>('local')
   const [localCatalogKey, setLocalCatalogKey] = React.useState(DEFAULT_CATALOG_KEY)
   const [localCatalogQuery, setLocalCatalogQuery] = React.useState('')
 
-  const viewMode = isOnIndexRoute ? urlSearchParams.view || 'local' : localViewMode
   const catalogKey = isOnIndexRoute
     ? urlSearchParams.category || DEFAULT_CATALOG_KEY
     : localCatalogKey
   const catalogQuery = isOnIndexRoute ? urlSearchParams.q || '' : localCatalogQuery
-
-  const setViewMode = (mode: LibraryViewMode) => {
-    if (isOnIndexRoute) {
-      navigate({
-        to: '/',
-        search: (prev: any) => ({ ...prev, view: mode }),
-      })
-    } else {
-      setLocalViewMode(mode)
-    }
-  }
 
   const setCatalogKey = (key: string) => {
     if (isOnIndexRoute) {
@@ -153,8 +135,6 @@ export function useCatalogSearch() {
   }, [catalogQ.data, sortBy, catalogSearch])
 
   return {
-    viewMode,
-    setViewMode,
     catalogKey,
     setCatalogKey,
     catalogQuery,

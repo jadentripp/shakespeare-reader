@@ -5,13 +5,7 @@ import type { SortOption } from '@/lib/gutenbergUtils'
 import type { Book, GutendexBook, GutendexResponse } from '@/lib/tauri/types'
 import type { BulkScanState, DownloadTask } from './library/useDownloadQueue'
 
-export type LibraryViewMode = 'local' | 'discover'
-
 export interface LibraryContextType {
-  // Global View State
-  viewMode: LibraryViewMode
-  setViewMode: (mode: LibraryViewMode) => void
-
   // From useLibraryCore
   booksQ: UseQueryResult<Book[], Error>
   libraryQuery: string
