@@ -3,20 +3,22 @@ mod db;
 mod gutendex;
 
 use db::{Book, BookChatThread, BookMessage, BookPosition, Highlight, HighlightMessage};
-use tauri::AppHandle;
+use tauri::{AppHandle, State, Manager};
+use sqlx::{Pool, Postgres};
 use std::fs;
 
 #[tauri::command]
-fn db_init(app_handle: AppHandle) -> Result<(), String> {
-    db::init(&app_handle).map_err(|e| e.to_string())
+async fn db_init(_pool: State<'_, Pool<Postgres>>) -> Result<(), String> {
+    // Already initialized in run()
+    Ok(())
 }
 
 #[tauri::command]
 async fn gutendex_shakespeare_page(
-    app_handle: AppHandle,
+    _app_handle: AppHandle,
+    _pool: State<'_, Pool<Postgres>>,
     page_url: Option<String>,
 ) -> Result<gutendex::GutendexResponse, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
     gutendex::search_catalog("shakespeare", page_url, None, None)
         .await
         .map_err(|e| e.to_string())
@@ -24,33 +26,32 @@ async fn gutendex_shakespeare_page(
 
 #[tauri::command]
 async fn gutendex_catalog_page(
-    app_handle: AppHandle,
+    _app_handle: AppHandle,
+    _pool: State<'_, Pool<Postgres>>,
     catalog_key: String,
     page_url: Option<String>,
     search_query: Option<String>,
     topic: Option<String>,
 ) -> Result<gutendex::GutendexResponse, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
     gutendex::search_catalog(&catalog_key, page_url, search_query, topic)
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn list_books(app_handle: AppHandle) -> Result<Vec<Book>, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::list_books(&app_handle).map_err(|e| e.to_string())
+async fn list_books(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>) -> Result<Vec<Book>, String> {
+    db::list_books(&pool).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn get_book(app_handle: AppHandle, book_id: i64) -> Result<Book, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::get_book(&app_handle, book_id).map_err(|e| e.to_string())
+async fn get_book(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64) -> Result<Book, String> {
+    db::get_book(&pool, book_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 async fn download_gutenberg_mobi(
     app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     gutenberg_id: i64,
     title: String,
     authors: String,
@@ -58,68 +59,91 @@ async fn download_gutenberg_mobi(
     cover_url: Option<String>,
     mobi_url: String,
 ) -> Result<i64, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
     let mobi_path = books::download_mobi_to_app_data(&app_handle, gutenberg_id, mobi_url)
         .await
         .map_err(|e| e.to_string())?;
-    let (html_path, first_image_index) = books::extract_mobi_to_html(&app_handle, gutenberg_id, mobi_path.clone())
-        .map_err(|e| e.to_string())?;
+
+    let (html_path, first_image_index) = tauri::async_runtime::spawn_blocking({
+        let app_handle = app_handle.clone();
+        let mobi_path = mobi_path.clone();
+        move || books::extract_mobi_to_html(&app_handle, gutenberg_id, &mobi_path)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())?;
 
     db::upsert_book(
-        &app_handle,
+        &pool,
         gutenberg_id,
-        title,
-        authors,
+        &title,
+        &authors,
         publication_year,
-        cover_url,
-        mobi_path,
-        html_path,
+        cover_url.as_deref(),
+        &mobi_path,
+        &html_path,
         first_image_index.map(|v| v as i32),
     )
+    .await
     .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn get_book_html(app_handle: AppHandle, book_id: i64) -> Result<String, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    let book = db::get_book(&app_handle, book_id).map_err(|e| e.to_string())?;
-    let html_path = book.html_path.clone();
-    let mobi_path = book.mobi_path.clone();
+async fn get_book_html(app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64) -> Result<String, String> {
+    let book = db::get_book(&pool, book_id).await.map_err(|e| e.to_string())?;
 
-    let mut has_invalid_controls = false;
-    let mut html = if let Some(path) = html_path {
-        if let Ok(bytes) = fs::read(&path) {
-            has_invalid_controls = books::has_invalid_controls(&bytes);
-        }
-        books::read_html_string(path).map_err(|e| e.to_string())?
+    let (mut html, has_invalid_controls) = if let Some(ref path) = book.html_path {
+        let path = path.clone();
+        tauri::async_runtime::spawn_blocking(move || {
+            let bytes = fs::read(&path).map_err(|e| e.to_string())?;
+            let invalid = books::has_invalid_controls(&bytes);
+            let content = books::read_html_string_from_bytes(&bytes).map_err(|e| e.to_string())?;
+            Ok::<(String, bool), String>((content, invalid))
+        })
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?
     } else {
-        String::new()
+        (String::new(), false)
     };
 
-    if (html.is_empty()
+    let needs_regeneration = html.is_empty()
         || books::looks_like_mojibake(&html)
         || books::has_many_replacements(&html)
-        || has_invalid_controls)
-        && mobi_path.is_some()
-    {
-        let mobi_path = mobi_path.unwrap();
-        let (new_path, first_image_index) = books::extract_mobi_to_html(&app_handle, book.gutenberg_id, mobi_path)
-            .map_err(|e| e.to_string())?;
-        
-        // Update DB with first_image_index if it was regenerated
-        let _ = db::upsert_book(
-            &app_handle,
-            book.gutenberg_id,
-            book.title.clone(),
-            book.authors.clone(),
-            book.publication_year,
-            book.cover_url.clone(),
-            book.mobi_path.clone().unwrap_or_default(),
-            new_path.clone(),
-            first_image_index.map(|v| v as i32),
-        );
+        || has_invalid_controls;
 
-        html = books::read_html_string(new_path).map_err(|e| e.to_string())?;
+    if needs_regeneration {
+        if let Some(ref mobi_path) = book.mobi_path {
+            let mobi_path_clone = mobi_path.clone();
+            let app_handle_clone = app_handle.clone();
+            let gutenberg_id = book.gutenberg_id;
+            
+            let (new_path, first_image_index) = tauri::async_runtime::spawn_blocking(move || {
+                books::extract_mobi_to_html(&app_handle_clone, gutenberg_id, &mobi_path_clone)
+            })
+            .await
+            .map_err(|e| e.to_string())?
+            .map_err(|e| e.to_string())?;
+            
+            let _ = db::upsert_book(
+                &pool,
+                book.gutenberg_id,
+                &book.title,
+                &book.authors,
+                book.publication_year,
+                book.cover_url.as_deref(),
+                mobi_path,
+                &new_path,
+                first_image_index.map(|v| v as i32),
+            ).await;
+
+            let new_path_clone = new_path.clone();
+            html = tauri::async_runtime::spawn_blocking(move || {
+                books::read_html_string(new_path_clone)
+            })
+            .await
+            .map_err(|e| e.to_string())?
+            .map_err(|e| e.to_string())?;
+        }
     }
 
     if html.is_empty() {
@@ -130,9 +154,8 @@ fn get_book_html(app_handle: AppHandle, book_id: i64) -> Result<String, String> 
 }
 
 #[tauri::command]
-fn get_book_image_data(app_handle: AppHandle, book_id: i64, relative_index: i32) -> Result<String, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    let book = db::get_book(&app_handle, book_id).map_err(|e| e.to_string())?;
+async fn get_book_image_data(app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64, relative_index: i32) -> Result<String, String> {
+    let book = db::get_book(&pool, book_id).await.map_err(|e| e.to_string())?;
     let first_image_index = book.first_image_index.ok_or("Book has no image index".to_string())?;
     
     let absolute_index = (first_image_index + relative_index - 1) as usize;
@@ -140,7 +163,14 @@ fn get_book_image_data(app_handle: AppHandle, book_id: i64, relative_index: i32)
     let path = books::get_book_asset_path(&app_handle, book.gutenberg_id, absolute_index)
         .map_err(|e| e.to_string())?;
         
-    let bytes = fs::read(&path).map_err(|e| e.to_string())?;
+    let bytes = tauri::async_runtime::spawn_blocking(move || {
+        fs::read(&path).map(|b| (b, path))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())?;
+
+    let (bytes, path) = bytes;
     let extension = path.extension().and_then(|s| s.to_str()).unwrap_or("jpeg");
     let mime = match extension {
         "jpg" | "jpeg" => "image/jpeg",
@@ -154,55 +184,57 @@ fn get_book_image_data(app_handle: AppHandle, book_id: i64, relative_index: i32)
 }
 
 #[tauri::command]
-fn get_book_position(app_handle: AppHandle, book_id: i64) -> Result<Option<BookPosition>, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::get_book_position(&app_handle, book_id).map_err(|e| e.to_string())
+async fn get_book_position(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64) -> Result<Option<BookPosition>, String> {
+    db::get_book_position(&pool, book_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn set_book_position(app_handle: AppHandle, book_id: i64, cfi: String) -> Result<(), String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::set_book_position(&app_handle, book_id, cfi).map_err(|e| e.to_string())
+async fn set_book_position(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64, cfi: String) -> Result<(), String> {
+    db::set_book_position(&pool, book_id, &cfi).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn hard_delete_book(app_handle: AppHandle, book_id: i64) -> Result<(), String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    let book = db::get_book(&app_handle, book_id).map_err(|e| e.to_string())?;
+async fn hard_delete_book(app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64) -> Result<(), String> {
+    let book = db::get_book(&pool, book_id).await.map_err(|e| e.to_string())?;
 
-    if let Some(path) = book.mobi_path.clone() {
-        books::delete_mobi_file(path).map_err(|e| e.to_string())?;
-    }
-    if let Some(path) = book.html_path.clone() {
-        books::delete_html_file(path).map_err(|e| e.to_string())?;
-    }
-    
-    books::delete_book_assets(&app_handle, book.gutenberg_id).map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking({
+        let app_handle = app_handle.clone();
+        let book = book.clone();
+        move || {
+            if let Some(ref path) = book.mobi_path {
+                let _ = books::delete_mobi_file(path);
+            }
+            if let Some(ref path) = book.html_path {
+                let _ = books::delete_html_file(path);
+            }
+            let _ = books::delete_book_assets(&app_handle, book.gutenberg_id);
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?;
 
-    db::hard_delete_book(&app_handle, book_id).map_err(|e| e.to_string())
+    db::hard_delete_book(&pool, book_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn set_setting(app_handle: AppHandle, key: String, value: String) -> Result<(), String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::set_setting(&app_handle, key, value).map_err(|e| e.to_string())
+async fn set_setting(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, key: String, value: String) -> Result<(), String> {
+    db::set_setting(&pool, &key, &value).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn get_setting(app_handle: AppHandle, key: String) -> Result<Option<String>, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::get_setting(&app_handle, key).map_err(|e| e.to_string())
+async fn get_setting(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, key: String) -> Result<Option<String>, String> {
+    db::get_setting(&pool, &key).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn list_highlights(app_handle: AppHandle, book_id: i64) -> Result<Vec<Highlight>, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::list_highlights(&app_handle, book_id).map_err(|e| e.to_string())
+async fn list_highlights(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64) -> Result<Vec<Highlight>, String> {
+    db::list_highlights(&pool, book_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn create_highlight(
-    app_handle: AppHandle,
+async fn create_highlight(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     book_id: i64,
     start_path: String,
     start_offset: i64,
@@ -211,72 +243,73 @@ fn create_highlight(
     text: String,
     note: Option<String>,
 ) -> Result<Highlight, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
     db::create_highlight(
-        &app_handle,
+        &pool,
         book_id,
-        start_path,
+        &start_path,
         start_offset,
-        end_path,
+        &end_path,
         end_offset,
-        text,
-        note,
+        &text,
+        note.as_deref(),
     )
+    .await
     .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn update_highlight_note(
-    app_handle: AppHandle,
+async fn update_highlight_note(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     highlight_id: i64,
     note: Option<String>,
 ) -> Result<Highlight, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::update_highlight_note(&app_handle, highlight_id, note).map_err(|e| e.to_string())
+    db::update_highlight_note(&pool, highlight_id, note.as_deref()).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn delete_highlight(
-    app_handle: AppHandle,
+async fn delete_highlight(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     highlight_id: i64,
 ) -> Result<(), String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::delete_highlight(&app_handle, highlight_id).map_err(|e| e.to_string())
+    db::delete_highlight(&pool, highlight_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn list_highlight_messages(
-    app_handle: AppHandle,
+async fn list_highlight_messages(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     highlight_id: i64,
 ) -> Result<Vec<HighlightMessage>, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::list_highlight_messages(&app_handle, highlight_id).map_err(|e| e.to_string())
+    db::list_highlight_messages(&pool, highlight_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn add_highlight_message(
-    app_handle: AppHandle,
+async fn add_highlight_message(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     highlight_id: i64,
     role: String,
     content: String,
 ) -> Result<HighlightMessage, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::add_highlight_message(&app_handle, highlight_id, role, content).map_err(|e| e.to_string())
+    db::add_highlight_message(&pool, highlight_id, &role, &content).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn list_book_messages(
-    app_handle: AppHandle,
+async fn list_book_messages(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     book_id: i64,
     thread_id: Option<i64>,
 ) -> Result<Vec<BookMessage>, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::list_book_messages(&app_handle, book_id, thread_id).map_err(|e| e.to_string())
+    db::list_book_messages(&pool, book_id, thread_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn add_book_message(
-    app_handle: AppHandle,
+async fn add_book_message(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     book_id: i64,
     thread_id: Option<i64>,
     role: String,
@@ -284,102 +317,101 @@ fn add_book_message(
     reasoning_summary: Option<String>,
     context_map: Option<String>,
 ) -> Result<BookMessage, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::add_book_message(&app_handle, book_id, thread_id, role, content, reasoning_summary, context_map).map_err(|e| e.to_string())
+    db::add_book_message(&pool, book_id, thread_id, &role, &content, reasoning_summary.as_deref(), context_map.as_deref()).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn list_book_chat_threads(
-    app_handle: AppHandle,
+async fn list_book_chat_threads(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     book_id: i64,
 ) -> Result<Vec<BookChatThread>, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::list_book_chat_threads(&app_handle, book_id).map_err(|e| e.to_string())
+    db::list_book_chat_threads(&pool, book_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn create_book_chat_thread(
-    app_handle: AppHandle,
+async fn create_book_chat_thread(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     book_id: i64,
     title: String,
 ) -> Result<BookChatThread, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::create_book_chat_thread(&app_handle, book_id, title).map_err(|e| e.to_string())
+    db::create_book_chat_thread(&pool, book_id, &title).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn rename_book_chat_thread(
-    app_handle: AppHandle,
+async fn rename_book_chat_thread(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     thread_id: i64,
     title: String,
 ) -> Result<(), String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::rename_book_chat_thread(&app_handle, thread_id, title).map_err(|e| e.to_string())
+    db::rename_book_chat_thread(&pool, thread_id, &title).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn delete_book_chat_thread(
-    app_handle: AppHandle,
+async fn delete_book_chat_thread(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     thread_id: i64,
 ) -> Result<(), String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::delete_book_chat_thread(&app_handle, thread_id).map_err(|e| e.to_string())
+    db::delete_book_chat_thread(&pool, thread_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn delete_book_messages(
-    app_handle: AppHandle,
+async fn delete_book_messages(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     book_id: i64,
 ) -> Result<(), String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::delete_book_messages(&app_handle, book_id).map_err(|e| e.to_string())
+    db::delete_book_messages(&pool, book_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn delete_book_message(
-    app_handle: AppHandle,
+async fn delete_book_message(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     message_id: i64,
 ) -> Result<(), String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::delete_book_message(&app_handle, message_id).map_err(|e| e.to_string())
+    db::delete_book_message(&pool, message_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn clear_default_book_messages(
-    app_handle: AppHandle,
+async fn clear_default_book_messages(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     book_id: i64,
 ) -> Result<(), String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::clear_default_book_messages(&app_handle, book_id).map_err(|e| e.to_string())
+    db::clear_default_book_messages(&pool, book_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn delete_book_thread_messages(
-    app_handle: AppHandle,
+async fn delete_book_thread_messages(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     thread_id: i64,
 ) -> Result<(), String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::delete_book_thread_messages(&app_handle, thread_id).map_err(|e| e.to_string())
+    db::delete_book_thread_messages(&pool, thread_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn set_thread_last_cfi(
-    app_handle: AppHandle,
+async fn set_thread_last_cfi(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     thread_id: i64,
     cfi: String,
 ) -> Result<(), String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::set_thread_last_cfi(&app_handle, thread_id, cfi).map_err(|e| e.to_string())
+    db::set_thread_last_cfi(&pool, thread_id, &cfi).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn get_thread_max_citation_index(
-    app_handle: AppHandle,
+async fn get_thread_max_citation_index(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
     book_id: i64,
     thread_id: Option<i64>,
 ) -> Result<i32, String> {
-    db::init(&app_handle).map_err(|e| e.to_string())?;
-    db::get_thread_max_citation_index(&app_handle, book_id, thread_id).map_err(|e| e.to_string())
+    db::get_thread_max_citation_index(&pool, book_id, thread_id).await.map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -388,6 +420,17 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .setup(|app| {
+            let database_url = std::env::var("DATABASE_URL")
+                .expect("DATABASE_URL must be set");
+
+            let pool = tauri::async_runtime::block_on(async {
+                db::init_pool(&database_url).await
+            }).expect("Failed to initialize database pool");
+
+            app.manage(pool);
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             db_init,
             gutendex_shakespeare_page,

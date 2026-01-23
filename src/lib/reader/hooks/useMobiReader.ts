@@ -192,22 +192,22 @@ export function useMobiReader(bookId: number) {
     // If we have a current word and TTS is playing, highlight it using the character map
     if (tts.currentWord && tts.state === 'playing' && tts.currentCharMap.length > 0) {
       const { word, startChar, endChar } = tts.currentWord;
-      
+
       // Use the character map to get the exact DOM positions
       const startMapping = tts.currentCharMap[startChar];
       const endMapping = tts.currentCharMap[endChar - 1];
-      
+
       if (startMapping?.node && endMapping?.node) {
         console.log(`[TTS Highlight] Highlighting word: "${word}" using charMap`);
-        
+
         try {
           const range = doc.createRange();
           range.setStart(startMapping.node, startMapping.offset);
           range.setEnd(endMapping.node, endMapping.offset + 1);
-          
+
           const span = doc.createElement("span");
           span.className = "ttsCurrentWord";
-          
+
           try {
             range.surroundContents(span);
           } catch (e) {
@@ -246,18 +246,26 @@ export function useMobiReader(bookId: number) {
     setLightboxImage,
   });
 
-  const srcDoc = useMemo(() => {
+  const processedHtml = useMemo(() => {
     if (!htmlQ.data) return "";
     const isTauri = typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__ !== undefined;
     const baseUrl =
       !isTauri && bookQ.data?.gutenberg_id
         ? `https://www.gutenberg.org/cache/epub/${bookQ.data.gutenberg_id}/`
         : undefined;
-    const { html: processedHtml } = processGutenbergContent(htmlQ.data, bookId, baseUrl);
+
+    console.time(`[Reader] Process HTML bookId=${bookId}`);
+    const { html } = processGutenbergContent(htmlQ.data, bookId, baseUrl);
+    console.timeEnd(`[Reader] Process HTML bookId=${bookId}`);
+    return html;
+  }, [htmlQ.data, bookQ.data?.gutenberg_id, bookId]);
+
+  const srcDoc = useMemo(() => {
+    if (!processedHtml) return "";
     const css = buildReaderCss({ columns, margin, pageGap, fontFamily, lineHeight });
     const wrappedBody = wrapBody(processedHtml);
     return injectHead(wrappedBody, css);
-  }, [htmlQ.data, bookQ.data?.gutenberg_id, bookId, fontFamily, lineHeight, margin, columns, pageGap]);
+  }, [processedHtml, fontFamily, lineHeight, margin, columns, pageGap]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {

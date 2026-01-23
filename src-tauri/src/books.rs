@@ -2,6 +2,25 @@ use std::{fs, path::PathBuf, time::{Duration, Instant}};
 use std::env;
 
 use tauri::{path::BaseDirectory, AppHandle, Manager};
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum BooksError {
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("HTTP error: {0}")]
+    Http(#[from] reqwest::Error),
+
+    #[error("Tauri error: {0}")]
+    Tauri(#[from] tauri::Error),
+
+    #[error("MOBI extraction error: {0}")]
+    Extraction(String),
+
+    #[error("{0}")]
+    Other(String),
+}
 
 const REPLACEMENT_THRESHOLD: usize = 16;
 
@@ -119,11 +138,11 @@ pub fn looks_like_mojibake(s: &str) -> bool {
 }
 
 pub fn contains_replacement(s: &str) -> bool {
-    s.chars().any(|c| c == '\u{FFFD}')
+    s.contains('\u{FFFD}')
 }
 
 pub fn replacement_count(s: &str) -> usize {
-    s.chars().filter(|c| *c == '\u{FFFD}').count()
+    s.matches('\u{FFFD}').count()
 }
 
 pub fn has_many_replacements(s: &str) -> bool {
@@ -131,9 +150,7 @@ pub fn has_many_replacements(s: &str) -> bool {
 }
 
 pub fn has_invalid_controls(bytes: &[u8]) -> bool {
-    bytes.iter().any(|b| {
-        *b < 0x20 && !matches!(*b, b'\n' | b'\r' | b'\t')
-    })
+    bytes.iter().any(|&b| b < 0x20 && !matches!(b, b'\n' | b'\r' | b'\t'))
 }
 
 pub fn fix_mojibake(s: &str) -> Option<String> {
@@ -153,16 +170,13 @@ pub fn fix_mojibake(s: &str) -> Option<String> {
     }
 }
 
-static GUTENBERG_LAST: once_cell::sync::Lazy<tokio::sync::Mutex<Option<Instant>>> =
-    once_cell::sync::Lazy::new(|| tokio::sync::Mutex::new(None));
+static GUTENBERG_NEXT_ALLOWED: once_cell::sync::Lazy<tokio::sync::Mutex<Instant>> =
+    once_cell::sync::Lazy::new(|| tokio::sync::Mutex::new(Instant::now()));
 
 async fn throttle_gutenberg_if_needed(url: &str) {
-    let host = reqwest::Url::parse(url)
+    let is_gutenberg = reqwest::Url::parse(url)
         .ok()
-        .and_then(|u| u.host_str().map(|h| h.to_string()));
-    let is_gutenberg = host
-        .as_deref()
-        .map(|h| h == "gutenberg.org" || h.ends_with(".gutenberg.org"))
+        .and_then(|u| u.host_str().map(|h| h == "gutenberg.org" || h.ends_with(".gutenberg.org")))
         .unwrap_or(false);
     if !is_gutenberg {
         return;
@@ -171,17 +185,24 @@ async fn throttle_gutenberg_if_needed(url: &str) {
     // Project Gutenberg asks automated tools to be very gentle; 2s matches their wget example.
     let min_delay = Duration::from_secs(2);
 
-    let mut guard = GUTENBERG_LAST.lock().await;
-    if let Some(last) = *guard {
-        let elapsed = last.elapsed();
-        if elapsed < min_delay {
-            tokio::time::sleep(min_delay - elapsed).await;
-        }
+    let delay = {
+        let mut next_allowed = GUTENBERG_NEXT_ALLOWED.lock().await;
+        let now = Instant::now();
+
+        // if we're early, we must wait until next_allowed
+        let delay = next_allowed.saturating_duration_since(now);
+
+        // reserve the next slot *now*, so concurrent callers schedule properly
+        *next_allowed = (now + delay) + min_delay;
+        delay
+    };
+
+    if !delay.is_zero() {
+        tokio::time::sleep(delay).await;
     }
-    *guard = Some(Instant::now());
 }
 
-pub fn books_dir(app_handle: &AppHandle) -> Result<PathBuf, anyhow::Error> {
+pub fn books_dir(app_handle: &AppHandle) -> Result<PathBuf, BooksError> {
     let mut base = env::current_dir().unwrap_or(app_handle.path().resolve(".", BaseDirectory::AppLocalData)?);
     if base.file_name().and_then(|s| s.to_str()) == Some("src-tauri") {
         if let Some(parent) = base.parent() {
@@ -197,7 +218,7 @@ pub async fn download_mobi_to_app_data(
     app_handle: &AppHandle,
     gutenberg_id: i64,
     mobi_url: String,
-) -> Result<String, anyhow::Error> {
+) -> Result<String, BooksError> {
     let dir = books_dir(app_handle)?;
     let path = dir.join(format!("{}.mobi", gutenberg_id));
 
@@ -210,10 +231,10 @@ pub async fn download_mobi_to_app_data(
     let resp = client.get(&mobi_url).send().await?;
     let status = resp.status();
     if status.as_u16() == 403 || status.as_u16() == 429 {
-        anyhow::bail!(
+        return Err(BooksError::Other(format!(
             "Project Gutenberg blocked/rate-limited this request (HTTP {}). Try pausing/resuming, or download fewer books / set up a local mirror per https://www.gutenberg.org/policy/robot",
             status
-        );
+        )));
     }
 
     let bytes = resp.error_for_status()?.bytes().await?;
@@ -230,6 +251,21 @@ fn be_u16(b: &[u8], off: usize) -> Option<u16> {
 fn be_u32(b: &[u8], off: usize) -> Option<u32> {
     b.get(off..off + 4)
         .map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]))
+}
+
+fn detect_image_format(data: &[u8]) -> Option<&'static str> {
+    if data.len() < 4 {
+        return None;
+    }
+    if data.starts_with(&[0xff, 0xd8, 0xff]) {
+        Some("jpg")
+    } else if data.starts_with(&[0x89, 0x50, 0x4e, 0x47]) {
+        Some("png")
+    } else if data.starts_with(&[0x47, 0x49, 0x46, 0x38]) {
+        Some("gif")
+    } else {
+        None
+    }
 }
 
 fn palmdoc_decompress(input: &[u8]) -> Vec<u8> {
@@ -283,7 +319,7 @@ fn palmdoc_decompress(input: &[u8]) -> Vec<u8> {
 }
 
 fn escape_html(s: &str) -> String {
-    let mut out = String::with_capacity(s.len() + s.len() / 10);
+    let mut out = String::with_capacity(s.len() + s.len() / 8);
     for ch in s.chars() {
         match ch {
             '&' => out.push_str("&amp;"),
@@ -337,36 +373,27 @@ fn trim_trailing_record_data(rec: &[u8], extra_flags: u16) -> usize {
 }
 
 fn strip_invalid_controls(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    for ch in s.chars() {
-        if ch == '\n' || ch == '\r' || ch == '\t' {
-            out.push(ch);
-            continue;
-        }
-        if ch.is_control() {
-            continue;
-        }
-        out.push(ch);
-    }
-    out
+    s.chars()
+        .filter(|&ch| !ch.is_control() || matches!(ch, '\n' | '\r' | '\t'))
+        .collect()
 }
 
-pub fn extract_mobi_images(bytes: &[u8]) -> Result<(std::collections::HashMap<usize, Vec<u8>>, Option<i32>), anyhow::Error> {
+pub fn extract_mobi_images(bytes: &[u8]) -> Result<(std::collections::HashMap<usize, Vec<u8>>, Option<i32>), BooksError> {
     if bytes.len() < 80 {
-        anyhow::bail!("MOBI file too small");
+        return Err(BooksError::Extraction("MOBI file too small".to_string()));
     }
 
-    let num_records = be_u16(&bytes, 76).ok_or_else(|| anyhow::anyhow!("Invalid PDB header"))? as usize;
+    let num_records = be_u16(&bytes, 76).ok_or_else(|| BooksError::Extraction("Invalid PDB header".to_string()))? as usize;
     let record_list_start = 78;
     let record_list_len = num_records * 8;
     if bytes.len() < record_list_start + record_list_len {
-        anyhow::bail!("Invalid record list");
+        return Err(BooksError::Extraction("Invalid record list".to_string()));
     }
 
-    let mut offsets: Vec<usize> = Vec::with_capacity(num_records);
+    let mut offsets: Vec<usize> = Vec::with_capacity(num_records + 1);
     for i in 0..num_records {
         let off = record_list_start + i * 8;
-        let o = be_u32(&bytes, off).ok_or_else(|| anyhow::anyhow!("Invalid record offset"))? as usize;
+        let o = be_u32(&bytes, off).ok_or_else(|| BooksError::Extraction("Invalid record offset".to_string()))? as usize;
         offsets.push(o);
     }
     offsets.push(bytes.len());
@@ -374,7 +401,7 @@ pub fn extract_mobi_images(bytes: &[u8]) -> Result<(std::collections::HashMap<us
     let rec0_start = offsets[0];
     let rec0_end = offsets[1];
     if rec0_end <= rec0_start || rec0_end > bytes.len() {
-        anyhow::bail!("Invalid record 0 bounds");
+        return Err(BooksError::Extraction("Invalid record 0 bounds".to_string()));
     }
     let rec0 = &bytes[rec0_start..rec0_end];
     let record_count = be_u16(rec0, 8).unwrap_or(0) as usize;
@@ -382,7 +409,8 @@ pub fn extract_mobi_images(bytes: &[u8]) -> Result<(std::collections::HashMap<us
     let mobi_off = find_mobi_header_offset(rec0).unwrap_or(0);
     let mut first_image_index = be_u32(rec0, mobi_off + 0x6c).map(|v| v as i32);
 
-    let mut images = std::collections::HashMap::new();
+    let estimated_images = num_records.saturating_sub(record_count + 1);
+    let mut images = std::collections::HashMap::with_capacity(estimated_images);
     let mut first_found_index = None;
     
     // Heuristic: images start after text records.
@@ -394,18 +422,8 @@ pub fn extract_mobi_images(bytes: &[u8]) -> Result<(std::collections::HashMap<us
             continue;
         }
         let data = &bytes[start..end];
-        if data.len() < 4 {
-            continue;
-        }
-
-        // JPEG, PNG, GIF
-        if data.starts_with(&[0xff, 0xd8, 0xff])
-            || data.starts_with(&[0x89, 0x50, 0x4e, 0x47])
-            || data.starts_with(&[0x47, 0x49, 0x46, 0x38])
-        {
-            if first_found_index.is_none() {
-                first_found_index = Some(i as i32);
-            }
+        if detect_image_format(data).is_some() {
+            first_found_index.get_or_insert(i as i32);
             images.insert(i, data.to_vec());
         }
     }
@@ -418,11 +436,11 @@ pub fn extract_mobi_images(bytes: &[u8]) -> Result<(std::collections::HashMap<us
     Ok((images, first_image_index))
 }
 
-pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path: String) -> Result<(String, Option<i32>), anyhow::Error> {
+pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path: impl AsRef<std::path::Path>) -> Result<(String, Option<i32>), BooksError> {
     let dir = books_dir(app_handle)?;
     let out_path = dir.join(format!("{}.mobi.html", gutenberg_id));
 
-    let bytes = fs::read(mobi_path)?;
+    let bytes = fs::read(mobi_path.as_ref())?;
     if bytes.len() < 80 {
         anyhow::bail!("MOBI file too small");
     }
@@ -433,15 +451,7 @@ pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path
         let images_dir = dir.join(format!("{}_assets", gutenberg_id));
         let _ = fs::create_dir_all(&images_dir);
         for (idx, img_data) in images {
-            let ext = if img_data.starts_with(&[0xff, 0xd8, 0xff]) {
-                "jpg"
-            } else if img_data.starts_with(&[0x89, 0x50, 0x4e, 0x47]) {
-                "png"
-            } else if img_data.starts_with(&[0x47, 0x49, 0x46, 0x38]) {
-                "gif"
-            } else {
-                "bin"
-            };
+            let ext = detect_image_format(&img_data).unwrap_or("bin");
             let img_path = images_dir.join(format!("{}.{}", idx, ext));
             let _ = fs::write(img_path, img_data);
         }
@@ -454,7 +464,7 @@ pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path
         anyhow::bail!("Invalid record list");
     }
 
-    let mut offsets: Vec<usize> = Vec::with_capacity(num_records);
+    let mut offsets: Vec<usize> = Vec::with_capacity(num_records + 1);
     for i in 0..num_records {
         let off = record_list_start + i * 8;
         let o = be_u32(&bytes, off).ok_or_else(|| anyhow::anyhow!("Invalid record offset"))? as usize;
@@ -480,7 +490,7 @@ pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path
     }
 
     let max_record = (1 + record_count).min(num_records);
-    let mut record_texts: Vec<String> = Vec::new();
+    let mut record_texts: Vec<String> = Vec::with_capacity(record_count);
     
     for idx in 1..max_record {
         let start = offsets[idx];
@@ -504,11 +514,14 @@ pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path
         }
     }
 
-    // Concatenate records directly. MOBI HTML is often split across records regardless of tags.
-    let joined_text = record_texts.concat();
+    let joined_text = record_texts.join("");
     let text = strip_invalid_controls(&joined_text);
 
-    let html = if text.to_lowercase().contains("<html") {
+    fn contains_html_tag(s: &str) -> bool {
+        s.as_bytes().windows(5).any(|w| w.eq_ignore_ascii_case(b"<html"))
+    }
+
+    let html = if contains_html_tag(&text) {
         text
     } else {
         format!(
@@ -521,12 +534,12 @@ pub fn extract_mobi_to_html(app_handle: &AppHandle, gutenberg_id: i64, mobi_path
     Ok((out_path.to_string_lossy().to_string(), first_image_index))
 }
 
-pub fn delete_mobi_file(mobi_path: String) -> Result<(), anyhow::Error> {
+pub fn delete_mobi_file(mobi_path: impl AsRef<std::path::Path>) -> Result<(), BooksError> {
     let _ = fs::remove_file(mobi_path);
     Ok(())
 }
 
-pub fn get_book_asset_path(app_handle: &AppHandle, gutenberg_id: i64, asset_id: usize) -> Result<PathBuf, anyhow::Error> {
+pub fn get_book_asset_path(app_handle: &AppHandle, gutenberg_id: i64, asset_id: usize) -> Result<PathBuf, BooksError> {
     let dir = books_dir(app_handle)?;
     let assets_dir = dir.join(format!("{}_assets", gutenberg_id));
     
@@ -541,39 +554,43 @@ pub fn get_book_asset_path(app_handle: &AppHandle, gutenberg_id: i64, asset_id: 
     anyhow::bail!("Asset {} not found for book {}", asset_id, gutenberg_id)
 }
 
-pub fn read_html_string(html_path: String) -> Result<String, anyhow::Error> {
-    let bytes = fs::read(&html_path)?;
-    let encoding = detect_html_encoding(&bytes).unwrap_or(encoding_rs::UTF_8);
-    let (cow, _, had_errors) = encoding.decode(&bytes);
-    let mut text = strip_invalid_controls(&cow.to_string());
+pub fn read_html_string_from_bytes(bytes: &[u8]) -> Result<String, BooksError> {
+    let encoding = detect_html_encoding(bytes).unwrap_or(encoding_rs::UTF_8);
+    let (cow, _, had_errors) = encoding.decode(bytes);
+    let mut text = strip_invalid_controls(cow.as_ref());
     let mut replacement_total = replacement_count(&text);
     if had_errors || replacement_total > 0 {
-        let (cp, _, _) = encoding_rs::WINDOWS_1252.decode(&bytes);
-        let fallback = strip_invalid_controls(&cp.to_string());
+        let (cp, _, _) = encoding_rs::WINDOWS_1252.decode(bytes);
+        let fallback = strip_invalid_controls(cp.as_ref());
         let fallback_replacements = replacement_count(&fallback);
-        // Only switch to Windows-1252 when UTF-8 decoding is clearly worse.
         if replacement_total > REPLACEMENT_THRESHOLD && fallback_replacements < replacement_total {
             text = fallback;
             replacement_total = fallback_replacements;
         }
     }
     
-    // If text still contains replacement chars, the cached HTML is corrupt - delete it
-    // so it gets regenerated on next load
     if replacement_total > REPLACEMENT_THRESHOLD {
-        let _ = fs::remove_file(&html_path);
         anyhow::bail!("Cached HTML contains encoding errors, please reload the book");
     }
     
     Ok(fix_mojibake(&text).unwrap_or(text))
 }
 
-pub fn delete_html_file(html_path: String) -> Result<(), anyhow::Error> {
+pub fn read_html_string(html_path: impl AsRef<std::path::Path>) -> Result<String, BooksError> {
+    let html_path = html_path.as_ref();
+    let bytes = fs::read(html_path)?;
+    read_html_string_from_bytes(&bytes).map_err(|e| {
+        let _ = fs::remove_file(html_path);
+        e
+    })
+}
+
+pub fn delete_html_file(html_path: impl AsRef<std::path::Path>) -> Result<(), BooksError> {
     let _ = fs::remove_file(html_path);
     Ok(())
 }
 
-pub fn delete_book_assets(app_handle: &AppHandle, gutenberg_id: i64) -> Result<(), anyhow::Error> {
+pub fn delete_book_assets(app_handle: &AppHandle, gutenberg_id: i64) -> Result<(), BooksError> {
     let dir = books_dir(app_handle)?;
     let assets_dir = dir.join(format!("{}_assets", gutenberg_id));
     if assets_dir.exists() {
