@@ -6,8 +6,12 @@
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres, Row};
 use thiserror::Error;
+use once_cell::sync::OnceCell;
+use std::env;
 
 use super::{Book, BookChatThread, BookMessage, BookPosition, Highlight, HighlightMessage};
+
+static POOL: OnceCell<Pool<Postgres>> = OnceCell::new();
 
 #[derive(Debug, Error)]
 pub enum DbError {
@@ -17,22 +21,36 @@ pub enum DbError {
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),
 
+    #[error("Missing DATABASE_URL environment variable")]
+    MissingDatabaseUrl,
+
     #[error("{0}")]
     Other(String),
 }
 
-pub async fn init_pool(database_url: &str) -> Result<Pool<Postgres>, DbError> {
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(database_url)
-        .await?;
-
-    init_schema(&pool).await?;
-
-    Ok(pool)
+pub fn get_pool() -> Result<&'static Pool<Postgres>, DbError> {
+    POOL.get().ok_or_else(|| DbError::Other("Database pool not initialized".to_string()))
 }
 
-pub async fn init_schema(pool: &Pool<Postgres>) -> Result<(), DbError> {
+pub fn init() -> Result<(), DbError> {
+    let database_url = env::var("DATABASE_URL")
+        .map_err(|_| DbError::MissingDatabaseUrl)?;
+
+    POOL.get_or_try_init(|| {
+        tauri::async_runtime::block_on(async {
+            let pool = PgPoolOptions::new()
+                .max_connections(5)
+                .connect(&database_url)
+                .await?;
+            init_schema(&pool).await?;
+            Ok::<Pool<Postgres>, DbError>(pool)
+        })
+    })?;
+
+    Ok(())
+}
+
+async fn init_schema(pool: &Pool<Postgres>) -> Result<(), DbError> {
     // Settings table
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
@@ -49,8 +67,8 @@ pub async fn init_schema(pool: &Pool<Postgres>) -> Result<(), DbError> {
             authors TEXT NOT NULL,
             publication_year INTEGER,
             cover_url TEXT,
-            mobi_path TEXT,
-            html_path TEXT,
+            mobi_data BYTEA,
+            html_content TEXT,
             first_image_index INTEGER,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )"#
@@ -168,21 +186,21 @@ pub async fn upsert_book(
     authors: &str,
     publication_year: Option<i32>,
     cover_url: Option<&str>,
-    mobi_path: &str,
-    html_path: &str,
+    mobi_data: Option<&[u8]>,
+    html_content: Option<&str>,
     first_image_index: Option<i32>,
 ) -> Result<i64, DbError> {
     let row: (i64,) = sqlx::query_as(
         r#"
-        INSERT INTO book (gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, first_image_index)
+        INSERT INTO book (gutenberg_id, title, authors, publication_year, cover_url, mobi_data, html_content, first_image_index)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         ON CONFLICT (gutenberg_id) DO UPDATE SET
             title = EXCLUDED.title,
             authors = EXCLUDED.authors,
             publication_year = EXCLUDED.publication_year,
             cover_url = EXCLUDED.cover_url,
-            mobi_path = EXCLUDED.mobi_path,
-            html_path = EXCLUDED.html_path,
+            mobi_data = EXCLUDED.mobi_data,
+            html_content = EXCLUDED.html_content,
             first_image_index = EXCLUDED.first_image_index
         RETURNING id
         "#,
@@ -192,8 +210,8 @@ pub async fn upsert_book(
     .bind(authors)
     .bind(publication_year)
     .bind(cover_url)
-    .bind(mobi_path)
-    .bind(html_path)
+    .bind(mobi_data)
+    .bind(html_content)
     .bind(first_image_index)
     .fetch_one(pool)
     .await?;
@@ -203,7 +221,7 @@ pub async fn upsert_book(
 pub async fn list_books(pool: &Pool<Postgres>) -> Result<Vec<Book>, DbError> {
     let rows = sqlx::query(
         r#"
-        SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, first_image_index, created_at::text as created_at
+        SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_data, html_content, first_image_index, created_at::text as created_at
         FROM book ORDER BY title ASC
         "#
     )
@@ -219,8 +237,8 @@ pub async fn list_books(pool: &Pool<Postgres>) -> Result<Vec<Book>, DbError> {
             authors: row.get("authors"),
             publication_year: row.get("publication_year"),
             cover_url: row.get("cover_url"),
-            mobi_path: row.get("mobi_path"),
-            html_path: row.get("html_path"),
+            mobi_data: row.get("mobi_data"),
+            html_content: row.get("html_content"),
             first_image_index: row.get("first_image_index"),
             created_at: row.get::<Option<String>, _>("created_at").unwrap_or_default(),
         });
@@ -231,7 +249,7 @@ pub async fn list_books(pool: &Pool<Postgres>) -> Result<Vec<Book>, DbError> {
 pub async fn get_book(pool: &Pool<Postgres>, book_id: i64) -> Result<Book, DbError> {
     let row = sqlx::query(
         r#"
-        SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_path, html_path, first_image_index, created_at::text as created_at
+        SELECT id, gutenberg_id, title, authors, publication_year, cover_url, mobi_data, html_content, first_image_index, created_at::text as created_at
         FROM book WHERE id = $1
         "#,
     )
@@ -246,8 +264,8 @@ pub async fn get_book(pool: &Pool<Postgres>, book_id: i64) -> Result<Book, DbErr
         authors: row.get("authors"),
         publication_year: row.get("publication_year"),
         cover_url: row.get("cover_url"),
-        mobi_path: row.get("mobi_path"),
-        html_path: row.get("html_path"),
+        mobi_data: row.get("mobi_data"),
+        html_content: row.get("html_content"),
         first_image_index: row.get("first_image_index"),
         created_at: row.get::<Option<String>, _>("created_at").unwrap_or_default(),
     })
