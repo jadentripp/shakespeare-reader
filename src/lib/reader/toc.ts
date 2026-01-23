@@ -37,8 +37,17 @@ export const buildTocFromAnchors = (doc: Document): TocEntry[] => {
 
     let level = 3;
     const upper = text.toUpperCase();
+
+    // Level 1: Major works or sections
     if (upper.match(/^BOOK\s+/)) level = 1;
+    else if (upper.match(/^(THE\s+)?SONNETS$/)) level = 1;
+    else if (upper.match(/^(THE\s+)?(TRAGEDY|PLAY|COMEDY|HISTORY|POEM|LIFE)\s+OF\b/)) level = 1;
+    else if (upper.match(/^(ALL’S|AS\s+YOU|MUCH\s+ADO|A\s+MIDSUMMER|TWELFTH\s+NIGHT|THE\s+TAMING|THE\s+TEMPEST|THE\s+WINTER’S|THE\s+TWO\s+NOBLE)\b/)) level = 1;
+
+    // Level 2: Chapters or large subdivisions
     else if (upper.match(/^(CHAPTER|PART|ACT)\s+/)) level = 2;
+
+    // Level 3: Scenes or sections
     else if (upper.match(/^(SCENE|SECTION)\s+/)) level = 3;
 
     seenHrefs.add(href);

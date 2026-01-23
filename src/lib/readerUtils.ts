@@ -89,7 +89,6 @@ export function resolveNodePath(root: Node, path: number[]): Node | null {
 
 /**
  * Find a text range in the DOM that matches the target text.
- * Uses fuzzy matching to handle whitespace and punctuation differences.
  */
 export function findTextRange(
     root: HTMLElement,
@@ -109,13 +108,27 @@ export function findTextRange(
     // Handle snippets with ellipses by splitting them into parts
     const snippetParts = targetText.split(/\.\.\./).map(p => p.trim()).filter(p => p.length > 0);
     if (snippetParts.length > 1) {
-        // For now, find the range of the longest part as a reliable anchor
+        // Find the range of the longest part as a reliable anchor
         const longestPart = snippetParts.reduce((a, b) => a.length > b.length ? a : b);
         return findTextRange(root, longestPart, blockIndex);
     }
 
+    // PERFORMANCE OPTIMIZATION: If searchRoot is too large, use textContent first to narrow down
+    if (blockIndex === undefined && searchRoot.textContent && searchRoot.textContent.length > 100000) {
+        console.log(`[findTextRange] Large document detected (${searchRoot.textContent.length} chars). Searching with block strategy...`);
+        // Try to find the block first by scanning block textContents (much faster than TreeWalker)
+        const blocks = Array.from(searchRoot.querySelectorAll("[data-block-index]")) as HTMLElement[];
+        const normalizedTarget = ultraNormalize(targetText);
+
+        for (const block of blocks) {
+            const blockContent = ultraNormalize(block.textContent || "");
+            if (blockContent.includes(normalizedTarget)) {
+                return findTextRange(block, targetText);
+            }
+        }
+    }
+
     const walker = doc.createTreeWalker(searchRoot, NodeFilter.SHOW_TEXT);
-    const textNodes: Text[] = [];
     const fullTextParts: string[] = [];
     const charMap: Array<{ node: Text; offset: number }> = [];
 
@@ -126,7 +139,6 @@ export function findTextRange(
             fullTextParts.push(nodeText[i]);
             charMap.push({ node, offset: i });
         }
-        textNodes.push(node);
     }
 
     const fullText = fullTextParts.join("");
@@ -182,11 +194,9 @@ export function cleanFootnoteContent(html: string): string {
     const div = document.createElement("div");
     div.innerHTML = html;
 
-    // Remove links that look like return links
     const links = div.querySelectorAll("a");
     links.forEach(a => {
         const text = a.textContent?.trim().toLowerCase() || "";
-        // Common back-link patterns
         if (
             text.includes("back") ||
             text.includes("return") ||
@@ -200,9 +210,8 @@ export function cleanFootnoteContent(html: string): string {
         }
     });
 
-    // Also common in Gutenberg: [1] at the start of footnote
     const firstChild = div.firstChild;
-    if (firstChild && firstChild.nodeType === 3) { // Text node
+    if (firstChild && firstChild.nodeType === 3) {
         firstChild.nodeValue = firstChild.nodeValue?.replace(/^\[\d+\]\s*/, "") || "";
     }
 
@@ -215,13 +224,6 @@ export function cleanFootnoteContent(html: string): string {
 
 /**
  * Extracts the text content for a specific page number.
- * Handles paragraphs that span page boundaries by splitting at the exact character.
- * Works for ANY page, not just the currently visible one.
- * 
- * @param doc - The iframe's document
- * @param pageNumber - The target page (1-indexed)
- * @param metrics - Page layout metrics (pageWidth, gap, stride, scrollLeft, rootRect)
- * @returns The text content and block information for the specified page
  */
 export function getPageContent(
     doc: Document,
@@ -229,130 +231,130 @@ export function getPageContent(
     metrics: PageMetrics
 ): PageContentResult {
     const { pageWidth, stride, scrollLeft, rootRect } = metrics;
-    console.log(`[getPageContent] Page: ${pageNumber}, Metrics:`, { pageWidth, stride, scrollLeft, rootRect: { left: rootRect.left, right: rootRect.right, width: rootRect.width } });
     const blocks = Array.from(doc.querySelectorAll("[data-block-index]")) as HTMLElement[];
-    console.log(`[getPageContent] Found ${blocks.length} blocks in document`);
     const result: PageContentResult = { text: "", blocks: [], charMap: [] };
     const textParts: string[] = [];
-    
-    // Global character map: maps each character position in result.text to its DOM location
     const globalCharMap: CharacterMapping[] = [];
-    let globalCharOffset = 0;
 
-    // Calculate the absolute x-coordinate range for the target page
     const pageStartX = (pageNumber - 1) * stride;
     const pageEndX = pageStartX + pageWidth;
 
-    blocks.forEach((block, blockArrayIndex) => {
-        const indexAttr = block.getAttribute("data-block-index");
-        if (!indexAttr) return;
-        const blockIndex = parseInt(indexAttr, 10);
+    blocks.forEach((block) => {
+        const blockRects = block.getClientRects();
+        if (blockRects.length === 0) return;
 
-        // Quick check: does this block have any rects that could be on the target page?
-        const blockRects = Array.from(block.getClientRects());
-        const blockMightBeOnPage = blockRects.some(rect => {
+        let anyOnPage = false;
+        let allOnPage = true;
+
+        for (let i = 0; i < blockRects.length; i++) {
+            const rect = blockRects[i];
             const absLeft = rect.left - rootRect.left + scrollLeft;
             const absRight = rect.right - rootRect.left + scrollLeft;
-            return absRight > pageStartX && absLeft < pageEndX;
-        });
 
-        if (!blockMightBeOnPage) return;
+            if (absRight > pageStartX && absLeft < pageEndX) {
+                anyOnPage = true;
+                if (absLeft < pageStartX || absRight > pageEndX) {
+                    allOnPage = false;
+                }
+            } else {
+                allOnPage = false;
+            }
+        }
 
-        // Collect visible characters with their DOM positions
+        if (!anyOnPage) return;
+
         const visibleChars: Array<{ char: string; node: Text; offset: number }> = [];
         const walker = doc.createTreeWalker(block, NodeFilter.SHOW_TEXT, null);
         let node: Node | null;
 
-        while ((node = walker.nextNode())) {
-            const textNode = node as Text;
-            const textContent = textNode.textContent || "";
-            if (!textContent.trim()) continue;
-
-            for (let i = 0; i < textContent.length; i++) {
-                const range = doc.createRange();
-                range.setStart(node, i);
-                range.setEnd(node, Math.min(i + 1, textContent.length));
-                const rect = range.getBoundingClientRect();
-
-                const absCharLeft = rect.left - rootRect.left + scrollLeft;
-                const absCharRight = rect.right - rootRect.left + scrollLeft;
-                const isOnPage = absCharRight > pageStartX && absCharLeft < pageEndX;
-
-                if (isOnPage) {
+        if (allOnPage) {
+            while ((node = walker.nextNode())) {
+                const textNode = node as Text;
+                const textContent = textNode.textContent || "";
+                for (let i = 0; i < textContent.length; i++) {
                     visibleChars.push({ char: textContent[i], node: textNode, offset: i });
-                } else if (visibleChars.length > 0 && absCharLeft >= pageEndX) {
-                    break;
+                }
+            }
+        } else {
+            while ((node = walker.nextNode())) {
+                const textNode = node as Text;
+                const textContent = textNode.textContent || "";
+                if (!textContent.trim()) continue;
+
+                const range = doc.createRange();
+                range.selectNodeContents(node);
+                const nodeRect = range.getBoundingClientRect();
+                const absNodeLeft = nodeRect.left - rootRect.left + scrollLeft;
+                const absNodeRight = nodeRect.right - rootRect.left + scrollLeft;
+
+                if (absNodeRight <= pageStartX || absNodeLeft >= pageEndX) continue;
+
+                if (absNodeLeft >= pageStartX && absNodeRight <= pageEndX) {
+                    for (let i = 0; i < textContent.length; i++) {
+                        visibleChars.push({ char: textContent[i], node: textNode, offset: i });
+                    }
+                    continue;
+                }
+
+                for (let i = 0; i < textContent.length; i++) {
+                    range.setStart(node, i);
+                    range.setEnd(node, i + 1);
+                    const rect = range.getBoundingClientRect();
+                    const absCharLeft = rect.left - rootRect.left + scrollLeft;
+                    const absCharRight = rect.right - rootRect.left + scrollLeft;
+
+                    if (absCharRight > pageStartX && absCharLeft < pageEndX) {
+                        visibleChars.push({ char: textContent[i], node: textNode, offset: i });
+                    }
                 }
             }
         }
 
         if (visibleChars.length === 0) return;
 
-        // Build block text with whitespace normalization, tracking char mappings
         let blockText = "";
-        let lastWasSpace = true; // Start true to trim leading whitespace
-        
+        let lastWasSpace = true;
         for (const { char, node, offset } of visibleChars) {
             const isSpace = /\s/.test(char);
-            
             if (isSpace) {
                 if (!lastWasSpace) {
-                    // Add single space, map to first whitespace char
                     blockText += " ";
                     globalCharMap.push({ node, offset });
                     lastWasSpace = true;
                 }
-                // Skip additional whitespace
             } else {
                 blockText += char;
                 globalCharMap.push({ node, offset });
                 lastWasSpace = false;
             }
         }
-        
-        // Trim trailing space
         if (blockText.endsWith(" ")) {
             blockText = blockText.slice(0, -1);
             globalCharMap.pop();
         }
 
         if (blockText) {
+            const blockIndex = parseInt(block.getAttribute("data-block-index") || "0", 10);
             result.blocks.push({ text: blockText, blockIndex, pageNumber });
             textParts.push(blockText);
-            globalCharOffset += blockText.length;
-            
-            // Add block separator "\n\n" (will be added between blocks in final text)
-            // We don't map these to DOM nodes since they're synthetic
         }
     });
 
-    // Now build final text with block separators and adjust charMap
-    // The globalCharMap was built per-block, we need to account for "\n\n" separators
     result.charMap = [];
-    let finalCharOffset = 0;
     let blockCharOffset = 0;
-    
     for (let i = 0; i < textParts.length; i++) {
         const blockLen = textParts[i].length;
-        
-        // Copy mappings for this block
         for (let j = 0; j < blockLen; j++) {
             result.charMap.push(globalCharMap[blockCharOffset + j]);
         }
         blockCharOffset += blockLen;
-        finalCharOffset += blockLen;
-        
-        // Add separator (not mapped to DOM)
         if (i < textParts.length - 1) {
-            // "\n\n" - these won't have DOM mappings, push null placeholders
-            result.charMap.push({ node: null as any, offset: -1 }); // \n
-            result.charMap.push({ node: null as any, offset: -1 }); // \n
-            finalCharOffset += 2;
+            result.charMap.push({ node: null as any, offset: -1 });
+            result.charMap.push({ node: null as any, offset: -1 });
         }
     }
 
     result.text = textParts.join("\n\n");
-    console.log(`[getPageContent] Result: ${result.blocks.length} blocks, ${result.text.length} chars, ${result.charMap.length} mapped chars`);
     return result;
 }
 
@@ -360,9 +362,6 @@ export function getPageContent(
 // Highlight Utilities
 // ============================================================================
 
-/**
- * Clear all existing highlight spans from the document.
- */
 export function clearExistingHighlights(doc: Document): void {
     const spans = Array.from(doc.querySelectorAll("span.readerHighlight, span.readerContextSnippet"));
     for (const span of spans) {
@@ -376,12 +375,9 @@ export function clearExistingHighlights(doc: Document): void {
     }
 }
 
-/**
- * Apply a highlight to a range by wrapping text nodes in highlight spans.
- */
 export function applyHighlightToRange(
-    range: Range, 
-    highlightId: number | string, 
+    range: Range,
+    highlightId: number | string,
     className = "readerHighlight",
     explicitStartOffset?: number,
     explicitEndOffset?: number,
@@ -400,48 +396,27 @@ export function applyHighlightToRange(
     const common = range.commonAncestorContainer;
     const searchRoot = searchRootOverride ?? (common.nodeType === Node.TEXT_NODE ? common.parentNode! : common);
 
-    const walker = doc.createTreeWalker(
-        searchRoot,
-        NodeFilter.SHOW_TEXT,
-        null
-    );
-
+    const walker = doc.createTreeWalker(searchRoot, NodeFilter.SHOW_TEXT, null);
     const targetNodes: Array<{ node: Text; start: number; end: number }> = [];
     let currentNode = walker.nextNode() as Text | null;
     let inRange = false;
 
-    // Single text node case
     if (startNode === endNode && startNode.nodeType === Node.TEXT_NODE) {
-        targetNodes.push({
-            node: startNode as Text,
-            start: startOffset,
-            end: endOffset
-        });
+        targetNodes.push({ node: startNode as Text, start: startOffset, end: endOffset });
     } else {
         while (currentNode) {
-            if (currentNode === startNode) {
-                inRange = true;
-            }
-            
+            if (currentNode === startNode) inRange = true;
             if (inRange) {
                 const text = currentNode.nodeValue || "";
                 if (text.length > 0) {
                     const nodeStart = (currentNode === startNode) ? startOffset : 0;
                     const nodeEnd = (currentNode === endNode) ? endOffset : text.length;
-                    
                     if (nodeStart < nodeEnd) {
-                        targetNodes.push({
-                            node: currentNode,
-                            start: nodeStart,
-                            end: nodeEnd
-                        });
+                        targetNodes.push({ node: currentNode, start: nodeStart, end: nodeEnd });
                     }
                 }
             }
-
-            if (currentNode === endNode) {
-                inRange = false;
-            }
+            if (currentNode === endNode) inRange = false;
             currentNode = walker.nextNode() as Text | null;
         }
     }
@@ -451,20 +426,14 @@ export function applyHighlightToRange(
         const before = text.slice(0, start);
         const middle = text.slice(start, end);
         const after = text.slice(end);
-        
         const fragment = doc.createDocumentFragment();
         if (before) fragment.appendChild(doc.createTextNode(before));
-        
         const span = doc.createElement("span");
         span.className = className;
         span.dataset.highlightId = String(highlightId);
         span.textContent = middle;
         fragment.appendChild(span);
-        
         if (after) fragment.appendChild(doc.createTextNode(after));
-
-        if (node.parentNode) {
-            node.parentNode.replaceChild(fragment, node);
-        }
+        if (node.parentNode) node.parentNode.replaceChild(fragment, node);
     }
 }

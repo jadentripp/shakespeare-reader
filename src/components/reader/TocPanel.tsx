@@ -32,6 +32,7 @@ function detectGroups(entries: TocEntry[]): TocGroup[] {
     { regex: /^Scene\s+([IVXLCDM]+|[0-9]+)\b/i, label: "Scenes" },
     { regex: /^Canto\s+([IVXLCDM]+|[0-9]+)\b/i, label: "Cantos" },
     { regex: /^Section\s+([IVXLCDM]+|[0-9]+)\b/i, label: "Sections" },
+    { regex: /^(THE\s+)?(TRAGEDY|PLAY|COMEDY|HISTORY|POEM|SONNETS?|LIFE)\b/i, label: "Works" },
   ];
 
   const patternMatches = new Map<string, { entries: TocEntry[]; indices: number[] }>();
@@ -194,20 +195,22 @@ function CollapsibleGroup({
       <div
         className={cn(
           "overflow-hidden transition-all duration-200 ease-in-out",
-          isExpanded ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0"
+          isExpanded ? "max-h-[10000px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        <div className="ml-4 border-l-2 border-black/10 dark:border-white/10">
-          {group.entries.map((entry) => (
-            <TocItem
-              key={entry.id}
-              entry={entry}
-              isActive={entry.id === currentEntryId}
-              onNavigate={onNavigate}
-              indent={0}
-            />
-          ))}
-        </div>
+        {isExpanded && (
+          <div className="ml-4 border-l-2 border-black/10 dark:border-white/10">
+            {group.entries.map((entry) => (
+              <TocItem
+                key={entry.id}
+                entry={entry}
+                isActive={entry.id === currentEntryId}
+                onNavigate={onNavigate}
+                indent={0}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
