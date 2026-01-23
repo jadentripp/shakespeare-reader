@@ -1,23 +1,23 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import type { ChatPrompt, LocalChatMessage } from "@/lib/readerTypes";
-import type { RefObject } from "react";
-import { Markdown } from "@/components/ui/markdown";
+import type { RefObject } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Markdown } from '@/components/ui/markdown'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Textarea } from '@/components/ui/textarea'
+import type { ChatPrompt, LocalChatMessage } from '@/lib/readerTypes'
+import { cn } from '@/lib/utils'
 
 type ChatPanelProps = {
-  contextHint: string;
-  messages: LocalChatMessage[];
-  prompts: ChatPrompt[];
-  chatInput: string;
-  onChatInputChange: (value: string) => void;
-  onPromptSelect: (prompt: string) => void;
-  onSend: () => void;
-  chatSending: boolean;
-  chatInputRef: RefObject<HTMLTextAreaElement | null>;
-};
+  contextHint: string
+  messages: LocalChatMessage[]
+  prompts: ChatPrompt[]
+  chatInput: string
+  onChatInputChange: (value: string) => void
+  onPromptSelect: (prompt: string) => void
+  onSend: () => void
+  chatSending: boolean
+  chatInputRef: RefObject<HTMLTextAreaElement | null>
+}
 
 export default function ChatPanel({
   contextHint,
@@ -38,10 +38,10 @@ export default function ChatPanel({
           <div className="text-xs text-muted-foreground">{contextHint}</div>
         </div>
         <Badge
-          variant={chatSending ? "secondary" : "outline"}
-          className={cn(chatSending && "bg-primary/10 text-primary")}
+          variant={chatSending ? 'secondary' : 'outline'}
+          className={cn(chatSending && 'bg-primary/10 text-primary')}
         >
-          {chatSending ? "Thinking..." : "Ready"}
+          {chatSending ? 'Thinking...' : 'Ready'}
         </Badge>
       </div>
 
@@ -53,8 +53,8 @@ export default function ChatPanel({
             size="sm"
             className="h-7 rounded-full px-3 text-xs"
             onClick={() => {
-              onPromptSelect(prompt.prompt);
-              chatInputRef.current?.focus();
+              onPromptSelect(prompt.prompt)
+              chatInputRef.current?.focus()
             }}
             disabled={chatSending}
             type="button"
@@ -68,20 +68,23 @@ export default function ChatPanel({
         {messages.length ? (
           <div className="space-y-3">
             {messages.map((message) => {
-              const isUser = message.role === "user";
-              const roleLabel = isUser ? "You" : "AI Guide";
+              const isUser = message.role === 'user'
+              const roleLabel = isUser ? 'You' : 'AI Guide'
               return (
-                <div key={message.id} className={cn("flex", isUser ? "justify-end" : "justify-start")}>
+                <div
+                  key={message.id}
+                  className={cn('flex', isUser ? 'justify-end' : 'justify-start')}
+                >
                   <div
                     className={cn(
-                      "max-w-[85%] rounded-xl border p-3 text-sm shadow-sm",
-                      isUser ? "bg-primary text-primary-foreground" : "bg-muted/40"
+                      'max-w-[85%] rounded-xl border p-3 text-sm shadow-sm',
+                      isUser ? 'bg-primary text-primary-foreground' : 'bg-muted/40',
                     )}
                   >
                     <div
                       className={cn(
-                        "text-[10px] uppercase tracking-wide",
-                        isUser ? "text-primary-foreground/70" : "text-muted-foreground"
+                        'text-[10px] uppercase tracking-wide',
+                        isUser ? 'text-primary-foreground/70' : 'text-muted-foreground',
                       )}
                     >
                       {roleLabel}
@@ -98,7 +101,7 @@ export default function ChatPanel({
                     )}
                   </div>
                 </div>
-              );
+              )
             })}
           </div>
         ) : (
@@ -115,9 +118,9 @@ export default function ChatPanel({
           value={chatInput}
           onChange={(e) => onChatInputChange(e.currentTarget.value)}
           onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-              e.preventDefault();
-              onSend();
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+              e.preventDefault()
+              onSend()
             }
           }}
           placeholder="Ask about the meaning, context, or interpretation…"
@@ -125,10 +128,10 @@ export default function ChatPanel({
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">Press Cmd/Ctrl + Enter to send</span>
           <Button onClick={onSend} disabled={chatSending}>
-            {chatSending ? "Sending..." : "Send"}
+            {chatSending ? 'Sending...' : 'Send'}
           </Button>
         </div>
       </div>
     </div>
-  );
+  )
 }

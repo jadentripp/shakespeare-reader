@@ -1,11 +1,12 @@
-import { useContext } from "react";
-import { LibraryContext } from "./LibraryContext";
-export type { DownloadTask, BulkScanState } from "./library/useDownloadQueue";
+import { useContext } from 'react'
+import { LibraryContext } from './LibraryContext'
+
+export type { BulkScanState, DownloadTask } from './library/useDownloadQueue'
 
 export function useLibrary() {
-  const context = useContext(LibraryContext);
+  const context = useContext(LibraryContext)
   if (context === undefined) {
-    throw new Error("useLibrary must be used within a LibraryProvider");
+    throw new Error('useLibrary must be used within a LibraryProvider')
   }
-  return context;
+  return context
 }

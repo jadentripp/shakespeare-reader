@@ -1,33 +1,33 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import type React from 'react'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
+import { cn } from '@/lib/utils'
 
 interface AppearancePanelProps {
-  fontFamily: string;
-  lineHeight: number;
-  margin: number;
-  onFontFamilyChange: (font: string) => void;
-  onLineHeightChange: (lh: number) => void;
-  onMarginChange: (m: number) => void;
+  fontFamily: string
+  lineHeight: number
+  margin: number
+  onFontFamilyChange: (font: string) => void
+  onLineHeightChange: (lh: number) => void
+  onMarginChange: (m: number) => void
 }
 
 const FONTS = [
-  { value: "'EB Garamond', serif", label: "EB Garamond", preview: "EB Garamond" },
-  { value: "'Baskervville', serif", label: "Baskerville", preview: "Baskervville" },
-  { value: "Georgia, serif", label: "Georgia", preview: "Georgia" },
-  { value: "'Inter', sans-serif", label: "Inter", preview: "Inter" },
-  { value: "serif", label: "System Serif", preview: "serif" },
-  { value: "sans-serif", label: "System Sans", preview: "sans-serif" },
-];
+  { value: "'EB Garamond', serif", label: 'EB Garamond', preview: 'EB Garamond' },
+  { value: "'Baskervville', serif", label: 'Baskerville', preview: 'Baskervville' },
+  { value: 'Georgia, serif', label: 'Georgia', preview: 'Georgia' },
+  { value: "'Inter', sans-serif", label: 'Inter', preview: 'Inter' },
+  { value: 'serif', label: 'System Serif', preview: 'serif' },
+  { value: 'sans-serif', label: 'System Sans', preview: 'sans-serif' },
+]
 
 const AppearancePanel: React.FC<AppearancePanelProps> = ({
   fontFamily,
@@ -88,9 +88,7 @@ const AppearancePanel: React.FC<AppearancePanelProps> = ({
             className="rounded-none border-2 border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-4 text-center"
             style={{ fontFamily }}
           >
-            <span className="text-lg font-medium text-foreground">
-              The quick brown fox…
-            </span>
+            <span className="text-lg font-medium text-foreground">The quick brown fox…</span>
           </div>
         </div>
 
@@ -125,12 +123,18 @@ const AppearancePanel: React.FC<AppearancePanelProps> = ({
               size="icon"
               onClick={() => onLineHeightChange(Math.max(1, lineHeight - 0.1))}
               className={cn(
-                "h-9 w-9 rounded-none border-2 border-black/20 dark:border-white/20",
-                "bg-background text-foreground transition-[background-color,color,border-color,transform]",
-                "hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black hover:border-black dark:hover:border-white active:scale-95"
+                'h-9 w-9 rounded-none border-2 border-black/20 dark:border-white/20',
+                'bg-background text-foreground transition-[background-color,color,border-color,transform]',
+                'hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black hover:border-black dark:hover:border-white active:scale-95',
               )}
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <path d="M5 12h14" />
               </svg>
             </Button>
@@ -139,7 +143,7 @@ const AppearancePanel: React.FC<AppearancePanelProps> = ({
               max={3}
               step={0.1}
               value={[lineHeight]}
-              onValueChange={(value) => onLineHeightChange(value[0])}
+              onValueChange={(value) => value[0] !== undefined && onLineHeightChange(value[0])}
               className="flex-1"
             />
             <Button
@@ -147,12 +151,18 @@ const AppearancePanel: React.FC<AppearancePanelProps> = ({
               size="icon"
               onClick={() => onLineHeightChange(Math.min(3, lineHeight + 0.1))}
               className={cn(
-                "h-9 w-9 rounded-none border-2 border-black/20 dark:border-white/20",
-                "bg-background text-foreground transition-[background-color,color,border-color,transform]",
-                "hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black hover:border-black dark:hover:border-white active:scale-95"
+                'h-9 w-9 rounded-none border-2 border-black/20 dark:border-white/20',
+                'bg-background text-foreground transition-[background-color,color,border-color,transform]',
+                'hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black hover:border-black dark:hover:border-white active:scale-95',
               )}
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <path d="M12 5v14M5 12h14" />
               </svg>
             </Button>
@@ -166,10 +176,10 @@ const AppearancePanel: React.FC<AppearancePanelProps> = ({
                 variant="ghost"
                 onClick={() => onLineHeightChange(lh)}
                 className={cn(
-                  "group flex flex-1 flex-col items-center gap-2 h-auto rounded-none border-2 py-2 transition-[background-color,color,border-color]",
+                  'group flex flex-1 flex-col items-center gap-2 h-auto rounded-none border-2 py-2 transition-[background-color,color,border-color]',
                   Math.abs(lineHeight - lh) < 0.15
-                    ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white hover:bg-black/90 dark:hover:bg-white/90"
-                    : "border-black/10 dark:border-white/10 hover:border-black dark:hover:border-white"
+                    ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white hover:bg-black/90 dark:hover:bg-white/90'
+                    : 'border-black/10 dark:border-white/10 hover:border-black dark:hover:border-white',
                 )}
               >
                 <div className="flex flex-col" style={{ gap: `${(lh - 1) * 3}px` }}>
@@ -177,16 +187,16 @@ const AppearancePanel: React.FC<AppearancePanelProps> = ({
                     <div
                       key={i}
                       className={cn(
-                        "h-0.5 w-6 rounded-none transition-colors",
+                        'h-0.5 w-6 rounded-none transition-colors',
                         Math.abs(lineHeight - lh) < 0.15
-                          ? "bg-white dark:bg-black"
-                          : "bg-black/30 dark:bg-white/30 group-hover:bg-black dark:group-hover:bg-white"
+                          ? 'bg-white dark:bg-black'
+                          : 'bg-black/30 dark:bg-white/30 group-hover:bg-black dark:group-hover:bg-white',
                       )}
                     />
                   ))}
                 </div>
                 <span className="text-[9px] font-bold uppercase tracking-widest">
-                  {lh === 1.2 ? "Tight" : lh === 1.6 ? "Normal" : "Relaxed"}
+                  {lh === 1.2 ? 'Tight' : lh === 1.6 ? 'Normal' : 'Relaxed'}
                 </span>
               </Button>
             ))}
@@ -225,12 +235,18 @@ const AppearancePanel: React.FC<AppearancePanelProps> = ({
               size="icon"
               onClick={() => onMarginChange(Math.max(0, margin - 10))}
               className={cn(
-                "h-9 w-9 rounded-none border-2 border-black/20 dark:border-white/20",
-                "bg-background text-foreground transition-[background-color,color,border-color,transform]",
-                "hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black hover:border-black dark:hover:border-white active:scale-95"
+                'h-9 w-9 rounded-none border-2 border-black/20 dark:border-white/20',
+                'bg-background text-foreground transition-[background-color,color,border-color,transform]',
+                'hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black hover:border-black dark:hover:border-white active:scale-95',
               )}
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <path d="M5 12h14" />
               </svg>
             </Button>
@@ -239,7 +255,7 @@ const AppearancePanel: React.FC<AppearancePanelProps> = ({
               max={200}
               step={10}
               value={[margin]}
-              onValueChange={(value) => onMarginChange(value[0])}
+              onValueChange={(value) => value[0] !== undefined && onMarginChange(value[0])}
               className="flex-1"
             />
             <Button
@@ -247,12 +263,18 @@ const AppearancePanel: React.FC<AppearancePanelProps> = ({
               size="icon"
               onClick={() => onMarginChange(Math.min(200, margin + 10))}
               className={cn(
-                "h-9 w-9 rounded-none border-2 border-black/20 dark:border-white/20",
-                "bg-background text-foreground transition-[background-color,color,border-color,transform]",
-                "hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black hover:border-black dark:hover:border-white active:scale-95"
+                'h-9 w-9 rounded-none border-2 border-black/20 dark:border-white/20',
+                'bg-background text-foreground transition-[background-color,color,border-color,transform]',
+                'hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black hover:border-black dark:hover:border-white active:scale-95',
               )}
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <path d="M12 5v14M5 12h14" />
               </svg>
             </Button>
@@ -261,49 +283,47 @@ const AppearancePanel: React.FC<AppearancePanelProps> = ({
           {/* Margin Visual */}
           <div className="flex justify-between gap-2 pt-1">
             {[
-              { value: 20, label: "Narrow" },
-              { value: 80, label: "Medium" },
-              { value: 150, label: "Wide" },
+              { value: 20, label: 'Narrow' },
+              { value: 80, label: 'Medium' },
+              { value: 150, label: 'Wide' },
             ].map(({ value, label }) => (
               <Button
                 key={value}
                 variant="ghost"
                 onClick={() => onMarginChange(value)}
                 className={cn(
-                  "group flex flex-1 flex-col items-center gap-2 h-auto rounded-none border-2 py-2 transition-[background-color,color,border-color]",
+                  'group flex flex-1 flex-col items-center gap-2 h-auto rounded-none border-2 py-2 transition-[background-color,color,border-color]',
                   Math.abs(margin - value) < 25
-                    ? "bg-[#E02E2E] text-white border-[#E02E2E] hover:bg-[#E02E2E]/90"
-                    : "border-black/10 dark:border-white/10 hover:border-black dark:hover:border-white"
+                    ? 'bg-[#E02E2E] text-white border-[#E02E2E] hover:bg-[#E02E2E]/90'
+                    : 'border-black/10 dark:border-white/10 hover:border-black dark:hover:border-white',
                 )}
               >
                 <div
                   className={cn(
-                    "flex h-6 w-10 items-center justify-center rounded-none border transition-colors",
+                    'flex h-6 w-10 items-center justify-center rounded-none border transition-colors',
                     Math.abs(margin - value) < 25
-                      ? "border-white/40 bg-white/10"
-                      : "border-black/20 dark:border-white/20 bg-black/5 dark:bg-white/5"
+                      ? 'border-white/40 bg-white/10'
+                      : 'border-black/20 dark:border-white/20 bg-black/5 dark:bg-white/5',
                   )}
                 >
                   <div
                     className={cn(
-                      "h-4 rounded-none transition-colors",
+                      'h-4 rounded-none transition-colors',
                       Math.abs(margin - value) < 25
-                        ? "bg-white"
-                        : "bg-black/20 dark:bg-white/20 group-hover:bg-black/40 dark:group-hover:bg-white/40"
+                        ? 'bg-white'
+                        : 'bg-black/20 dark:bg-white/20 group-hover:bg-black/40 dark:group-hover:bg-white/40',
                     )}
                     style={{ width: `${100 - value / 3}%` }}
                   />
                 </div>
-                <span className="text-[9px] font-bold uppercase tracking-widest">
-                  {label}
-                </span>
+                <span className="text-[9px] font-bold uppercase tracking-widest">{label}</span>
               </Button>
             ))}
           </div>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AppearancePanel;
+export default AppearancePanel

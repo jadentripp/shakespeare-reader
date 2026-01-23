@@ -1,53 +1,63 @@
-import { type RefObject } from "react";
-import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import type { BookChatThread, ChatPrompt, LocalChatMessage, StagedSnippet } from "@/lib/readerTypes";
-import type { Highlight } from "@/lib/tauri";
-import { Check, PanelRightClose, PlusSquare, History, MessageSquare, X, Eraser, Trash2, MapPin, BookOpen, Feather, Quote, Lightbulb } from "lucide-react";
-import { ChatModelSelector } from "./ChatModelSelector";
-import { ChatThreadItem } from "./ChatThreadItem";
-import { ChatMessageList } from "./ChatMessageList";
-import { ChatInputArea } from "./ChatInputArea";
-import { ContextTray } from "./ContextTray";
+  BookOpen,
+  Check,
+  Eraser,
+  Feather,
+  History,
+  Lightbulb,
+  MapPin,
+  MessageSquare,
+  PanelRightClose,
+  PlusSquare,
+  Quote,
+  Trash2,
+  X,
+} from 'lucide-react'
+import type { RefObject } from 'react'
+import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import type { BookChatThread, ChatPrompt, LocalChatMessage, StagedSnippet } from '@/lib/readerTypes'
+import type { Highlight } from '@/lib/tauri'
+import { cn } from '@/lib/utils'
+import { ChatInputArea } from './ChatInputArea'
+import { ChatMessageList } from './ChatMessageList'
+import { ChatModelSelector } from './ChatModelSelector'
+import { ChatThreadItem } from './ChatThreadItem'
+import { ContextTray } from './ContextTray'
 
 type ChatSidebarProps = {
-  contextHint: string;
-  messages: LocalChatMessage[];
-  prompts: ChatPrompt[];
-  chatInput: string;
-  onChatInputChange: (value: string) => void;
-  onPromptSelect: (value: string) => void;
-  onSend: () => void;
-  onNewChat?: () => void;
-  chatSending: boolean;
-  chatInputRef: RefObject<HTMLTextAreaElement | null>;
-  currentModel: string;
-  availableModels: string[];
-  onModelChange: (model: string) => void;
-  modelsLoading: boolean;
-  onCollapse: () => void;
-  threads: BookChatThread[] | undefined;
-  currentThreadId: number | null;
-  onSelectThread: (id: number | null) => void;
-  onDeleteThread?: (id: number) => void;
-  onRenameThread?: (id: number, title: string) => void;
-  onClearDefaultChat?: () => void;
-  onClearThreadChat?: (id: number) => void;
-  onDeleteMessage?: (id: number) => void;
-  placeholder?: string;
-  isHighlightContext?: boolean;
-  attachedContext?: Highlight[];
-  onRemoveContext?: (id: number) => void;
-  stagedSnippets?: StagedSnippet[];
-  onRemoveSnippet?: (id: string) => void;
-  onClearSnippets?: () => void;
-  onCitationClick?: (index: number, snippet?: string) => void;
-};
+  contextHint: string
+  messages: LocalChatMessage[]
+  prompts: ChatPrompt[]
+  chatInput: string
+  onChatInputChange: (value: string) => void
+  onPromptSelect: (value: string) => void
+  onSend: () => void
+  onNewChat?: (() => void) | undefined
+  chatSending: boolean
+  chatInputRef: RefObject<HTMLTextAreaElement | null>
+  currentModel: string
+  availableModels: string[]
+  onModelChange: (model: string) => void
+  modelsLoading: boolean
+  onCollapse: () => void
+  threads: BookChatThread[] | undefined
+  currentThreadId: number | null
+  onSelectThread: (id: number | null) => void
+  onDeleteThread?: ((id: number) => void) | undefined
+  onRenameThread?: ((id: number, title: string) => void) | undefined
+  onClearDefaultChat?: (() => void) | undefined
+  onClearThreadChat?: ((id: number) => void) | undefined
+  onDeleteMessage?: ((id: number) => void) | undefined
+  placeholder?: string
+  isHighlightContext?: boolean
+  attachedContext?: Highlight[]
+  onRemoveContext?: ((id: number) => void) | undefined
+  stagedSnippets?: StagedSnippet[]
+  onRemoveSnippet?: ((id: string) => void) | undefined
+  onClearSnippets?: (() => void) | undefined
+  onCitationClick?: ((index: number, snippet?: string) => void) | undefined
+}
 
 export default function ChatSidebar({
   contextHint,
@@ -73,7 +83,7 @@ export default function ChatSidebar({
   onClearDefaultChat,
   onClearThreadChat,
   onDeleteMessage,
-  placeholder = "Ask about the text…",
+  placeholder = 'Ask about the text…',
   isHighlightContext = false,
   attachedContext = [],
   onRemoveContext,
@@ -123,28 +133,29 @@ export default function ChatSidebar({
                       <History className="h-3.5 w-3.5" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent align="start" className="w-64 p-2 rounded-none border-2 border-black dark:border-white">
+                  <PopoverContent
+                    align="start"
+                    className="w-64 p-2 rounded-none border-2 border-black dark:border-white"
+                  >
                     <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       Chat History
                     </div>
                     <div className="max-h-64 overflow-y-auto space-y-1">
                       <div
                         className={cn(
-                          "group flex items-center gap-1 rounded-none px-2 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors",
-                          currentThreadId === null && "bg-black text-white dark:bg-white dark:text-black"
+                          'group flex items-center gap-1 rounded-none px-2 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors',
+                          currentThreadId === null &&
+                          'bg-black text-white dark:bg-white dark:text-black',
                         )}
                       >
-                        <button
-                          onClick={() => onSelectThread(null)}
-                          className="flex-1 text-left"
-                        >
+                        <button onClick={() => onSelectThread(null)} className="flex-1 text-left">
                           Default Chat
                         </button>
                         {onClearDefaultChat && currentThreadId === null && messages.length > 0 && (
                           <button
                             onClick={(e) => {
-                              e.stopPropagation();
-                              onClearDefaultChat();
+                              e.stopPropagation()
+                              onClearDefaultChat()
                             }}
                             className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-[opacity,color]"
                             title="Clear default chat"
@@ -158,8 +169,9 @@ export default function ChatSidebar({
                         <div
                           key={thread.id}
                           className={cn(
-                            "group flex flex-col gap-0.5 rounded-none px-2 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors",
-                            currentThreadId === thread.id && "bg-black text-white dark:bg-white dark:text-black"
+                            'group flex flex-col gap-0.5 rounded-none px-2 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors',
+                            currentThreadId === thread.id &&
+                            'bg-black text-white dark:bg-white dark:text-black',
                           )}
                         >
                           <div className="flex items-center gap-1">
@@ -176,26 +188,26 @@ export default function ChatSidebar({
                                 {thread.title}
                               </button>
                             )}
-                            {thread.last_cfi && (
-                              <MapPin className="h-2.5 w-2.5" />
-                            )}
-                            {onClearThreadChat && currentThreadId === thread.id && messages.length > 0 && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onClearThreadChat(thread.id);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-[opacity,color]"
-                                title="Clear thread messages"
-                              >
-                                <Eraser className="h-3 w-3" />
-                              </button>
-                            )}
+                            {thread.last_cfi && <MapPin className="h-2.5 w-2.5" />}
+                            {onClearThreadChat &&
+                              currentThreadId === thread.id &&
+                              messages.length > 0 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    onClearThreadChat(thread.id)
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-[opacity,color]"
+                                  title="Clear thread messages"
+                                >
+                                  <Eraser className="h-3 w-3" />
+                                </button>
+                              )}
                             {onDeleteThread && (
                               <button
                                 onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDeleteThread(thread.id);
+                                  e.stopPropagation()
+                                  onDeleteThread(thread.id)
                                 }}
                                 className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-[opacity,color]"
                                 title="Delete thread"
@@ -203,7 +215,9 @@ export default function ChatSidebar({
                                 <Trash2 className="h-3 w-3" />
                               </button>
                             )}
-                            {currentThreadId === thread.id && <Check className="h-3 w-3 shrink-0" />}
+                            {currentThreadId === thread.id && (
+                              <Check className="h-3 w-3 shrink-0" />
+                            )}
                           </div>
                         </div>
                       ))}
@@ -223,15 +237,19 @@ export default function ChatSidebar({
           {/* Bottom row: title + context */}
           <div className="flex items-center gap-2 px-3 py-1.5">
             <div className="bg-black dark:bg-white px-1.5 py-0.5 shrink-0">
-              <span className="text-[9px] font-black uppercase tracking-tight text-white dark:text-black leading-none">AI</span>
+              <span className="text-[9px] font-black uppercase tracking-tight text-white dark:text-black leading-none">
+                AI
+              </span>
             </div>
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
               <div className="bg-[#E02E2E] px-1 py-0.5 shrink-0">
                 <span className="text-[7px] font-black uppercase tracking-widest text-white leading-none">
-                  {isHighlightContext ? "SEL" : "PG"}
+                  {isHighlightContext ? 'SEL' : 'PG'}
                 </span>
               </div>
-              <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground truncate">{contextHint}</span>
+              <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground truncate">
+                {contextHint}
+              </span>
             </div>
           </div>
         </div>
@@ -240,8 +258,8 @@ export default function ChatSidebar({
         {prompts.length > 0 && (
           <div className="shrink-0 flex flex-wrap gap-2 px-4 py-3 bg-black/5 dark:bg-white/5 border-b-2 border-black/10 dark:border-white/10">
             {prompts.map((prompt, index) => {
-              const icons = [BookOpen, Quote, Lightbulb, Feather];
-              const Icon = icons[index % icons.length];
+              const icons = [BookOpen, Quote, Lightbulb, Feather]
+              const Icon = icons[index % icons.length]
               return (
                 <Button
                   key={prompt.label}
@@ -249,16 +267,16 @@ export default function ChatSidebar({
                   size="sm"
                   className="group h-8 gap-2 rounded-none border-2 border-black/20 dark:border-white/20 bg-background px-3 text-[10px] font-bold uppercase tracking-widest transition-[border-color,background-color,color] duration-200 hover:border-black dark:hover:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
                   onClick={() => {
-                    onPromptSelect(prompt.prompt);
-                    chatInputRef.current?.focus();
+                    onPromptSelect(prompt.prompt)
+                    chatInputRef.current?.focus()
                   }}
                   disabled={chatSending}
                   type="button"
                 >
-                  <Icon className="h-3.5 w-3.5 opacity-60 group-hover:opacity-100" />
+                  {Icon && <Icon className="h-3.5 w-3.5 opacity-60 group-hover:opacity-100" />}
                   {prompt.label}
                 </Button>
-              );
+              )
             })}
           </div>
         )}
@@ -282,7 +300,7 @@ export default function ChatSidebar({
         {/* Context Shelf */}
         {attachedContext.length > 0 && (
           <div className="shrink-0 flex flex-wrap gap-1.5 px-3 py-2 border-t-2 border-black dark:border-white bg-black/5 dark:bg-white/5">
-            {attachedContext.map((h: any) => (
+            {attachedContext.map((h: Highlight) => (
               <div
                 key={h.id}
                 className="flex items-center gap-1.5 rounded-none bg-[#E02E2E]/10 border-2 border-[#E02E2E]/20 px-2 py-1 group"
@@ -314,5 +332,5 @@ export default function ChatSidebar({
         />
       </div>
     </aside>
-  );
+  )
 }

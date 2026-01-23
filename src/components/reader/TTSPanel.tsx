@@ -1,60 +1,61 @@
-import { useState, useCallback, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Play,
+  Check,
+  Gauge,
+  Mic2,
   Pause,
+  Play,
+  RotateCcw,
+  Settings2,
+  Volume1,
   Volume2,
   VolumeX,
-  Volume1,
-  RotateCcw,
-  Mic2,
-  Settings2,
   X,
-  Gauge,
-  Check
-} from "lucide-react";
-import { elevenLabsService, Voice } from "@/lib/elevenlabs";
-import { cn } from "@/lib/utils";
+} from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Slider } from '@/components/ui/slider'
+import { elevenLabsService, type Voice } from '@/lib/elevenlabs'
+import { cn } from '@/lib/utils'
 
 interface TTSHook {
-  state: 'idle' | 'playing' | 'paused' | 'buffering' | 'error';
-  progress: { currentTime: number; duration: number; isBuffering: boolean };
-  playCurrentPage: () => Promise<void>;
-  pause: () => void;
-  resume: () => void;
-  stop: () => void;
-  setPlaybackRate: (rate: number) => void;
-  setVolume: (volume: number) => void;
-  seek: (position: number) => void;
-  voiceId: string | undefined;
-  changeVoice: (voiceId: string) => void;
+  state: 'idle' | 'playing' | 'paused' | 'buffering' | 'error'
+  progress: { currentTime: number; duration: number; isBuffering: boolean }
+  playCurrentPage: () => Promise<void>
+  pause: () => void
+  resume: () => void
+  stop: () => void
+  setPlaybackRate: (rate: number) => void
+  setVolume: (volume: number) => void
+  seek: (position: number) => void
+  voiceId: string | undefined
+  changeVoice: (voiceId: string) => void
 }
 
 interface TTSPanelProps {
-  className?: string;
-  expanded?: boolean;
-  onExpandChange?: (expanded: boolean) => void;
-  tts: TTSHook;
+  className?: string
+  expanded?: boolean
+  onExpandChange?: (expanded: boolean) => void
+  tts: TTSHook
 }
 
-const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] as const;
-type PlaybackSpeed = typeof SPEED_OPTIONS[number];
+const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] as const
+type PlaybackSpeed = (typeof SPEED_OPTIONS)[number]
 
-const getSpeedLabel = (speed: PlaybackSpeed): string => `${speed}x`;
+const getSpeedLabel = (speed: PlaybackSpeed): string => `${speed}x`
 
 const VolumeIcon = ({ volume }: { volume: number }) => {
-  if (volume === 0) return <VolumeX className="h-4 w-4" />;
-  if (volume < 0.5) return <Volume1 className="h-4 w-4" />;
-  return <Volume2 className="h-4 w-4" />;
-};
+  if (volume === 0) return <VolumeX className="h-4 w-4" />
+  if (volume < 0.5) return <Volume1 className="h-4 w-4" />
+  return <Volume2 className="h-4 w-4" />
+}
 
-export function TTSPanel({ className, expanded: controlledExpanded, onExpandChange, tts }: TTSPanelProps) {
+export function TTSPanel({
+  className,
+  expanded: controlledExpanded,
+  onExpandChange,
+  tts,
+}: TTSPanelProps) {
   const {
     state,
     progress,
@@ -67,102 +68,112 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
     seek,
     voiceId,
     changeVoice,
-  } = tts;
+  } = tts
 
-  const [internalExpanded, setInternalExpanded] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [internalExpanded, setInternalExpanded] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   // Use controlled state if provided, otherwise internal
-  const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
+  const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded
 
-  const setIsExpanded = useCallback((value: boolean) => {
-    setInternalExpanded(value);
-    onExpandChange?.(value);
-  }, [onExpandChange]);
+  const setIsExpanded = useCallback(
+    (value: boolean) => {
+      setInternalExpanded(value)
+      onExpandChange?.(value)
+    },
+    [onExpandChange],
+  )
 
-  const [playbackRate, setPlaybackRateLocal] = useState<PlaybackSpeed>(1);
-  const [volume, setVolumeLocal] = useState(1);
-  const [voices, setVoices] = useState<Voice[]>([]);
+  const [playbackRate, setPlaybackRateLocal] = useState<PlaybackSpeed>(1)
+  const [volume, setVolumeLocal] = useState(1)
+  const [voices, setVoices] = useState<Voice[]>([])
 
   useEffect(() => {
-    elevenLabsService.getVoices()
+    elevenLabsService
+      .getVoices()
       .then((fetchedVoices) => {
-        setVoices(fetchedVoices);
-        if (fetchedVoices.length > 0 && !voiceId) {
-          changeVoice(fetchedVoices[0].voice_id);
+        setVoices(fetchedVoices)
+        const firstVoice = fetchedVoices[0]
+        if (firstVoice && !voiceId) {
+          changeVoice(firstVoice.voice_id)
         }
       })
-      .catch(console.error);
-  }, [voiceId, changeVoice]);
+      .catch(console.error)
+  }, [voiceId, changeVoice])
 
-  const isPlaying = state === "playing";
-  const isPaused = state === "paused";
-  const currentVoice = voices.find(v => v.voice_id === voiceId);
-  const currentVoiceName = currentVoice?.name || "Select a Voice";
+  const isPlaying = state === 'playing'
+  const isPaused = state === 'paused'
+  const currentVoice = voices.find((v) => v.voice_id === voiceId)
+  const currentVoiceName = currentVoice?.name || 'Select a Voice'
 
   const handleTogglePlayPause = () => {
     if (isPlaying) {
-      pause();
+      pause()
     } else if (isPaused) {
-      resume();
+      resume()
     } else {
-      playCurrentPage();
+      playCurrentPage()
     }
-  };
+  }
 
   const handleSpeedSelect = (speed: PlaybackSpeed) => {
-    setPlaybackRateLocal(speed);
-    setPlaybackRate(speed);
-  };
+    setPlaybackRateLocal(speed)
+    setPlaybackRate(speed)
+  }
 
   const handleVolumeChange = (value: number[]) => {
-    const newVolume = value[0];
-    setVolumeLocal(newVolume);
-    setVolume(newVolume);
-  };
+    const newVolume = value[0]
+    if (newVolume !== undefined) {
+      setVolumeLocal(newVolume)
+      setVolume(newVolume)
+    }
+  }
 
   const handleSkipBackward = () => {
-    const skipAmount = 15;
-    const newTime = Math.max(0, progress.currentTime - skipAmount);
-    seek(newTime);
-  };
+    const skipAmount = 15
+    const newTime = Math.max(0, progress.currentTime - skipAmount)
+    seek(newTime)
+  }
 
   const handleSkipForward = () => {
-    const skipAmount = 15;
-    const newTime = progress.currentTime + skipAmount;
+    const skipAmount = 15
+    const newTime = progress.currentTime + skipAmount
 
     if (newTime >= progress.duration) {
-      seek(progress.duration);
+      seek(progress.duration)
     } else {
-      seek(newTime);
+      seek(newTime)
     }
-  };
+  }
 
   const handleSeek = (value: number[]) => {
-    seek(value[0]);
-  };
+    const newVal = value[0]
+    if (newVal !== undefined) {
+      seek(newVal)
+    }
+  }
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
 
   // If idle and not explicitly expanded, hide (or if you want a "launch" button, handle that elsewhere)
-  if (state === 'idle' && !isExpanded) return null;
+  if (state === 'idle' && !isExpanded) return null
 
   return (
     <div
       data-testid="tts-panel-container"
       className={cn(
-        "fixed bottom-8 left-1/2 -translate-x-1/2 z-50",
-        "w-[95%] max-w-3xl",
-        "bg-background border-2 border-black dark:border-white rounded-none",
-        "shadow-2xl",
-        "transition-[opacity,transform,background-color,border-color,box-shadow] duration-300 ease-out",
-        "animate-in slide-in-from-bottom-4 fade-in",
-        "touch-action-manipulation",
-        className
+        'fixed bottom-8 left-1/2 -translate-x-1/2 z-50',
+        'w-[95%] max-w-3xl',
+        'bg-background border-2 border-black dark:border-white rounded-none',
+        'shadow-2xl',
+        'transition-[opacity,transform,background-color,border-color,box-shadow] duration-300 ease-out',
+        'animate-in slide-in-from-bottom-4 fade-in',
+        'touch-action-manipulation',
+        className,
       )}
     >
       <div className="flex flex-col p-3 gap-2">
@@ -194,7 +205,6 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
 
         {/* Controls Row */}
         <div className="flex items-center justify-between px-2 pb-1 gap-4 border-t-2 border-black/10 dark:border-white/10 pt-3">
-
           {/* Left: Info & Voice (Conditional) */}
           <div className="flex items-center gap-3 flex-1 min-w-0 justify-start">
             {showSettings && (
@@ -211,9 +221,15 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
                     </span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-2 rounded-none border-2 border-black dark:border-white bg-background" side="top" align="start">
+                <PopoverContent
+                  className="w-64 p-2 rounded-none border-2 border-black dark:border-white bg-background"
+                  side="top"
+                  align="start"
+                >
                   <div className="space-y-2">
-                    <h4 className="font-black text-[10px] uppercase tracking-widest text-muted-foreground px-2 mb-1 border-b-2 border-black/10 dark:border-white/10 pb-1">SELECT VOICE</h4>
+                    <h4 className="font-black text-[10px] uppercase tracking-widest text-muted-foreground px-2 mb-1 border-b-2 border-black/10 dark:border-white/10 pb-1">
+                      SELECT VOICE
+                    </h4>
                     <div className="max-h-[200px] overflow-y-auto space-y-1 pr-1">
                       {voices.map((voice) => (
                         <Button
@@ -222,10 +238,10 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
                           size="sm"
                           onClick={() => changeVoice(voice.voice_id)}
                           className={cn(
-                            "w-full justify-start px-3 h-9 rounded-none text-[10px] font-bold uppercase tracking-widest transition-colors",
+                            'w-full justify-start px-3 h-9 rounded-none text-[10px] font-bold uppercase tracking-widest transition-colors',
                             voiceId === voice.voice_id
-                              ? "bg-black text-white dark:bg-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90"
-                              : "hover:bg-black/10 dark:hover:bg-white/10 text-foreground"
+                              ? 'bg-black text-white dark:bg-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90'
+                              : 'hover:bg-black/10 dark:hover:bg-white/10 text-foreground',
                           )}
                         >
                           {voice.name}
@@ -254,7 +270,7 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
               variant="default"
               size="icon"
               onClick={handleTogglePlayPause}
-              aria-label={isPlaying ? "Pause" : "Play"}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
               className="h-12 w-12 rounded-none bg-black text-white dark:bg-white dark:text-black hover:bg-[#E02E2E] hover:text-white transition-[color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform] shadow-xl border-2 border-black dark:border-white"
             >
               {isPlaying ? (
@@ -279,10 +295,10 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
               size="icon"
               onClick={() => setShowSettings(!showSettings)}
               className={cn(
-                "h-10 w-10 text-foreground border-2 rounded-none transition-[color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform]",
+                'h-10 w-10 text-foreground border-2 rounded-none transition-[color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform]',
                 showSettings
-                  ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white"
-                  : "border-black/10 dark:border-white/10 hover:border-black dark:hover:border-white"
+                  ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
+                  : 'border-black/10 dark:border-white/10 hover:border-black dark:hover:border-white',
               )}
               aria-label="Toggle settings"
             >
@@ -292,18 +308,27 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
 
           {/* Right: Settings & Volume */}
           <div className="flex items-center gap-2 flex-1 justify-end">
-
             {showSettings && (
               <>
                 {/* Speed Popover */}
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-9 w-14 gap-1 px-0 border-2 border-black/20 dark:border-white/20 rounded-none text-foreground hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-[color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform] animate-in fade-in slide-in-from-right-2 duration-200">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-14 gap-1 px-0 border-2 border-black/20 dark:border-white/20 rounded-none text-foreground hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-[color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform] animate-in fade-in slide-in-from-right-2 duration-200"
+                    >
                       <Gauge className="h-4 w-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">{getSpeedLabel(playbackRate)}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">
+                        {getSpeedLabel(playbackRate)}
+                      </span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-40 p-1 rounded-none border-2 border-black dark:border-white bg-background" side="top" align="center">
+                  <PopoverContent
+                    className="w-40 p-1 rounded-none border-2 border-black dark:border-white bg-background"
+                    side="top"
+                    align="center"
+                  >
                     <div className="grid grid-cols-1 gap-1">
                       {SPEED_OPTIONS.map((speed) => (
                         <Button
@@ -312,10 +337,10 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
                           size="sm"
                           onClick={() => handleSpeedSelect(speed)}
                           className={cn(
-                            "flex items-center justify-between px-3 h-9 rounded-none text-[10px] font-bold uppercase tracking-widest transition-colors",
+                            'flex items-center justify-between px-3 h-9 rounded-none text-[10px] font-bold uppercase tracking-widest transition-colors',
                             playbackRate === speed
-                              ? "bg-black text-white dark:bg-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90"
-                              : "hover:bg-black/10 dark:hover:bg-white/10 text-foreground"
+                              ? 'bg-black text-white dark:bg-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90'
+                              : 'hover:bg-black/10 dark:hover:bg-white/10 text-foreground',
                           )}
                         >
                           <span>{speed}X</span>
@@ -329,11 +354,19 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
                 {/* Volume Popover */}
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 text-foreground border-2 border-black/20 dark:border-white/20 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-[color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform] animate-in fade-in slide-in-from-right-2 duration-200">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-foreground border-2 border-black/20 dark:border-white/20 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-[color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform] animate-in fade-in slide-in-from-right-2 duration-200"
+                    >
                       <VolumeIcon volume={volume} />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-12 h-32 p-0 flex justify-center py-4 rounded-none border-2 border-black dark:border-white bg-background" side="top" align="center">
+                  <PopoverContent
+                    className="w-12 h-32 p-0 flex justify-center py-4 rounded-none border-2 border-black dark:border-white bg-background"
+                    side="top"
+                    align="center"
+                  >
                     <Slider
                       orientation="vertical"
                       value={[volume]}
@@ -354,8 +387,8 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
               variant="ghost"
               size="icon"
               onClick={() => {
-                stop();
-                setIsExpanded(false);
+                stop()
+                setIsExpanded(false)
               }}
               aria-label="Close TTS Panel"
               className="h-9 w-9 text-foreground border-2 border-black/10 dark:border-white/10 hover:bg-[#E02E2E] hover:text-white hover:border-[#E02E2E] rounded-none transition-[color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform]"
@@ -366,5 +399,5 @@ export function TTSPanel({ className, expanded: controlledExpanded, onExpandChan
         </div>
       </div>
     </div>
-  );
+  )
 }

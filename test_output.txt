@@ -1,0 +1,926 @@
+$ bun test
+bun test v1.3.6 (d530ed99)
+
+src/tests/bookCategories.test.ts:
+(pass) Book Categories - Configuration Validation > should have at least one category defined per group [1.24ms]
+(pass) Book Categories - Configuration Validation > should have all categories with valid topics [0.25ms]
+(pass) Book Categories - Configuration Validation > should have unique keys for all catalog entries [0.17ms]
+(pass) Book Categories - Configuration Validation > should have all entries accessible via CATALOG_BY_KEY [0.13ms]
+(pass) Book Categories - Configuration Validation > should have valid collection entries with catalog keys
+(pass) Book Categories - Configuration Validation > should have exactly 71 category topics
+(pass) Book Categories - Configuration Validation > should have exactly 5 collections
+(pass) Book Categories - Expected Results > Literature > should have 19 topics defined
+(pass) Book Categories - Expected Results > Literature > should have 'Adventure' as a valid category [0.45ms]
+(pass) Book Categories - Expected Results > Literature > should have 'American Literature' as a valid category [0.04ms]
+(pass) Book Categories - Expected Results > Literature > should have 'British Literature' as a valid category
+(pass) Book Categories - Expected Results > Literature > should have 'French Literature' as a valid category [0.08ms]
+(pass) Book Categories - Expected Results > Literature > should have 'German Literature' as a valid category
+(pass) Book Categories - Expected Results > Literature > should have 'Russian Literature' as a valid category [0.05ms]
+(pass) Book Categories - Expected Results > Literature > should have 'Classics of Literature' as a valid category
+(pass) Book Categories - Expected Results > Literature > should have 'Biographies' as a valid category [0.04ms]
+(pass) Book Categories - Expected Results > Literature > should have 'Novels' as a valid category [0.06ms]
+(pass) Book Categories - Expected Results > Literature > should have 'Short Stories' as a valid category [0.07ms]
+(pass) Book Categories - Expected Results > Literature > should have 'Poetry' as a valid category [0.10ms]
+(pass) Book Categories - Expected Results > Literature > should have 'Plays/Films/Dramas' as a valid category
+(pass) Book Categories - Expected Results > Literature > should have 'Romance' as a valid category
+(pass) Book Categories - Expected Results > Literature > should have 'Science-Fiction & Fantasy' as a valid category
+(pass) Book Categories - Expected Results > Literature > should have 'Crime, Thrillers & Mystery' as a valid category [0.20ms]
+(pass) Book Categories - Expected Results > Literature > should have 'Mythology, Legends & Folklore' as a valid category
+(pass) Book Categories - Expected Results > Literature > should have 'Humour' as a valid category
+(pass) Book Categories - Expected Results > Literature > should have 'Children & Young Adult Reading' as a valid category
+(pass) Book Categories - Expected Results > Literature > should have 'Literature - Other' as a valid category
+(pass) Book Categories - Expected Results > Science & Technology > should have 8 topics defined [0.04ms]
+(pass) Book Categories - Expected Results > Science & Technology > should have 'Engineering & Technology' as a valid category [0.04ms]
+(pass) Book Categories - Expected Results > Science & Technology > should have 'Mathematics' as a valid category [0.03ms]
+(pass) Book Categories - Expected Results > Science & Technology > should have 'Science - Physics' as a valid category [0.02ms]
+(pass) Book Categories - Expected Results > Science & Technology > should have 'Science - Chemistry/Biochemistry' as a valid category
+(pass) Book Categories - Expected Results > Science & Technology > should have 'Science - Biology' as a valid category
+(pass) Book Categories - Expected Results > Science & Technology > should have 'Science - Earth/Agricultural/Farming' as a valid category [0.10ms]
+(pass) Book Categories - Expected Results > Science & Technology > should have 'Research Methods/Statistics/Information Sys' as a valid category [0.07ms]
+(pass) Book Categories - Expected Results > Science & Technology > should have 'Environmental Issues' as a valid category
+(pass) Book Categories - Expected Results > History > should have 13 topics defined
+(pass) Book Categories - Expected Results > History > should have 'History - American' as a valid category [0.32ms]
+(pass) Book Categories - Expected Results > History > should have 'History - British' as a valid category
+(pass) Book Categories - Expected Results > History > should have 'History - European' as a valid category
+(pass) Book Categories - Expected Results > History > should have 'History - Ancient' as a valid category
+(pass) Book Categories - Expected Results > History > should have 'History - Medieval/Middle Ages' as a valid category
+(pass) Book Categories - Expected Results > History > should have 'History - Early Modern (c. 1450-1750)' as a valid category
+(pass) Book Categories - Expected Results > History > should have 'History - Modern (1750+)' as a valid category [0.17ms]
+(pass) Book Categories - Expected Results > History > should have 'History - Religious' as a valid category
+(pass) Book Categories - Expected Results > History > should have 'History - Royalty' as a valid category [0.04ms]
+(pass) Book Categories - Expected Results > History > should have 'History - Warfare' as a valid category
+(pass) Book Categories - Expected Results > History > should have 'History - Schools & Universities' as a valid category
+(pass) Book Categories - Expected Results > History > should have 'History - Other' as a valid category [0.04ms]
+(pass) Book Categories - Expected Results > History > should have 'Archaeology & Anthropology' as a valid category
+(pass) Book Categories - Expected Results > Social Sciences & Society > should have 9 topics defined [0.05ms]
+(pass) Book Categories - Expected Results > Social Sciences & Society > should have 'Business/Management' as a valid category [0.03ms]
+(pass) Book Categories - Expected Results > Social Sciences & Society > should have 'Economics' as a valid category [0.02ms]
+(pass) Book Categories - Expected Results > Social Sciences & Society > should have 'Law & Criminology' as a valid category
+(pass) Book Categories - Expected Results > Social Sciences & Society > should have 'Gender & Sexuality Studies' as a valid category
+(pass) Book Categories - Expected Results > Social Sciences & Society > should have 'Psychiatry/Psychology' as a valid category [0.04ms]
+(pass) Book Categories - Expected Results > Social Sciences & Society > should have 'Sociology' as a valid category
+(pass) Book Categories - Expected Results > Social Sciences & Society > should have 'Politics' as a valid category
+(pass) Book Categories - Expected Results > Social Sciences & Society > should have 'Parenthood & Family Relations' as a valid category [0.01ms]
+(pass) Book Categories - Expected Results > Social Sciences & Society > should have 'Old Age & the Elderly' as a valid category
+(pass) Book Categories - Expected Results > Arts & Culture > should have 7 topics defined
+(pass) Book Categories - Expected Results > Arts & Culture > should have 'Art' as a valid category
+(pass) Book Categories - Expected Results > Arts & Culture > should have 'Architecture' as a valid category
+(pass) Book Categories - Expected Results > Arts & Culture > should have 'Music' as a valid category
+(pass) Book Categories - Expected Results > Arts & Culture > should have 'Fashion' as a valid category
+(pass) Book Categories - Expected Results > Arts & Culture > should have 'Journalism/Media/Writing' as a valid category [0.12ms]
+(pass) Book Categories - Expected Results > Arts & Culture > should have 'Language & Communication' as a valid category
+(pass) Book Categories - Expected Results > Arts & Culture > should have 'Essays, Letters & Speeches' as a valid category
+(pass) Book Categories - Expected Results > Religion & Philosophy > should have 2 topics defined
+(pass) Book Categories - Expected Results > Religion & Philosophy > should have 'Religion/Spirituality' as a valid category
+(pass) Book Categories - Expected Results > Religion & Philosophy > should have 'Philosophy & Ethics' as a valid category
+(pass) Book Categories - Expected Results > Lifestyle & Hobbies > should have 6 topics defined [0.19ms]
+(pass) Book Categories - Expected Results > Lifestyle & Hobbies > should have 'Cooking & Drinking' as a valid category [0.02ms]
+(pass) Book Categories - Expected Results > Lifestyle & Hobbies > should have 'Sports/Hobbies' as a valid category [0.01ms]
+(pass) Book Categories - Expected Results > Lifestyle & Hobbies > should have 'How To ...' as a valid category
+(pass) Book Categories - Expected Results > Lifestyle & Hobbies > should have 'Travel Writing' as a valid category
+(pass) Book Categories - Expected Results > Lifestyle & Hobbies > should have 'Nature/Gardening/Animals' as a valid category
+(pass) Book Categories - Expected Results > Lifestyle & Hobbies > should have 'Sexuality & Erotica' as a valid category
+(pass) Book Categories - Expected Results > Health & Medicine > should have 3 topics defined [0.03ms]
+(pass) Book Categories - Expected Results > Health & Medicine > should have 'Health & Medicine' as a valid category
+(pass) Book Categories - Expected Results > Health & Medicine > should have 'Drugs/Alcohol/Pharmacology' as a valid category
+(pass) Book Categories - Expected Results > Health & Medicine > should have 'Nutrition' as a valid category [0.07ms]
+(pass) Book Categories - Expected Results > Education & Reference > should have 4 topics defined
+(pass) Book Categories - Expected Results > Education & Reference > should have 'Encyclopedias/Dictionaries/Reference' as a valid category [0.04ms]
+(pass) Book Categories - Expected Results > Education & Reference > should have 'Teaching & Education' as a valid category
+(pass) Book Categories - Expected Results > Education & Reference > should have 'Reports & Conference Proceedings' as a valid category
+(pass) Book Categories - Expected Results > Education & Reference > should have 'Journals' as a valid category [0.06ms]
+(pass) Book Categories - API Integration (Mocked) > each category topic should produce a valid Gutendex URL [0.93ms]
+(pass) Book Categories - API Integration (Mocked) > should handle API responses with at least 4 results per category (mocked) [4.51ms]
+(pass) Book Categories - API Integration (Mocked) > should handle API errors gracefully [0.42ms]
+(pass) Book Categories - Collections Validation > should have 'All of Gutenberg' collection with key 'collection-all' [0.09ms]
+(pass) Book Categories - Collections Validation > should have 'Shakespeare' collection with key 'collection-shakespeare' [0.03ms]
+(pass) Book Categories - Collections Validation > should have 'Greek tragedy' collection with key 'collection-greek-tragedy'
+(pass) Book Categories - Collections Validation > should have 'Greek epics' collection with key 'collection-greek-epic'
+(pass) Book Categories - Collections Validation > should have 'Roman drama' collection with key 'collection-roman-drama'
+
+src/tests/ChatSidebar.test.tsx:
+(pass) ChatSidebar Bauhaus Alignment > should have sharp corners and bold 2px borders [76.90ms]
+(pass) ChatSidebar Bauhaus Alignment > should use bold geometric sans-serif for the header in a black box [23.22ms]
+(pass) ChatSidebar Bauhaus Alignment > should have sharp corners on input area [16.79ms]
+
+src/tests/BookCard.test.tsx:
+(pass) BookCard > should render local book in grid variant by default [19.54ms]
+(pass) BookCard > should render catalog book in list variant [5.12ms]
+
+src/tests/readerHtml.test.ts:
+(pass) processGutenbergContent > should inject data-block-index into meaningful blocks [5.72ms]
+(pass) processGutenbergContent > should extract metadata correctly [0.35ms]
+
+src/tests/useTTS.test.ts:
+[useTTS] State transition: idle -> idle
+[useTTS] currentPage changed to 1. AutoNext: false, State: idle, justStarted: false
+(pass) useTTS > should initialize with idle state [3.59ms]
+[useTTS] State transition: idle -> idle
+[useTTS] currentPage changed to 1. AutoNext: false, State: idle, justStarted: false
+[useTTS] playCurrentPage called. Page: 1, Text length: 16, CharMap length: 0
+[useTTS] Text preview (first 200 chars): "Mocked page text"
+[useTTS] Text preview (last 200 chars): "Mocked page text"
+[useTTS] State transition: idle -> idle
+(pass) useTTS > should call audioPlayer.playWithTimestamps with page text [18.69ms]
+
+src/tests/useLibrary.test.tsx:
+
+# Unhandled error between tests
+-------------------------------
+1 | })
+2 | {
+    ^
+SyntaxError: Export named 'useRouterState' not found in module '/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/@tanstack/react-router/dist/esm/index.js'.
+      at loadAndEvaluateModule (2:1)
+-------------------------------
+
+
+src/tests/ReaderTopBar.test.tsx:
+(pass) ReaderTopBar > renders the TTS play button when idle [14.75ms]
+(pass) ReaderTopBar > renders with sharp edges and Bauhaus branding [12.89ms]
+(pass) ReaderTopBar > contains no rounded corners in navigation elements [9.02ms]
+(pass) ReaderTopBar > renders a Bauhaus Red reading progress bar [16.87ms]
+(pass) ReaderTopBar > uses bold geometric sans-serif for title [12.65ms]
+
+src/tests/useChatSidebar.test.tsx:
+(pass) useChatSidebar hook > should initialize with default states [7.05ms]
+
+src/tests/ThreeDLibraryPage.test.tsx:
+
+# Unhandled error between tests
+-------------------------------
+1 | })
+2 | {
+    ^
+SyntaxError: Export named 'useRouterState' not found in module '/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/@tanstack/react-router/dist/esm/index.js'.
+      at loadAndEvaluateModule (2:1)
+-------------------------------
+
+
+src/tests/ReadingRoom.test.tsx:
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <planeGeometry> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <meshStandardMaterial> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+The tag <mesh> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+React does not recognize the `receiveShadow` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `receiveshadow` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <boxGeometry> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+React does not recognize the `castShadow` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `castshadow` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+The tag <group> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+(pass) ReadingRoom > should render without crashing [4.05ms]
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+(pass) ReadingRoom > should render floor, walls and rug geometries [2.86ms]
+
+src/tests/useMobiReader.test.tsx:
+(pass) useMobiReader hook > should initialize with default states [10.61ms]
+(pass) useMobiReader hook > should toggle columns [2.58ms]
+403 |     const currentPageNum = pagination.currentPage
+404 |     setColumns((prev) => {
+405 |       const newColumns = prev === 1 ? 2 : 1
+406 |       requestAnimationFrame(() => {
+407 |         pagination.syncPageMetrics()
+408 |         pagination.scrollToPageInstant(currentPageNum)
+                         ^
+TypeError: pagination.scrollToPageInstant is not a function. (In 'pagination.scrollToPageInstant(currentPageNum)', 'pagination.scrollToPageInstant' is undefined)
+      at <anonymous> (/Users/jadentripp/Desktop/tests/reader/ai-reader/src/lib/reader/hooks/useMobiReader.ts:408:20)
+      at <anonymous> (/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/happy-dom/lib/window/BrowserWindow.js:1346:30)
+
+
+src/tests/SettingsAppearance.test.tsx:
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  has_env_key: false,
+  has_saved_key: false,
+}
+[Settings] Loading saved voice ID: null
+[Settings] No saved voice ID, will use default when voices load
+[Settings] No key detected
+(pass) SettingsPage Appearance Section > renders the appearance section [65.46ms]
+
+src/tests/useTTS_progress.test.ts:
+[useTTS] State transition: idle -> idle
+[useTTS] currentPage changed to 1. AutoNext: false, State: idle, justStarted: false
+(pass) useTTS Progress > should expose progress state [6.40ms]
+
+src/tests/fonts.test.ts:
+(pass) Project Fonts > index.html should include Google Fonts links for EB Garamond and Inter [0.38ms]
+
+src/tests/useTTS_auto.test.ts:
+[useTTS] State transition: idle -> idle
+[useTTS] currentPage changed to 1. AutoNext: false, State: idle, justStarted: false
+[useTTS] playCurrentPage called. Page: 1, Text length: 16, CharMap length: 0
+[useTTS] Text preview (first 200 chars): "Mocked page text"
+[useTTS] Text preview (last 200 chars): "Mocked page text"
+[useTTS] State transition: idle -> idle
+[useTTS] State transition: idle -> playing
+[useTTS] State transition: playing -> idle
+[useTTS] Playback ended. Reason: ended, Duration: 100.00s, CurrentTime: 100.00s, AutoNext: true
+[useTTS] Auto-advancing to next page
+(pass) useTTS auto-advance > triggers onPageTurnNeeded when audio ends naturally and autoNext is true [4.96ms]
+
+src/tests/useTTS_persistence.test.ts:
+[useTTS] State transition: idle -> idle
+[useTTS] currentPage changed to 1. AutoNext: false, State: idle, justStarted: false
+(pass) useTTS Persistence > should load playback speed and volume from settings on mount [4.60ms]
+[useTTS] State transition: idle -> idle
+[useTTS] currentPage changed to 1. AutoNext: false, State: idle, justStarted: false
+(pass) useTTS Persistence > should save playback speed and volume when changed [2.99ms]
+
+src/tests/SettingsSidebar.test.tsx:
+(pass) SettingsSidebar > renders all settings categories [4.35ms]
+(pass) SettingsSidebar > calls onTabChange when a category is clicked [4.33ms]
+(pass) SettingsSidebar > highlights the active tab [4.46ms]
+
+src/tests/BookMesh.test.tsx:
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+Received `true` for a non-boolean attribute `transparent`.
+
+If you want to write it to the DOM, pass a string instead: transparent="true" or transparent={value.toString()}.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<cylinderGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <cylinderGeometry> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<boxGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<planeGeometry /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+<meshStandardMaterial /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+React does not recognize the `emissiveIntensity` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `emissiveintensity` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+(pass) BookMesh > should render the book mesh and its components [6.55ms]
+
+src/tests/TTSPanel.test.tsx:
+(pass) TTSPanel > renders the player bar when playing [15.48ms]
+(pass) TTSPanel > can toggle play/pause [16.47ms]
+(pass) TTSPanel > displays progress slider [12.32ms]
+(pass) TTSPanel > displays current time and duration [8.14ms]
+(pass) TTSPanel > renders voice selector button when settings toggled [37.75ms]
+(pass) TTSPanel > has a close/hide button [7.80ms]
+
+src/tests/LibraryGrid.test.tsx:
+(pass) LibraryGrid > should render children in grid variant [3.96ms]
+(pass) LibraryGrid > should render children in list variant [0.89ms]
+(pass) LibraryGrid > should render children in minimal variant with generous spacing [0.81ms]
+
+src/tests/ContextTray.test.tsx:
+(pass) ContextTray > should render chips for each snippet [4.69ms]
+(pass) ContextTray > should call onRemove when 'X' is clicked [5.43ms]
+(pass) ContextTray > should call onClear when 'Clear' is clicked [2.70ms]
+(pass) ContextTray > should render nothing when there are no snippets [1.05ms]
+
+src/tests/contextStaging.test.tsx:
+(pass) useHighlights Context Staging > should initialize with empty staged snippets [3.28ms]
+(pass) useHighlights Context Staging > should add a snippet to context [2.29ms]
+(pass) useHighlights Context Staging > should remove a snippet from context [2.11ms]
+(pass) useHighlights Context Staging > should clear all staged snippets [2.30ms]
+
+src/tests/threadTitle.test.ts:
+[OpenAI] Generating thread title...
+[OpenAI] Title generated: Summary of Hamlet
+(pass) AI Thread Title Generation > should generate a concise title from the first interaction [0.27ms]
+[OpenAI] Generating thread title...
+[OpenAI] Title generated: The Ghost of Hamlet
+(pass) AI Thread Title Generation > should clean up quotes from the generated title [0.71ms]
+
+src/tests/TTSProgressBar.test.tsx:
+(pass) TTSProgressBar > renders progress bar with current time and duration [4.13ms]
+(pass) TTSProgressBar > displays page context information [0.80ms]
+(pass) TTSProgressBar > shows correct progress percentage [1.42ms]
+(pass) TTSProgressBar > is seekable - allows clicking to seek [1.16ms]
+(pass) TTSProgressBar > has proper ARIA labels for accessibility [1.51ms]
+(pass) TTSProgressBar > displays elapsed and remaining time [1.69ms]
+
+src/tests/appearance.test.ts:
+(pass) useReaderAppearance > should return default values when no data in localStorage [2.50ms]
+(pass) useReaderAppearance > should persist changes to localStorage [1.18ms]
+(pass) useReaderAppearance > should load data from localStorage on initialization [0.60ms]
+
+src/tests/GlobalBauhausColors.test.tsx:
+(pass) Global Bauhaus Colors > HighlightNote should not use amber colors [4.80ms]
+(pass) Global Bauhaus Colors > HighlightsList should not use amber colors [5.43ms]
+
+src/tests/SettingsPage_voices.test.tsx:
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  has_env_key: false,
+  has_saved_key: false,
+}
+[Settings] Loading saved voice ID: v1
+[Settings] No key detected
+[Settings] voiceId changed: v1
+(pass) SettingsPage Voice Selection > renders the Voice selection dropdown [69.10ms]
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  has_env_key: false,
+  has_saved_key: false,
+}
+[Settings] Loading saved voice ID: v1
+[Settings] No key detected
+[Settings] voiceId changed: v1
+(pass) SettingsPage Voice Selection > shows preview button when a voice with preview is selected [123.91ms]
+
+src/tests/openai.test.ts:
+(pass) OpenAI Service > resolveApiKey > should resolve key from Tauri settings first [0.92ms]
+(pass) OpenAI Service > resolveApiKey > should fallback to environment variables if no saved key [0.17ms]
+(pass) OpenAI Service > resolveApiKey > should throw error if no key found [0.20ms]
+[OpenAI] listModels started
+[OpenAI] listModels raw response count: 12
+[OpenAI] listModels filtered count: 4
+(pass) OpenAI Service > listModels > should filter and sort gpt models correctly [0.76ms]
+(pass) OpenAI Service > chat > should call openai.responses.create and format result [0.31ms]
+
+src/tests/BauhausHeader.test.tsx:
+(pass) BauhausHeader > should render the massive typographic header [4.22ms]
+(pass) BauhausHeader > should render the horizontal filter bar with collections [1.99ms]
+(pass) BauhausHeader > should render the bold search input [2.77ms]
+(pass) BauhausHeader > should call handleSearch on Enter [3.80ms]
+
+src/tests/elevenlabs.test.ts:
+[ElevenLabs] textToSpeech called for text: "Hello world..." with voiceId: v1
+[ElevenLabs] textToSpeech conversion successful
+(pass) ElevenLabsService > should be able to convert text to speech [1.35ms]
+[ElevenLabs] getVoices called
+[ElevenLabs] getVoices successful, found 1 voices
+[ElevenLabs] Sample voice object structure: {
+  has_voice_id: true,
+  has_voiceId: false,
+  raw_keys: [ "voice_id", "name" ],
+}
+(pass) ElevenLabsService > should be able to list voices [0.22ms]
+(pass) AudioPlayer > should initialize with idle state [0.24ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 10.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+(pass) AudioPlayer > should be able to play text [2.91ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Resolved voiceId from database: fake-api-key
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: fake-api-key
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 10.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Pause requested
+[AudioPlayer] State transition: playing -> paused
+[AudioPlayer] Resume requested
+[AudioPlayer] State transition: paused -> playing
+(pass) AudioPlayer > should be able to pause and resume [1.37ms]
+
+src/tests/toc.test.ts:
+(pass) parseSceneLinksHierarchical > should group scenes under acts [1.82ms]
+(pass) parseSceneLinksHierarchical > should handle scenes before any act [0.66ms]
+
+src/tests/libraryStateSharing.test.tsx:
+
+# Unhandled error between tests
+-------------------------------
+1 | })
+2 | {
+    ^
+SyntaxError: Export named 'useRouterState' not found in module '/Users/jadentripp/Desktop/tests/reader/ai-reader/node_modules/@tanstack/react-router/dist/esm/index.js'.
+      at loadAndEvaluateModule (2:1)
+-------------------------------
+
+
+src/tests/SettingsPage.test.tsx:
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  has_env_key: false,
+  has_saved_key: false,
+}
+[Settings] Loading saved voice ID: null
+[Settings] No saved voice ID, will use default when voices load
+[Settings] No key detected
+(pass) SettingsPage > renders the ElevenLabs API key input [54.71ms]
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  has_env_key: false,
+  has_saved_key: false,
+}
+[Settings] Loading saved voice ID: null
+[Settings] No saved voice ID, will use default when voices load
+[Settings] No key detected
+(pass) SettingsPage > renders the Connection Status section [50.72ms]
+[Settings] voiceId changed: 
+[Settings] Initializing...
+[Settings] openAiKeyStatus result: {
+  has_env_key: false,
+  has_saved_key: false,
+}
+[Settings] Found saved OpenAI key
+[Settings] Loading saved voice ID: null
+[Settings] No saved voice ID, will use default when voices load
+[Settings] Key detected, loading models...
+[Settings] loadModels called
+[Settings] listModels result: [ "gpt-4", "gpt-3.5-turbo" ]
+(pass) SettingsPage > shows the settings page content [32.87ms]
+
+src/tests/aiContextIntegration.test.ts:
+(pass) buildChatSystemPrompt Context Integration > should include multiple staged snippets in the system prompt [1.11ms]
+(pass) buildChatSystemPrompt Context Integration > should include both staged snippets and permanent highlights [0.22ms]
+(pass) buildChatSystemPrompt Context Integration > should prioritize selectedHighlight if provided [0.05ms]
+
+src/tests/audioPlayerEnhanced.test.ts:
+(pass) AudioPlayer Enhanced Capabilities > seek(position) > should have a seek method [0.41ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Seeking to position: 10.00s
+[AudioPlayer] Starting playback at offset: 10.00s
+[AudioPlayer] Progress: 10.00s, wordTimings: 0
+(pass) AudioPlayer Enhanced Capabilities > seek(position) > should seek to a position within the audio [0.76ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Seeking to position: 0.00s
+[AudioPlayer] Starting playback at offset: 0.00s
+(pass) AudioPlayer Enhanced Capabilities > seek(position) > should clamp seek to 0 when seeking before start [0.63ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Seeking to position: 30.00s
+[AudioPlayer] Starting playback at offset: 30.00s
+[AudioPlayer] Progress: 30.00s, wordTimings: 0
+(pass) AudioPlayer Enhanced Capabilities > seek(position) > should clamp seek to duration when seeking past end [0.52ms]
+(pass) AudioPlayer Enhanced Capabilities > setPlaybackRate(rate) > should have a setPlaybackRate method [0.10ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Setting playback rate to: 1.5x
+(pass) AudioPlayer Enhanced Capabilities > setPlaybackRate(rate) > should set playback rate on the audio source [0.36ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Setting playback rate to: 0.5x
+[AudioPlayer] Setting playback rate to: 2x
+(pass) AudioPlayer Enhanced Capabilities > setPlaybackRate(rate) > should accept standard playback rates (0.5x to 2x) [0.63ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Setting playback rate to: 0.5x
+(pass) AudioPlayer Enhanced Capabilities > setPlaybackRate(rate) > should clamp rate below minimum to 0.5 [0.41ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Setting playback rate to: 2x
+(pass) AudioPlayer Enhanced Capabilities > setPlaybackRate(rate) > should clamp rate above maximum to 2 [0.46ms]
+(pass) AudioPlayer Enhanced Capabilities > setVolume(level) > should have a setVolume method [0.09ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Setting volume to: 0.5
+(pass) AudioPlayer Enhanced Capabilities > setVolume(level) > should set volume level (0-1 range) [0.96ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Setting volume to: 0
+(pass) AudioPlayer Enhanced Capabilities > setVolume(level) > should clamp volume below 0 to 0 [0.70ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+[AudioPlayer] Setting volume to: 1
+(pass) AudioPlayer Enhanced Capabilities > setVolume(level) > should clamp volume above 1 to 1 [0.55ms]
+[AudioPlayer] Setting volume to: 0.7
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+(pass) AudioPlayer Enhanced Capabilities > setVolume(level) > should persist volume across playback sessions
+(pass) AudioPlayer Enhanced Capabilities > getDuration() and getCurrentTime() > should have getProgress method returning currentTime and duration
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+(pass) AudioPlayer Enhanced Capabilities > getDuration() and getCurrentTime() > should return duration after audio is loaded [1.01ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+(pass) AudioPlayer Enhanced Capabilities > getDuration() and getCurrentTime() > should return currentTime of 0 at start of playback [0.15ms]
+[AudioPlayer] play requested for text length: 9
+[AudioPlayer] Initializing AudioContext
+[AudioPlayer] AudioContext state: suspended
+[AudioPlayer] Resuming suspended AudioContext
+[AudioPlayer] State transition: idle -> buffering
+[AudioPlayer] Loading voice settings from database
+[AudioPlayer] Settings loaded: {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: false,
+}
+[AudioPlayer] Calling elevenLabsService.textToSpeech with voiceId: v1
+[AudioPlayer] Converting stream to buffer
+[AudioPlayer] Reading stream
+[AudioPlayer] Stream read complete, total chunks: 0, total length: 0
+[AudioPlayer] Audio data received, size: 0 bytes
+[AudioPlayer] Decoding audio data
+[AudioPlayer] Audio decoded successfully, duration: 30.00s
+[AudioPlayer] State transition: buffering -> idle
+[AudioPlayer] Starting playback at offset: 0.00s
+[AudioPlayer] State transition: idle -> playing
+(pass) AudioPlayer Enhanced Capabilities > getDuration() and getCurrentTime() > should expose buffered state [0.66ms]
+(pass) AudioPlayer Enhanced Capabilities > getPlaybackRate() > should have a getPlaybackRate method
+(pass) AudioPlayer Enhanced Capabilities > getPlaybackRate() > should return default rate of 1
+(pass) AudioPlayer Enhanced Capabilities > getVolume() > should have a getVolume method
+(pass) AudioPlayer Enhanced Capabilities > getVolume() > should return default volume of 1
+
+src/tests/TTSPanelPhase3.test.tsx:
+(pass) TTSPanel Bauhaus Alignment > should have sharp corners and bold 2px borders [10.37ms]
+(pass) TTSPanel Bauhaus Alignment > should have a Bauhaus Red progress bar with sharp edges [6.87ms]
+(pass) TTSPanel Bauhaus Alignment > should use bold geometric sans-serif for labels [5.98ms]
+
+src/tests/webGPUScene.test.tsx:
+(pass) WebGPUScene > should render the Canvas component [4.10ms]
+
+src/tests/readerContextVisualization.test.tsx:
+Staged Snippet state: {
+  "startPath": [
+    0,
+    0
+  ],
+  "startOffset": 0,
+  "endPath": [
+    0,
+    0
+  ],
+  "endOffset": 6,
+  "text": "Sample",
+  "rect": {
+    "top": 0,
+    "left": 0,
+    "width": 0,
+    "height": 0
+  },
+  "id": "48f83d49-5ef9-4a1b-8953-120494465732"
+}
+Start Node resolved in test: #text Type: 3 Text: Sample text for testing highlights.
+Root HTML after render: <p><span class="readerContextSnippet" data-highlight-id="48f83d49-5ef9-4a1b-8953-120494465732">Sample</span> text for testing highlights.</p>
+(pass) Reader Context Visualization > should render staged snippets with context class [6.74ms]
+(pass) Reader Context Visualization > should render staged snippets spanning multiple nodes [2.73ms]
+
+src/tests/ReaderLayout.test.tsx:
+(pass) ReaderLayout > renders children [4.85ms]
+(pass) ReaderLayout > stores the column count on the root element [0.98ms]
+(pass) ReaderLayout > updates the column count when set to 2 [1.41ms]
+
+src/tests/theme.test.ts:
+(pass) Global Theme Variables > should define shadcn theme tokens in index.css [0.51ms]
+(pass) Global Theme Variables > should apply the new variables to global selectors [0.14ms]
+
+src/tests/AppearancePanel.test.tsx:
+(pass) AppearancePanel > renders correctly with default props [24.81ms]
+[AudioPlayer] Progress: 10.00s, wordTimings: 0
+[AudioPlayer] Progress: 30.00s, wordTimings: 0
+(pass) AppearancePanel > calls onFontFamilyChange when font selection changes [51.46ms]
+(pass) AppearancePanel > has sharp corners and bold 2px borders [27.35ms]
+(pass) AppearancePanel > uses bold geometric sans-serif for headers [19.58ms]
+(pass) AppearancePanel > has sharp corners on interactive elements [18.95ms]
+
+src/tests/BookCardMinimal.test.tsx:
+(pass) BookCardMinimal > should render title and author [5.37ms]
+(pass) BookCardMinimal > should have sharp edges (no border-radius) [2.62ms]
+(pass) BookCardMinimal > should render actions (Read/Delete) [2.65ms]
+(pass) BookCardMinimal > should render a geometric progress bar [2.86ms]
+
+src/tests/pollution.test.ts:
+(pass) Pollution Check > should set a value in localStorage [6.06ms]
+(pass) Pollution Check > should find localStorage empty in a fresh test [0.05ms]
+(pass) Pollution Check > should add an element to the body [0.32ms]
+(pass) Pollution Check > should find the body empty in a fresh test [0.36ms]
+
+src/tests/library.test.tsx:
+[AudioPlayer] Progress: 10.00s, wordTimings: 0
+[AudioPlayer] Progress: 30.00s, wordTimings: 0
+(pass) LibraryPage > should display the Bauhaus LIBRARY header [14.29ms]
+(pass) LibraryPage > should display book title [9.29ms]
+(pass) LibraryPage > should display empty state when no books are found [8.65ms]
+
+src/tests/SelectionTTS.test.tsx:
+(pass) ReaderPane Selection TTS > renders the Read button in the selection popover [8.34ms]
+(pass) ReaderPane Selection TTS > calls onReadAloud when the Read button is clicked [6.76ms]
+
+3 tests failed:
+
+ 229 pass
+ 3 fail
+ 3 errors
+ 968 expect() calls
+Ran 232 tests across 45 files. [3.34s]
+error: script "test" exited with code 1

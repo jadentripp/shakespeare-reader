@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 .env
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
@@ -28,3 +30,8 @@ tmp/
 .gemini-clipboard/
 coverage/
 Thumbs.db
+
+.agent/skills
+.agents/skills
+.codex/skills
+.opencode/skills

@@ -1,38 +1,50 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import AppearancePanel from "@/components/AppearancePanel";
-import { ChevronLeft, ChevronRight, Settings2, Columns2, BookOpen, Play, Pause, Square, Loader2, SlidersHorizontal, Settings } from "lucide-react";
-import { PlaybackState } from "@/lib/elevenlabs";
-import { Link } from "@tanstack/react-router";
+import { Link } from '@tanstack/react-router'
+import {
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Columns2,
+  Loader2,
+  Pause,
+  Play,
+  Settings,
+  Settings2,
+  SlidersHorizontal,
+  Square,
+} from 'lucide-react'
+import AppearancePanel from '@/components/AppearancePanel'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import type { PlaybackState } from '@/lib/elevenlabs'
 
 type ReaderTopBarProps = {
-  title?: string;
-  showAppearance: boolean;
-  onShowAppearanceChange: (open: boolean) => void;
-  fontFamily: string;
-  lineHeight: number;
-  margin: number;
-  onFontFamilyChange: (value: string) => void;
-  onLineHeightChange: (value: number) => void;
-  onMarginChange: (value: number) => void;
-  columns: 1 | 2;
-  onToggleColumns: () => void;
-  onPrev: () => void;
-  onNext: () => void;
-  currentPage: number;
-  totalPages: number;
-  jumpPage: string;
-  onJumpPageChange: (value: string) => void;
-  onJumpPageGo: () => void;
-  onBack: () => void;
+  title?: string | undefined
+  showAppearance: boolean
+  onShowAppearanceChange: (open: boolean) => void
+  fontFamily: string
+  lineHeight: number
+  margin: number
+  onFontFamilyChange: (value: string) => void
+  onLineHeightChange: (value: number) => void
+  onMarginChange: (value: number) => void
+  columns: 1 | 2
+  onToggleColumns: () => void
+  onPrev: () => void
+  onNext: () => void
+  currentPage: number
+  totalPages: number
+  jumpPage: string
+  onJumpPageChange: (value: string) => void
+  onJumpPageGo: () => void
+  onBack: () => void
   // TTS props
-  ttsState: PlaybackState;
-  onTtsPlay: () => void;
-  onTtsPause: () => void;
-  onTtsStop: () => void;
-  onTtsSettings: () => void;
-};
+  ttsState: PlaybackState
+  onTtsPlay: () => void
+  onTtsPause: () => void
+  onTtsStop: () => void
+  onTtsSettings: () => void
+}
 
 export default function ReaderTopBar({
   title,
@@ -61,11 +73,16 @@ export default function ReaderTopBar({
   onTtsSettings,
 }: ReaderTopBarProps) {
   return (
-    <div role="banner" className="relative shrink-0 flex items-center gap-4 px-4 py-3 border-b-2 border-black dark:border-white bg-background touch-action-manipulation">
+    <div
+      role="banner"
+      className="relative shrink-0 flex items-center gap-4 px-4 py-3 border-b-2 border-black dark:border-white bg-background touch-action-manipulation"
+    >
       {/* Left: Brand + Back + Title */}
       <div className="flex items-center gap-4 min-w-0 flex-1">
         <div className="hidden md:flex items-center gap-1 bg-black dark:bg-white px-2 py-0.5 shrink-0">
-          <span className="font-sans text-[10px] font-black tracking-tighter text-white dark:text-black uppercase">AI READER</span>
+          <span className="font-sans text-[10px] font-black tracking-tighter text-white dark:text-black uppercase">
+            AI READER
+          </span>
         </div>
         <div className="flex items-center gap-2 min-w-0">
           <Button
@@ -77,7 +94,9 @@ export default function ReaderTopBar({
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <p className="truncate text-sm font-bold uppercase tracking-tight text-foreground">{title}</p>
+          <p className="truncate text-sm font-bold uppercase tracking-tight text-foreground">
+            {title}
+          </p>
         </div>
       </div>
 
@@ -152,12 +171,16 @@ export default function ReaderTopBar({
             className="h-7 w-28 px-1 text-center text-sm font-bold border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 tabular-nums rounded-none"
             value={jumpPage}
             onChange={(e) => onJumpPageChange(e.currentTarget.value)}
-            onBlur={() => onJumpPageChange("")}
+            onBlur={() => onJumpPageChange('')}
             onKeyDown={(e) => {
-              if (e.key !== "Enter") return;
-              onJumpPageGo();
+              if (e.key !== 'Enter') return
+              onJumpPageGo()
             }}
-            placeholder={columns === 2 ? `${currentPage}–${Math.min(currentPage + 1, totalPages)}` : String(currentPage)}
+            placeholder={
+              columns === 2
+                ? `${currentPage}–${Math.min(currentPage + 1, totalPages)}`
+                : String(currentPage)
+            }
           />
           <span className="text-black/30 dark:text-white/30 text-sm font-bold">/</span>
           <span className="text-sm text-black dark:text-white font-bold tabular-nums pr-1">
@@ -184,8 +207,8 @@ export default function ReaderTopBar({
             size="sm"
             onClick={columns === 1 ? undefined : onToggleColumns}
             className={`flex items-center gap-1.5 px-3 py-1.5 h-auto text-[10px] font-bold uppercase tracking-widest rounded-none transition-[color,background-color] ${columns === 1
-              ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-              : "text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
+                : 'text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5'
               }`}
           >
             <BookOpen className="h-3.5 w-3.5" />
@@ -196,8 +219,8 @@ export default function ReaderTopBar({
             size="sm"
             onClick={columns === 2 ? undefined : onToggleColumns}
             className={`flex items-center gap-1.5 px-3 py-1.5 h-auto text-[10px] font-bold uppercase tracking-widest rounded-none transition-[color,background-color] ${columns === 2
-              ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-              : "text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
+                : 'text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5'
               }`}
           >
             <Columns2 className="h-3.5 w-3.5" />
@@ -217,7 +240,10 @@ export default function ReaderTopBar({
               <span>Display</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-auto p-0 rounded-none border-2 border-black dark:border-white">
+          <PopoverContent
+            align="end"
+            className="w-auto p-0 rounded-none border-2 border-black dark:border-white"
+          >
             <AppearancePanel
               fontFamily={fontFamily}
               lineHeight={lineHeight}
@@ -253,5 +279,5 @@ export default function ReaderTopBar({
         />
       </div>
     </div>
-  );
+  )
 }

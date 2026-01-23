@@ -1,27 +1,23 @@
-import { Play, Pause, RotateCcw, Trash, CheckCircle2, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { type DownloadTask } from "../../hooks/useLibrary";
+import { CheckCircle2, Clock, Pause, Play, RotateCcw, Trash } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import type { DownloadTask } from '../../hooks/useLibrary'
 
 interface DownloadStatusBarProps {
-  paused: boolean;
-  setPaused: (p: boolean) => void;
+  paused: boolean
+  setPaused: (p: boolean) => void
   counts: {
-    downloading: number;
-    queued: number;
-    done: number;
-    failed: number;
-  };
-  active: DownloadTask | null;
-  retryFailed: () => void;
-  clearDone: () => void;
-  clearFailed: () => void;
-  resumeAll: () => void;
+    downloading: number
+    queued: number
+    done: number
+    failed: number
+  }
+  active: DownloadTask | null
+  retryFailed: () => void
+  clearDone: () => void
+  clearFailed: () => void
+  resumeAll: () => void
 }
 
 export function DownloadStatusBar({
@@ -44,12 +40,14 @@ export function DownloadStatusBar({
                 variant="ghost"
                 size="icon"
                 className="h-10 w-10 rounded-none hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
-                onClick={() => paused ? resumeAll() : setPaused(true)}
+                onClick={() => (paused ? resumeAll() : setPaused(true))}
               >
                 {paused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="rounded-none border-2 border-black font-mono text-[10px] uppercase font-bold dark:border-white">{paused ? "Resume" : "Pause"}</TooltipContent>
+            <TooltipContent className="rounded-none border-2 border-black font-mono text-[10px] uppercase font-bold dark:border-white">
+              {paused ? 'Resume' : 'Pause'}
+            </TooltipContent>
           </Tooltip>
 
           <div className="h-8 w-1 bg-black dark:bg-white" />
@@ -93,7 +91,12 @@ export function DownloadStatusBar({
 
         <div className="ml-auto flex items-center gap-4">
           {counts.failed > 0 && (
-            <Button variant="ghost" size="sm" onClick={retryFailed} className="h-10 rounded-none border-2 border-black font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={retryFailed}
+              className="h-10 rounded-none border-2 border-black font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+            >
               <RotateCcw className="h-4 w-4" />
               Retry
             </Button>
@@ -101,12 +104,19 @@ export function DownloadStatusBar({
           {(counts.done > 0 || counts.failed > 0) && (
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-10 rounded-none border-2 border-black font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 rounded-none border-2 border-black font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+                >
                   <Trash className="h-4 w-4" />
                   Clear
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-48 rounded-none border-2 border-black p-1 dark:border-white">
+              <PopoverContent
+                align="end"
+                className="w-48 rounded-none border-2 border-black p-1 dark:border-white"
+              >
                 <button
                   type="button"
                   className="flex w-full items-center gap-2 px-3 py-3 font-mono text-[10px] font-bold uppercase tracking-widest hover:bg-stone-100 disabled:opacity-50 dark:hover:bg-stone-800"
@@ -131,5 +141,5 @@ export function DownloadStatusBar({
         </div>
       </div>
     </div>
-  );
+  )
 }

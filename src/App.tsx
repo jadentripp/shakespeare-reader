@@ -1,18 +1,18 @@
-import { Outlet } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { dbInit } from "./lib/tauri";
-import { LibraryProvider } from "./hooks/LibraryProvider";
-import { GlobalNav } from "./components/ui/GlobalNav";
+import { Outlet } from '@tanstack/react-router'
+import { useEffect } from 'react'
+import { GlobalNav } from './components/ui/GlobalNav'
+import { LibraryProvider } from './hooks/LibraryProvider'
+import { dbInit } from './lib/tauri'
 
-let didInit = false;
+let didInit = false
 
 export default function AppLayout() {
   useEffect(() => {
     if (!didInit) {
-      didInit = true;
-      void dbInit();
+      didInit = true
+      void dbInit()
     }
-  }, []);
+  }, [])
 
   return (
     <LibraryProvider>
@@ -24,5 +24,5 @@ export default function AppLayout() {
         </main>
       </div>
     </LibraryProvider>
-  );
+  )
 }

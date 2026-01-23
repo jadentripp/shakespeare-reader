@@ -1,24 +1,25 @@
-import React, { useState, useRef, useCallback } from "react";
-import { Search, X, Loader2, History, TrendingUp } from "lucide-react";
+import { History, Loader2, Search, TrendingUp, X } from 'lucide-react'
+import type React from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 const POPULAR_SEARCHES = [
-  "Shakespeare",
-  "Jane Austen",
-  "Mark Twain",
-  "Charles Dickens",
-  "Edgar Allan Poe",
-  "Oscar Wilde",
-];
+  'Shakespeare',
+  'Jane Austen',
+  'Mark Twain',
+  'Charles Dickens',
+  'Edgar Allan Poe',
+  'Oscar Wilde',
+]
 
 interface SearchOverlayProps {
-  catalogQuery: string;
-  setCatalogQuery: (q: string) => void;
-  handleSearch: (q: string) => void;
-  isSearching: boolean;
-  recentSearches: string[];
-  clearRecentSearches: () => void;
-  catalogSearch: string;
-  onClearSearch: () => void;
+  catalogQuery: string
+  setCatalogQuery: (q: string) => void
+  handleSearch: (q: string) => void
+  isSearching: boolean
+  recentSearches: string[]
+  clearRecentSearches: () => void
+  catalogSearch: string
+  onClearSearch: () => void
 }
 
 export const SearchOverlay: React.FC<SearchOverlayProps> = ({
@@ -31,22 +32,28 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
   catalogSearch,
   onClearSearch,
 }) => {
-  const [isFocused, setIsFocused] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [isFocused, setIsFocused] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const onSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (catalogQuery.trim()) {
-      handleSearch(catalogQuery);
-      inputRef.current?.blur();
-      setIsFocused(false);
-    }
-  }, [catalogQuery, handleSearch]);
+  const onSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault()
+      if (catalogQuery.trim()) {
+        handleSearch(catalogQuery)
+        inputRef.current?.blur()
+        setIsFocused(false)
+      }
+    },
+    [catalogQuery, handleSearch],
+  )
 
-  const onQuickSearch = useCallback((term: string) => {
-    handleSearch(term);
-    setIsFocused(false);
-  }, [handleSearch]);
+  const onQuickSearch = useCallback(
+    (term: string) => {
+      handleSearch(term)
+      setIsFocused(false)
+    },
+    [handleSearch],
+  )
 
   return (
     <div className="relative z-30 pointer-events-auto w-full">
@@ -54,9 +61,10 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
         <div
           className={`
             relative overflow-hidden rounded-full backdrop-blur-xl transition-[background-color,box-shadow,border-color,--tw-ring-color] duration-300
-            ${isFocused
-              ? "bg-stone-900/95 shadow-xl ring-1 ring-amber-400/50"
-              : "bg-stone-900/80 shadow-lg"
+            ${
+              isFocused
+                ? 'bg-stone-900/95 shadow-xl ring-1 ring-amber-400/50'
+                : 'bg-stone-900/80 shadow-lg'
             }
           `}
         >
@@ -93,8 +101,8 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setCatalogQuery("");
-                  if (catalogSearch) onClearSearch();
+                  setCatalogQuery('')
+                  if (catalogSearch) onClearSearch()
                 }}
                 aria-label="Clear search"
                 className="p-1 rounded-full hover:bg-white/10 transition-colors"
@@ -119,8 +127,8 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                     <button
                       type="button"
                       onMouseDown={(e) => {
-                        e.preventDefault();
-                        clearRecentSearches();
+                        e.preventDefault()
+                        clearRecentSearches()
                       }}
                       className="text-[10px] text-stone-600 hover:text-white transition-colors"
                     >
@@ -133,8 +141,8 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                         key={search}
                         type="button"
                         onMouseDown={(e) => {
-                          e.preventDefault();
-                          onQuickSearch(search);
+                          e.preventDefault()
+                          onQuickSearch(search)
                         }}
                         className="rounded-full bg-white/5 px-2.5 py-1 text-xs text-stone-300 transition-[background-color,color] hover:bg-amber-500/20 hover:text-amber-200"
                       >
@@ -156,8 +164,8 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                       key={search}
                       type="button"
                       onMouseDown={(e) => {
-                        e.preventDefault();
-                        onQuickSearch(search);
+                        e.preventDefault()
+                        onQuickSearch(search)
                       }}
                       className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs text-amber-200/80 transition-[background-color,color] hover:bg-amber-500/20 hover:text-amber-200"
                     >
@@ -171,5 +179,5 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
         )}
       </form>
     </div>
-  );
-};
+  )
+}
