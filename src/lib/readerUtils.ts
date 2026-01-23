@@ -53,6 +53,118 @@ export function ultraNormalize(s: string): string {
 // DOM Path Utilities
 // ============================================================================
 
+// ============================================================================
+// DOM Path Utilities
+// ============================================================================
+
+function isTextOrHighlight(node: Node): boolean {
+  if (node.nodeType === Node.TEXT_NODE) return true
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    const el = node as HTMLElement
+    return (
+      el.classList.contains('readerHighlight') ||
+      el.classList.contains('readerContextSnippet') ||
+      el.classList.contains('readerPendingHighlight')
+    )
+  }
+  return false
+}
+
+function getNodeTextLength(node: Node): number {
+  if (node.nodeType === Node.TEXT_NODE) return (node.nodeValue || '').length
+  if (node.nodeType === Node.ELEMENT_NODE) return (node.textContent || '').length
+  return 0
+}
+
+/**
+ * Calculates the path and offset as they would be in a "normalized" DOM
+ * (where all highlight spans are unwrapped and adjacent text nodes are merged).
+ */
+export function getCanonicalTextPosition(
+  root: Node,
+  node: Node,
+  offset: number,
+): { path: number[]; offset: number } | null {
+  // 1. Find the effective parent (skip highlight spans)
+  let targetNode = node
+  let targetOffset = offset
+
+  // If inside a highlight span, treat the span as the node
+  if (
+    node.parentNode &&
+    node.parentNode.nodeType === Node.ELEMENT_NODE &&
+    isTextOrHighlight(node.parentNode)
+  ) {
+    targetNode = node.parentNode
+    // If the span contains a text node (which it should), the offset provided 
+    // is usually relative to that text node. 
+    // If the input `node` was the text node, we don't need to adjust offset 
+    // *relative to the text node*, but we need to account for previous siblings within the span?
+    // Usually applyHighlightToRange creates <span>text</span>. So offset is correct.
+  }
+
+  const parent = targetNode.parentNode
+  if (!parent) return null
+
+  // 2. Iterate siblings to simulate normalization
+  let cleanIndex = 0
+  let inRun = false
+  let currentRunOffset = 0
+  let found = false
+  let finalPathIndex = -1
+  let finalOffset = -1
+
+  for (let i = 0; i < parent.childNodes.length; i++) {
+    const child = parent.childNodes[i]
+    const isTextish = isTextOrHighlight(child)
+
+    if (isTextish) {
+      if (!inRun) {
+        // Start of a new text run (which will be 1 node in clean DOM)
+        // cleanIndex is pointing to this new node
+      }
+      inRun = true
+
+      if (child === targetNode) {
+        finalPathIndex = cleanIndex
+        finalOffset = currentRunOffset + targetOffset
+        found = true
+        break
+      }
+
+      currentRunOffset += getNodeTextLength(child)
+    } else {
+      if (inRun) {
+        cleanIndex++ // The previous run ended, taking up 1 slot
+      }
+      inRun = false
+      currentRunOffset = 0 // Reset for next run
+
+      if (child === targetNode) {
+        // Should not happen if target is text/highlight, but for safety
+        finalPathIndex = cleanIndex
+        finalOffset = targetOffset
+        found = true
+        break
+      }
+      cleanIndex++ // This non-text node takes up 1 slot
+    }
+  }
+
+  // If we were in a run and matched, finalPathIndex is already set correctly (to the start of the run)
+
+  if (!found) return null
+
+  // 3. Get path to parent
+  const parentPath = getNodePath(root, parent)
+  if (!parentPath) return null
+
+  return {
+    path: [...parentPath, finalPathIndex],
+    offset: finalOffset
+  }
+}
+
 /**
  * Get the path from root to a node as an array of child indices.
  */

@@ -11,7 +11,13 @@ import {
   Users,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { authorsString, coverUrl, formatDownloadCount, isPopular } from '../../lib/gutenbergUtils'
 import type { GutendexBook } from '../../lib/tauri'
 
@@ -58,6 +64,9 @@ export function BookDetailModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl overflow-hidden rounded-none border-4 border-black p-0 dark:border-white">
+        <DialogDescription className="sr-only">
+          Details and download options for {book.title}
+        </DialogDescription>
         {/* Header with cover background */}
         <div className="relative bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900">
           {/* Background blur of cover */}

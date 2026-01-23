@@ -1,10 +1,13 @@
+export type HighlightRect = { top: number; left: number; width: number; height: number }
+
 export type PendingHighlight = {
   startPath: number[]
   startOffset: number
   endPath: number[]
   endOffset: number
   text: string
-  rect: { top: number; left: number; width: number; height: number }
+  rect: HighlightRect
+  viewportRect?: HighlightRect
 }
 
 export type StagedSnippet = PendingHighlight & {

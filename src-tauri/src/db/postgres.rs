@@ -43,14 +43,24 @@ fn block_on<F: std::future::Future>(fut: F) -> F::Output {
 
 pub fn init() -> Result<(), DbError> {
     let database_url = env::var("DATABASE_URL").map_err(|_| DbError::MissingDatabaseUrl)?;
+    println!("[Backend] Initializing database connection...");
 
     POOL.get_or_try_init(|| {
         block_on(async {
             let pool = PgPoolOptions::new()
                 .max_connections(5)
                 .connect(&database_url)
-                .await?;
-            init_schema(&pool).await?;
+                .await
+                .map_err(|e| {
+                    println!("[Backend] Database connection failed: {}", e);
+                    e
+                })?;
+            println!("[Backend] Connected to database. Initializing schema...");
+            init_schema(&pool).await.map_err(|e| {
+                println!("[Backend] Schema initialization failed: {}", e);
+                e
+            })?;
+            println!("[Backend] Database schema initialized.");
             Ok::<Pool<Postgres>, DbError>(pool)
         })
     })?;
@@ -84,6 +94,17 @@ async fn init_schema(pool: &Pool<Postgres>) -> Result<(), DbError> {
     .await?;
 
     sqlx::query("CREATE INDEX IF NOT EXISTS idx_book_title ON book(title)")
+        .execute(pool)
+        .await?;
+
+    // Ensure all columns exist for existing tables
+    sqlx::query("ALTER TABLE book ADD COLUMN IF NOT EXISTS mobi_data BYTEA")
+        .execute(pool)
+        .await?;
+    sqlx::query("ALTER TABLE book ADD COLUMN IF NOT EXISTS html_content TEXT")
+        .execute(pool)
+        .await?;
+    sqlx::query("ALTER TABLE book ADD COLUMN IF NOT EXISTS first_image_index INTEGER")
         .execute(pool)
         .await?;
 
@@ -304,7 +325,15 @@ pub async fn upsert_book(
     .bind(html_content)
     .bind(first_image_index)
     .fetch_one(pool)
-    .await?;
+    .await
+    .map_err(|e| {
+        println!("[Backend] Book upsert failed for {}: {}", gutenberg_id, e);
+        e
+    })?;
+    println!(
+        "[Backend] Successfully upserted book {} (id: {})",
+        gutenberg_id, row.0
+    );
     Ok(row.0)
 }
 
@@ -401,7 +430,18 @@ pub async fn get_setting(pool: &Pool<Postgres>, key: &str) -> Result<Option<Stri
         .bind(key)
         .fetch_optional(pool)
         .await?;
-    Ok(row.map(|r| r.get(0)))
+
+    if let Some(r) = row {
+        return Ok(Some(r.get(0)));
+    }
+
+    // Fallback to environment variables (e.g. "openai_api_key" -> "OPENAI_API_KEY")
+    let env_key = key.to_uppercase();
+    if let Ok(val) = env::var(&env_key) {
+        return Ok(Some(val));
+    }
+
+    Ok(None)
 }
 
 // ============================================================================

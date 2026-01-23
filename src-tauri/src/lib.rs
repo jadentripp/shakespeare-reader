@@ -93,15 +93,28 @@ async fn download_gutenberg_mobi(
     mobi_url: String,
 ) -> Result<i64, String> {
     cmd(async {
+        println!(
+            "[Backend] Starting download for book {} from {}",
+            gutenberg_id, mobi_url
+        );
         let mobi_bytes = books::download_mobi_bytes(&app_handle, gutenberg_id, mobi_url)
             .await
             .map_err(anyhow::Error::from)
             .with_context(|| format!("downloading book {gutenberg_id} ({title})"))?;
+        println!(
+            "[Backend] Downloaded {} bytes for book {}",
+            mobi_bytes.len(),
+            gutenberg_id
+        );
 
         let (html_content, first_image_index) = {
             let app_handle = app_handle.clone();
             let mobi_bytes = mobi_bytes.clone();
             tauri::async_runtime::spawn_blocking(move || {
+                println!(
+                    "[Backend] Extracting MOBI content for book {}",
+                    gutenberg_id
+                );
                 books::extract_mobi_to_content(&app_handle, gutenberg_id, &mobi_bytes)
             })
             .await
@@ -109,6 +122,13 @@ async fn download_gutenberg_mobi(
             .map_err(anyhow::Error::from)
             .context("extracting mobi to html")?
         };
+        println!(
+            "[Backend] Extracted HTML ({} chars) for book {}",
+            html_content.len(),
+            gutenberg_id
+        );
+
+        println!("[Backend] Upserting book {} to database", gutenberg_id);
 
         db::upsert_book(
             &pool,

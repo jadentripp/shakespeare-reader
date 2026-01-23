@@ -318,9 +318,8 @@ export function useMobiReader(bookId: number) {
       } else {
         try {
           const parsed = JSON.parse(raw) as { page?: number }
-          pendingRestoreRef.current = {
-            page: typeof parsed.page === 'number' ? parsed.page : undefined,
-          }
+          const page = typeof parsed.page === 'number' ? parsed.page : undefined
+          pendingRestoreRef.current = page !== undefined ? { page } : {}
         } catch {
           pendingRestoreRef.current = null
         }
@@ -344,6 +343,10 @@ export function useMobiReader(bookId: number) {
   // Synchronize highlights with the iframe DOM
   useEffect(() => {
     if (!iframeReady) return
+    console.log('[useMobiReader] Triggering renderHighlights effect', {
+      selectedHighlightId: highlightsHook.selectedHighlightId,
+      stagedSnippetsLen: highlightsHook.stagedSnippets.length
+    })
     highlightsHook.renderHighlights(
       highlightsHook.selectedHighlightId,
       highlightsHook.activeAiQuote,

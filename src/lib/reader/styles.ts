@@ -122,7 +122,10 @@ export function buildReaderCss(options: ReaderStyleOptions): string {
     table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
     th, td { border: 1px solid var(--page-rule); padding: 0.5rem 0.75rem; text-align: left; }
     th { background: rgba(31, 27, 22, 0.04); font-weight: 600; }
-    ::selection { background: var(--page-mark); }
+    /* Native selection is hidden - we render a custom overlay for tight text wrapping */
+    ::selection { background: transparent; }
+    ::-moz-selection { background: transparent; }
+    
     .readerHighlight {
       background-color: rgba(224, 46, 46, 0.25);
       border-radius: 0;
@@ -143,6 +146,11 @@ export function buildReaderCss(options: ReaderStyleOptions): string {
       transition: background-color 0.15s ease;
     }
     .readerContextSnippet:hover { background-color: rgba(0, 85, 164, 0.5); }
+    .readerPendingHighlight {
+      background-color: var(--page-mark);
+      border-radius: 0;
+      cursor: pointer;
+    }
     .ttsCurrentWord {
       background-color: rgba(59, 130, 246, 0.4);
       border-radius: 2px;

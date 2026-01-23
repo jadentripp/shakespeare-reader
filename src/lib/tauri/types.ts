@@ -5,8 +5,9 @@ export type Book = {
   authors: string
   publication_year: number | null
   cover_url: string | null
-  mobi_path: string | null
-  html_path: string | null
+  mobi_path?: string | null
+  html_path?: string | null
+  html_content?: string | null
   first_image_index: number | null
   created_at: string
 }
