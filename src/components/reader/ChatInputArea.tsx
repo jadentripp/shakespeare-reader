@@ -1,21 +1,21 @@
-import { type RefObject } from "react";
-import { Button } from "@/components/ui/button";
+import { Send } from 'lucide-react'
+import type { RefObject } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   PromptInput,
-  PromptInputTextarea,
-  PromptInputActions,
   PromptInputAction,
-} from "@/components/ui/prompt-input";
-import { Send } from "lucide-react";
+  PromptInputActions,
+  PromptInputTextarea,
+} from '@/components/ui/prompt-input'
 
 type ChatInputAreaProps = {
-  chatInput: string;
-  onChatInputChange: (value: string) => void;
-  onSend: () => void;
-  chatSending: boolean;
-  chatInputRef: RefObject<HTMLTextAreaElement | null>;
-  placeholder?: string;
-};
+  chatInput: string
+  onChatInputChange: (value: string) => void
+  onSend: () => void
+  chatSending: boolean
+  chatInputRef: RefObject<HTMLTextAreaElement | null>
+  placeholder?: string
+}
 
 export function ChatInputArea({
   chatInput,
@@ -23,7 +23,7 @@ export function ChatInputArea({
   onSend,
   chatSending,
   chatInputRef,
-  placeholder = "Ask about the text…",
+  placeholder = 'Ask about the text…',
 }: ChatInputAreaProps) {
   return (
     <div className="shrink-0 border-t-2 border-black dark:border-white bg-background p-4">
@@ -41,9 +41,13 @@ export function ChatInputArea({
         />
         <PromptInputActions className="justify-between pt-3 border-t-2 border-black/10 dark:border-white/10 mt-2">
           <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
-            <kbd className="rounded-none bg-black text-white dark:bg-white dark:text-black px-1.5 py-0.5 font-mono text-[9px]">CMD</kbd>
+            <kbd className="rounded-none bg-black text-white dark:bg-white dark:text-black px-1.5 py-0.5 font-mono text-[9px]">
+              CMD
+            </kbd>
             <span>+</span>
-            <kbd className="rounded-none bg-black text-white dark:bg-white dark:text-black px-1.5 py-0.5 font-mono text-[9px]">ENTER</kbd>
+            <kbd className="rounded-none bg-black text-white dark:bg-white dark:text-black px-1.5 py-0.5 font-mono text-[9px]">
+              ENTER
+            </kbd>
           </span>
           <PromptInputAction tooltip="Send message">
             <Button
@@ -59,5 +63,5 @@ export function ChatInputArea({
         </PromptInputActions>
       </PromptInput>
     </div>
-  );
+  )
 }

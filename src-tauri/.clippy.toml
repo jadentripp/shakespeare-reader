@@ -1,0 +1,2 @@
+# Allow common patterns in Tauri commands
+allow-unwrap-in-tests = true

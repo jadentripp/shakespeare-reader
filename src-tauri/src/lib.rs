@@ -1,16 +1,17 @@
 mod books;
 mod db;
 mod gutendex;
+mod types;
 
+use anyhow::Context;
 use db::{Book, BookChatThread, BookMessage, BookPosition, Highlight, HighlightMessage};
-use tauri::{AppHandle, State, Manager};
 use sqlx::{Pool, Postgres};
 use std::fs;
-use anyhow::Context;
+use tauri::{AppHandle, Manager, State};
 
-/// Helper to convert anyhow::Result to Tauri-compatible Result<T, String>
+/// Helper to convert `anyhow::Result` to Tauri-compatible Result<T, String>
 fn cmd<T>(result: anyhow::Result<T>) -> Result<T, String> {
-    result.map_err(|e| format!("{:#}", e))
+    result.map_err(|e| format!("{e:#}"))
 }
 
 #[tauri::command]
@@ -29,7 +30,8 @@ async fn gutendex_shakespeare_page(
         gutendex::search_catalog("shakespeare", page_url, None, None)
             .await
             .context("fetching shakespeare page")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -44,30 +46,41 @@ async fn gutendex_catalog_page(
     cmd(async {
         gutendex::search_catalog(&catalog_key, page_url, search_query, topic)
             .await
-            .with_context(|| format!("fetching catalog page for {}", catalog_key))
-    }.await)
+            .with_context(|| format!("fetching catalog page for {catalog_key}"))
+    }
+    .await)
 }
 
 #[tauri::command]
-async fn list_books(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>) -> Result<Vec<Book>, String> {
+async fn list_books(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
+) -> Result<Vec<Book>, String> {
     cmd(async {
         db::list_books(&pool)
             .await
             .map_err(anyhow::Error::from)
             .context("listing books from database")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
-async fn get_book(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64) -> Result<Book, String> {
+async fn get_book(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
+    book_id: i64,
+) -> Result<Book, String> {
     cmd(async {
         db::get_book(&pool, book_id)
             .await
             .map_err(anyhow::Error::from)
-            .with_context(|| format!("getting book {} from database", book_id))
-    }.await)
+            .with_context(|| format!("getting book {book_id} from database"))
+    }
+    .await)
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 async fn download_gutenberg_mobi(
     app_handle: AppHandle,
@@ -83,7 +96,7 @@ async fn download_gutenberg_mobi(
         let mobi_bytes = books::download_mobi_bytes(&app_handle, gutenberg_id, mobi_url)
             .await
             .map_err(anyhow::Error::from)
-            .with_context(|| format!("downloading book {} ({})", gutenberg_id, title))?;
+            .with_context(|| format!("downloading book {gutenberg_id} ({title})"))?;
 
         let (html_content, first_image_index) = {
             let app_handle = app_handle.clone();
@@ -106,21 +119,26 @@ async fn download_gutenberg_mobi(
             cover_url.as_deref(),
             Some(&mobi_bytes),
             Some(&html_content),
-            first_image_index.map(|v| v as i32),
+            first_image_index,
         )
         .await
         .map_err(anyhow::Error::from)
         .context("saving book to database")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
-async fn get_book_html(app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64) -> Result<String, String> {
+async fn get_book_html(
+    app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
+    book_id: i64,
+) -> Result<String, String> {
     cmd(async {
         let book = db::get_book(&pool, book_id)
             .await
             .map_err(anyhow::Error::from)
-            .with_context(|| format!("getting book metadata for {}", book_id))?;
+            .with_context(|| format!("getting book metadata for {book_id}"))?;
 
         if let Some(html) = book.html_content {
             // Check for issues that might require regeneration
@@ -139,26 +157,31 @@ async fn get_book_html(app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, b
         if let Some(ref mobi_bytes) = book.mobi_data {
             let mobi_bytes_clone = mobi_bytes.clone();
             let app_handle_clone = app_handle.clone();
-            let gutenberg_id = book.gutenberg_id;
-            
-            let (html_content, first_image_index) = tauri::async_runtime::spawn_blocking(move || {
-                books::extract_mobi_to_content(&app_handle_clone, gutenberg_id, &mobi_bytes_clone)
-            })
-            .await
-            .context("waiting for extraction thread during regeneration")?
-            .map_err(anyhow::Error::from)
-            .context("regenerating html from mobi data")?;
-            
+            let gutenberg_id = book.gutenberg_id.get();
+
+            let (html_content, first_image_index) =
+                tauri::async_runtime::spawn_blocking(move || {
+                    books::extract_mobi_to_content(
+                        &app_handle_clone,
+                        gutenberg_id,
+                        &mobi_bytes_clone,
+                    )
+                })
+                .await
+                .context("waiting for extraction thread during regeneration")?
+                .map_err(anyhow::Error::from)
+                .context("regenerating html from mobi data")?;
+
             db::upsert_book(
                 &pool,
-                book.gutenberg_id,
+                book.gutenberg_id.get(),
                 &book.title,
                 &book.authors,
                 book.publication_year,
                 book.cover_url.as_deref(),
                 Some(mobi_bytes),
                 Some(&html_content),
-                first_image_index.map(|v| v as i32),
+                first_image_index,
             )
             .await
             .map_err(anyhow::Error::from)
@@ -168,78 +191,101 @@ async fn get_book_html(app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, b
         }
 
         anyhow::bail!("Book has no HTML content or MOBI data available");
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
-async fn get_book_image_data(app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64, relative_index: i32) -> Result<String, String> {
+async fn get_book_image_data(
+    app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
+    book_id: i64,
+    relative_index: i32,
+) -> Result<String, String> {
     cmd(async {
         let book = db::get_book(&pool, book_id)
             .await
             .map_err(anyhow::Error::from)
-            .with_context(|| format!("getting book metadata for {}", book_id))?;
-        let first_image_index = book.first_image_index.ok_or_else(|| anyhow::anyhow!("Book has no image index"))?;
-        
-        let absolute_index = (first_image_index + relative_index - 1) as usize;
-        
-        let path = books::get_book_asset_path(&app_handle, book.gutenberg_id, absolute_index)
+            .with_context(|| format!("getting book metadata for {book_id}"))?;
+        let first_image_index = book
+            .first_image_index
+            .ok_or_else(|| anyhow::anyhow!("Book has no image index"))?;
+
+        let absolute_index = usize::try_from(first_image_index + relative_index - 1).unwrap_or(0);
+
+        let path = books::get_book_asset_path(&app_handle, book.gutenberg_id.get(), absolute_index)
             .map_err(anyhow::Error::from)
-            .with_context(|| format!("finding asset path for index {}", relative_index))?;
-            
+            .with_context(|| format!("finding asset path for index {relative_index}"))?;
+
         let bytes = tauri::async_runtime::spawn_blocking({
             let path = path.clone();
             move || fs::read(&path).map(|b| (b, path))
         })
         .await
         .context("waiting for image read thread")?
-        .with_context(|| format!("reading image from {:?}", path))?;
+        .with_context(|| format!("reading image from {}", path.display()))?;
 
         let (bytes, path) = bytes;
         let extension = path.extension().and_then(|s| s.to_str()).unwrap_or("jpeg");
         let mime = match extension {
-            "jpg" | "jpeg" => "image/jpeg",
             "png" => "image/png",
             "gif" => "image/gif",
             _ => "image/jpeg",
         };
-        
+
         let b64 = data_encoding::BASE64.encode(&bytes);
-        Ok(format!("data:{};base64,{}", mime, b64))
-    }.await)
+        Ok(format!("data:{mime};base64,{b64}"))
+    }
+    .await)
 }
 
 #[tauri::command]
-async fn get_book_position(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64) -> Result<Option<BookPosition>, String> {
+async fn get_book_position(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
+    book_id: i64,
+) -> Result<Option<BookPosition>, String> {
     cmd(async {
         db::get_book_position(&pool, book_id)
             .await
             .map_err(anyhow::Error::from)
             .context("getting book position")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
-async fn set_book_position(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64, cfi: String) -> Result<(), String> {
+async fn set_book_position(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
+    book_id: i64,
+    cfi: String,
+) -> Result<(), String> {
     cmd(async {
         db::set_book_position(&pool, book_id, &cfi)
             .await
             .map_err(anyhow::Error::from)
             .context("saving book position")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
-async fn hard_delete_book(app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64) -> Result<(), String> {
+async fn hard_delete_book(
+    app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
+    book_id: i64,
+) -> Result<(), String> {
     cmd(async {
         let book = db::get_book(&pool, book_id)
             .await
             .map_err(anyhow::Error::from)
-            .with_context(|| format!("getting book metadata for deletion: {}", book_id))?;
+            .with_context(|| format!("getting book metadata for deletion: {book_id}"))?;
 
         // Still delete assets on disk (images)
         let app_handle_clone = app_handle.clone();
         tauri::async_runtime::spawn_blocking(move || {
-            let _ = books::delete_book_assets(&app_handle_clone, book.gutenberg_id);
+            let _ = books::delete_book_assets(&app_handle_clone, book.gutenberg_id.get());
         })
         .await
         .context("waiting for asset deletion thread")?;
@@ -248,39 +294,57 @@ async fn hard_delete_book(app_handle: AppHandle, pool: State<'_, Pool<Postgres>>
             .await
             .map_err(anyhow::Error::from)
             .context("deleting book from database")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
-async fn set_setting(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, key: String, value: String) -> Result<(), String> {
+async fn set_setting(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
+    key: String,
+    value: String,
+) -> Result<(), String> {
     cmd(async {
         db::set_setting(&pool, &key, &value)
             .await
             .map_err(anyhow::Error::from)
-            .with_context(|| format!("setting '{}'", key))
-    }.await)
+            .with_context(|| format!("setting '{key}'"))
+    }
+    .await)
 }
 
 #[tauri::command]
-async fn get_setting(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, key: String) -> Result<Option<String>, String> {
+async fn get_setting(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
+    key: String,
+) -> Result<Option<String>, String> {
     cmd(async {
         db::get_setting(&pool, &key)
             .await
             .map_err(anyhow::Error::from)
-            .with_context(|| format!("getting '{}'", key))
-    }.await)
+            .with_context(|| format!("getting '{key}'"))
+    }
+    .await)
 }
 
 #[tauri::command]
-async fn list_highlights(_app_handle: AppHandle, pool: State<'_, Pool<Postgres>>, book_id: i64) -> Result<Vec<Highlight>, String> {
+async fn list_highlights(
+    _app_handle: AppHandle,
+    pool: State<'_, Pool<Postgres>>,
+    book_id: i64,
+) -> Result<Vec<Highlight>, String> {
     cmd(async {
         db::list_highlights(&pool, book_id)
             .await
             .map_err(anyhow::Error::from)
             .context("listing highlights")
-    }.await)
+    }
+    .await)
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 async fn create_highlight(
     _app_handle: AppHandle,
@@ -307,7 +371,8 @@ async fn create_highlight(
         .await
         .map_err(anyhow::Error::from)
         .context("creating highlight")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -322,7 +387,8 @@ async fn update_highlight_note(
             .await
             .map_err(anyhow::Error::from)
             .context("updating highlight note")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -336,7 +402,8 @@ async fn delete_highlight(
             .await
             .map_err(anyhow::Error::from)
             .context("deleting highlight")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -350,7 +417,8 @@ async fn list_highlight_messages(
             .await
             .map_err(anyhow::Error::from)
             .context("listing highlight messages")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -366,7 +434,8 @@ async fn add_highlight_message(
             .await
             .map_err(anyhow::Error::from)
             .context("adding highlight message")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -381,9 +450,11 @@ async fn list_book_messages(
             .await
             .map_err(anyhow::Error::from)
             .context("listing book messages")
-    }.await)
+    }
+    .await)
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 async fn add_book_message(
     _app_handle: AppHandle,
@@ -396,11 +467,20 @@ async fn add_book_message(
     context_map: Option<String>,
 ) -> Result<BookMessage, String> {
     cmd(async {
-        db::add_book_message(&pool, book_id, thread_id, &role, &content, reasoning_summary.as_deref(), context_map.as_deref())
-            .await
-            .map_err(anyhow::Error::from)
-            .context("adding book message")
-    }.await)
+        db::add_book_message(
+            &pool,
+            book_id,
+            thread_id,
+            &role,
+            &content,
+            reasoning_summary.as_deref(),
+            context_map.as_deref(),
+        )
+        .await
+        .map_err(anyhow::Error::from)
+        .context("adding book message")
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -414,7 +494,8 @@ async fn list_book_chat_threads(
             .await
             .map_err(anyhow::Error::from)
             .context("listing chat threads")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -429,7 +510,8 @@ async fn create_book_chat_thread(
             .await
             .map_err(anyhow::Error::from)
             .context("creating chat thread")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -444,7 +526,8 @@ async fn rename_book_chat_thread(
             .await
             .map_err(anyhow::Error::from)
             .context("renaming chat thread")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -458,7 +541,8 @@ async fn delete_book_chat_thread(
             .await
             .map_err(anyhow::Error::from)
             .context("deleting chat thread")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -472,7 +556,8 @@ async fn delete_book_messages(
             .await
             .map_err(anyhow::Error::from)
             .context("deleting book messages")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -486,7 +571,8 @@ async fn delete_book_message(
             .await
             .map_err(anyhow::Error::from)
             .context("deleting message")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -500,7 +586,8 @@ async fn clear_default_book_messages(
             .await
             .map_err(anyhow::Error::from)
             .context("clearing default messages")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -514,7 +601,8 @@ async fn delete_book_thread_messages(
             .await
             .map_err(anyhow::Error::from)
             .context("deleting thread messages")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -529,7 +617,8 @@ async fn set_thread_last_cfi(
             .await
             .map_err(anyhow::Error::from)
             .context("saving thread position")
-    }.await)
+    }
+    .await)
 }
 
 #[tauri::command]
@@ -544,9 +633,11 @@ async fn get_thread_max_citation_index(
             .await
             .map_err(anyhow::Error::from)
             .context("getting max citation index")
-    }.await)
+    }
+    .await)
 }
 
+#[allow(clippy::large_stack_frames)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -554,8 +645,12 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
-            db::init().map_err(|e| tauri::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, format!("Database init failed: {}", e))))?;
-            let pool = db::get_pool().map_err(|e| tauri::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, format!("Database pool failed: {}", e))))?;
+            db::init().map_err(|e| {
+                tauri::Error::Io(std::io::Error::other(format!("Database init failed: {e}")))
+            })?;
+            let pool = db::get_pool().map_err(|e| {
+                tauri::Error::Io(std::io::Error::other(format!("Database pool failed: {e}")))
+            })?;
             app.manage(pool.clone());
             Ok(())
         })

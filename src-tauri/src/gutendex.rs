@@ -1,6 +1,26 @@
-use std::borrow::Cow;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum GutendexError {
+    #[error("HTTP error: {0}")]
+    Http(#[from] reqwest::Error),
+
+    #[error("URL parse error: {0}")]
+    Url(#[from] url::ParseError),
+
+    #[error("Unknown catalog: {0}")]
+    UnknownCatalog(String),
+
+    #[error("Invalid URL: {0}")]
+    InvalidUrl(String),
+
+    #[allow(dead_code)]
+    #[error("{0}")]
+    Other(String),
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GutendexAuthor {
@@ -47,7 +67,7 @@ fn build_catalog_url(
     base_url: &str,
     search_query: Option<&str>,
     topic: Option<&str>,
-) -> Result<String, anyhow::Error> {
+) -> Result<String, GutendexError> {
     let mut url = Url::parse(base_url)?;
     let mut existing_search: Option<String> = None;
     let mut other_pairs: Vec<(String, String)> = Vec::new();
@@ -99,11 +119,13 @@ fn build_catalog_url(
     Ok(url.to_string())
 }
 
-fn sanitize_page_url(page_url: &str) -> Result<Cow<'_, str>, anyhow::Error> {
+fn sanitize_page_url(page_url: &str) -> Result<Cow<'_, str>, GutendexError> {
     if page_url.starts_with("https://gutendex.com/books/") {
         Ok(Cow::Borrowed(page_url))
     } else {
-        Err(anyhow::anyhow!("Invalid catalog URL."))
+        Err(GutendexError::InvalidUrl(
+            "Invalid catalog URL.".to_string(),
+        ))
     }
 }
 
@@ -112,13 +134,17 @@ pub async fn search_catalog(
     page_url: Option<String>,
     search_query: Option<String>,
     topic: Option<String>,
-) -> Result<GutendexResponse, anyhow::Error> {
+) -> Result<GutendexResponse, GutendexError> {
     let url: Cow<'_, str> = if let Some(ref page_url) = page_url {
         sanitize_page_url(page_url)?
     } else {
         let base_url = catalog_base_url(catalog_key)
-            .ok_or_else(|| anyhow::anyhow!("Unknown catalog"))?;
-        Cow::Owned(build_catalog_url(base_url, search_query.as_deref(), topic.as_deref())?)
+            .ok_or_else(|| GutendexError::UnknownCatalog(catalog_key.to_string()))?;
+        Cow::Owned(build_catalog_url(
+            base_url,
+            search_query.as_deref(),
+            topic.as_deref(),
+        )?)
     };
 
     let client = reqwest::Client::new();

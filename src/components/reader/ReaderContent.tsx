@@ -1,16 +1,21 @@
-import { useState } from "react";
-import ReaderPane from "./ReaderPane";
-import HighlightsSidebar from "./HighlightsSidebar";
-import ChatSidebar from "./ChatSidebar";
-import { Button } from "@/components/ui/button";
-import { PanelLeftOpen, PanelRightOpen } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { CHAT_PROMPTS, SIDEBAR_GUTTER, SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from "@/lib/reader/constants";
-import { useMobiReader } from "@/lib/reader/hooks/useMobiReader";
+import { PanelLeftOpen, PanelRightOpen } from 'lucide-react'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  CHAT_PROMPTS,
+  SIDEBAR_COLLAPSED_WIDTH,
+  SIDEBAR_GUTTER,
+  SIDEBAR_WIDTH,
+} from '@/lib/reader/constants'
+import type { useMobiReader } from '@/lib/reader/hooks/useMobiReader'
+import { cn } from '@/lib/utils'
+import ChatSidebar from './ChatSidebar'
+import HighlightsSidebar from './HighlightsSidebar'
+import ReaderPane from './ReaderPane'
 
 type ReaderContentProps = {
-  reader: ReturnType<typeof useMobiReader>;
-};
+  reader: ReturnType<typeof useMobiReader>
+}
 
 export function ReaderContent({ reader }: ReaderContentProps) {
   const {
@@ -31,17 +36,17 @@ export function ReaderContent({ reader }: ReaderContentProps) {
     activeCitation,
     setActiveCitation,
     tts,
-  } = reader;
+  } = reader
 
-  const [highlightLibraryExpanded, setHighlightLibraryExpanded] = useState(false);
-  const [highlightPageMap] = useState<Record<number, number>>({});
+  const [highlightLibraryExpanded, setHighlightLibraryExpanded] = useState(false)
+  const [highlightPageMap] = useState<Record<number, number>>({})
 
-  const leftCol = leftPanelCollapsed 
-    ? `${SIDEBAR_COLLAPSED_WIDTH}px` 
-    : `minmax(0, ${SIDEBAR_WIDTH}px)`;
-  const rightCol = rightPanelCollapsed 
-    ? `${SIDEBAR_COLLAPSED_WIDTH}px` 
-    : `minmax(0, ${SIDEBAR_WIDTH}px)`;
+  const leftCol = leftPanelCollapsed
+    ? `${SIDEBAR_COLLAPSED_WIDTH}px`
+    : `minmax(0, ${SIDEBAR_WIDTH}px)`
+  const rightCol = rightPanelCollapsed
+    ? `${SIDEBAR_COLLAPSED_WIDTH}px`
+    : `minmax(0, ${SIDEBAR_WIDTH}px)`
 
   return (
     <div
@@ -70,13 +75,13 @@ export function ReaderContent({ reader }: ReaderContentProps) {
             highlights={highlights.highlights}
             selectedHighlightId={highlights.selectedHighlightId}
             onSelectHighlight={(highlightId) => {
-              highlights.setSelectedHighlightId(highlightId);
-              scrollToHighlight(highlightId);
+              highlights.setSelectedHighlightId(highlightId)
+              scrollToHighlight(highlightId)
             }}
             onDeleteHighlight={highlights.handleDelete}
             onClearSelection={() => {
-              highlights.setSelectedHighlightId(null);
-              highlights.setNoteDraft("");
+              highlights.setSelectedHighlightId(null)
+              highlights.setNoteDraft('')
             }}
             highlightLibraryExpanded={highlightLibraryExpanded}
             onToggleHighlightLibrary={() => setHighlightLibraryExpanded((prev) => !prev)}
@@ -110,8 +115,8 @@ export function ReaderContent({ reader }: ReaderContentProps) {
           onCancelHighlight={() => highlights.setPendingHighlight(null)}
           onAddToChat={highlights.handleAddToChat}
           onReadAloud={(text) => {
-            tts.playText(text);
-            highlights.setPendingHighlight(null);
+            tts.playText(text)
+            highlights.setPendingHighlight(null)
           }}
           activeCitation={activeCitation}
           onActiveCitationChange={setActiveCitation}
@@ -168,5 +173,5 @@ export function ReaderContent({ reader }: ReaderContentProps) {
         )}
       </div>
     </div>
-  );
+  )
 }

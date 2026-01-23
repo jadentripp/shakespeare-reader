@@ -1,16 +1,16 @@
-import { DESIRED_PAGE_WIDTH } from "./constants";
+import { DESIRED_PAGE_WIDTH } from './constants'
 
 export interface ReaderStyleOptions {
-  columns: 1 | 2;
-  margin: number;
-  pageGap: number;
-  fontFamily: string;
-  lineHeight: number;
+  columns: 1 | 2
+  margin: number
+  pageGap: number
+  fontFamily: string
+  lineHeight: number
 }
 
 export function buildReaderCss(options: ReaderStyleOptions): string {
-  const { columns, margin, pageGap, fontFamily, lineHeight } = options;
-  const gap = pageGap;
+  const { columns, margin, pageGap, fontFamily, lineHeight } = options
+  const gap = pageGap
 
   return `
     :root {
@@ -47,7 +47,7 @@ export function buildReaderCss(options: ReaderStyleOptions): string {
       column-fill: auto;
       column-width: var(--column-width);
       column-gap: var(--page-gap);
-      column-rule: ${columns === 2 ? "1px solid var(--page-rule)" : "none"};
+      column-rule: ${columns === 2 ? '1px solid var(--page-rule)' : 'none'};
       column-count: auto;
       width: ${columns === 2 ? DESIRED_PAGE_WIDTH * 2 + gap + margin * 2 : DESIRED_PAGE_WIDTH + margin * 2}px;
       max-width: 100%;
@@ -149,5 +149,5 @@ export function buildReaderCss(options: ReaderStyleOptions): string {
       transition: background-color 0.1s ease;
     }
     @keyframes pulse-highlight { 0%, 100% { background-color: rgba(224, 46, 46, 0.45); } 50% { background-color: rgba(224, 46, 46, 0.6); } }
-  `;
+  `
 }

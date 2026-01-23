@@ -1,19 +1,22 @@
-import { Link } from "@tanstack/react-router";
-import { Sparkles, BookOpen } from "lucide-react";
+import { Link } from '@tanstack/react-router'
+import type { Book } from '@/lib/tauri/types'
+import { BookOpen, Sparkles } from 'lucide-react'
 
 interface ContinueReadingProps {
-  booksInProgress: any[];
-  progressByBookId: Map<number, number>;
+  booksInProgress: Book[]
+  progressByBookId: Map<number, number>
 }
 
 export function ContinueReading({ booksInProgress, progressByBookId }: ContinueReadingProps) {
-  if (booksInProgress.length === 0) return null;
+  if (booksInProgress.length === 0) return null
 
   return (
     <section>
       <div className="mb-6 flex items-center gap-2 border-b-2 border-black pb-2 dark:border-white">
         <Sparkles className="h-5 w-5 text-amber-500" />
-        <h2 className="font-sans text-xl font-black uppercase tracking-tighter text-foreground">In Progress</h2>
+        <h2 className="font-sans text-xl font-black uppercase tracking-tighter text-foreground">
+          In Progress
+        </h2>
       </div>
       <div className="flex gap-8 overflow-x-auto pb-4">
         {booksInProgress.slice(0, 5).map((b) => (
@@ -43,11 +46,13 @@ export function ContinueReading({ booksInProgress, progressByBookId }: ContinueR
               <div className="truncate font-sans text-sm font-bold uppercase tracking-tight text-foreground group-hover:text-amber-600">
                 {b.title}
               </div>
-              <div className="truncate font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{b.authors}</div>
+              <div className="truncate font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                {b.authors}
+              </div>
             </div>
           </Link>
         ))}
       </div>
     </section>
-  );
+  )
 }

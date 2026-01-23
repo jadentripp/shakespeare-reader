@@ -1,11 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { Download, X } from "lucide-react";
+import { Download, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 type ReaderLightboxProps = {
-  image: { src: string; alt?: string };
-  onClose: () => void;
-  onSave: (src: string) => void;
-};
+  image: { src: string; alt?: string }
+  onClose: () => void
+  onSave: (src: string) => void
+}
 
 export function ReaderLightbox({ image, onClose, onSave }: ReaderLightboxProps) {
   return (
@@ -44,5 +44,5 @@ export function ReaderLightbox({ image, onClose, onSave }: ReaderLightboxProps) 
         )}
       </div>
     </div>
-  );
+  )
 }

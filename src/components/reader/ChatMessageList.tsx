@@ -1,21 +1,20 @@
-import { Button } from "@/components/ui/button";
+import { Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
-  ChatContainerRoot,
   ChatContainerContent,
+  ChatContainerRoot,
   ChatContainerScrollAnchor,
-} from "@/components/ui/chat-container";
-import { Message, MessageAvatar, MessageContent, MessageAction } from "@/components/ui/message";
-import { Loader } from "@/components/ui/loader";
-import { cn } from "@/lib/utils";
-import { Trash2, Feather, Quote } from "lucide-react";
-import type { LocalChatMessage } from "@/lib/readerTypes";
+} from '@/components/ui/chat-container'
+import { Message, MessageContent } from '@/components/ui/message'
+import type { LocalChatMessage } from '@/lib/readerTypes'
+import { cn } from '@/lib/utils'
 
 type ChatMessageListProps = {
-  messages: LocalChatMessage[];
-  chatSending: boolean;
-  onDeleteMessage?: (id: number) => void;
-  onCitationClick?: (index: number, snippet?: string) => void;
-};
+  messages: LocalChatMessage[]
+  chatSending: boolean
+  onDeleteMessage?: ((id: number) => void) | undefined
+  onCitationClick?: ((index: number, snippet?: string) => void) | undefined
+}
 
 export function ChatMessageList({
   messages,
@@ -28,39 +27,45 @@ export function ChatMessageList({
       <ChatContainerContent className="gap-8 p-6">
         {messages.length ? (
           <>
-            {messages.map((message: any) => {
-              const isUser = message.role === "user";
+            {messages.map((message: LocalChatMessage) => {
+              const isUser = message.role === 'user'
               return (
                 <div key={message.id} className="group/msg relative flex flex-col gap-2">
-                  <div className={cn(
-                    "flex items-center gap-2",
-                    isUser ? "flex-row-reverse" : "flex-row"
-                  )}>
-                    <div className={cn(
-                      "px-1.5 py-0.5",
-                      isUser ? "bg-[#E02E2E]" : "bg-black dark:bg-white"
-                    )}>
-                      <span className={cn(
-                        "text-[9px] font-black uppercase tracking-tighter leading-none",
-                        isUser ? "text-white" : "text-white dark:text-black"
-                      )}>
-                        {isUser ? "READER" : "AI"}
+                  <div
+                    className={cn(
+                      'flex items-center gap-2',
+                      isUser ? 'flex-row-reverse' : 'flex-row',
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'px-1.5 py-0.5',
+                        isUser ? 'bg-[#E02E2E]' : 'bg-black dark:bg-white',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'text-[9px] font-black uppercase tracking-tighter leading-none',
+                          isUser ? 'text-white' : 'text-white dark:text-black',
+                        )}
+                      >
+                        {isUser ? 'READER' : 'AI'}
                       </span>
                     </div>
                     <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-foreground/30">
-                      {isUser ? "USER" : "ASSISTANT"}
+                      {isUser ? 'USER' : 'ASSISTANT'}
                     </span>
                   </div>
 
-                  <div className={cn(
-                    "relative pl-4 border-l-4 transition-all",
-                    isUser 
-                      ? "border-[#E02E2E] bg-[#E02E2E]/5" 
-                      : "border-black dark:border-white bg-black/5 dark:bg-white/5"
-                  )}>
-                    <Message
-                      className="bg-transparent border-none p-0 shadow-none"
-                    >
+                  <div
+                    className={cn(
+                      'relative pl-4 border-l-4 transition-all',
+                      isUser
+                        ? 'border-[#E02E2E] bg-[#E02E2E]/5'
+                        : 'border-black dark:border-white bg-black/5 dark:bg-white/5',
+                    )}
+                  >
+                    <Message className="bg-transparent border-none p-0 shadow-none">
                       <MessageContent
                         markdown={!isUser}
                         onCitationClick={message.onCitationClick ?? onCitationClick}
@@ -84,7 +89,7 @@ export function ChatMessageList({
                     )}
                   </div>
                 </div>
-              );
+              )
             })}
             {chatSending && (
               <div className="flex flex-col gap-2 animate-pulse">
@@ -115,7 +120,7 @@ export function ChatMessageList({
                 <div className="absolute bottom-6 right-6 h-16 w-16 rounded-none bg-[#007FFF]" />
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 rounded-none bg-[#FFD700] border-4 border-black dark:border-white" />
               </div>
-              
+
               <div className="space-y-4">
                 <div className="inline-block bg-black dark:bg-white px-2 py-1">
                   <h3 className="font-sans text-xs font-black uppercase tracking-tighter text-white dark:text-black">
@@ -123,8 +128,8 @@ export function ChatMessageList({
                   </h3>
                 </div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.25em] leading-loose text-foreground/70">
-                  DECONSTRUCT THE TEXT. <br/>
-                  ANALYZE THE NARRATIVE. <br/>
+                  DECONSTRUCT THE TEXT. <br />
+                  ANALYZE THE NARRATIVE. <br />
                   UNCOVER THE MEANING.
                 </p>
               </div>
@@ -136,5 +141,5 @@ export function ChatMessageList({
         <ChatContainerScrollAnchor />
       </ChatContainerContent>
     </ChatContainerRoot>
-  );
+  )
 }

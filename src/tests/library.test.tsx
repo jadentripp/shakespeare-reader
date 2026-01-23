@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from "bun:test";
-import { render, screen, cleanup } from "@testing-library/react";
-import * as matchers from "@testing-library/jest-dom/matchers";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import React from "react";
-import * as tauri from "../lib/tauri";
-import * as useLibraryModule from "../hooks/useLibrary";
-import LibraryPage from "../routes/LibraryPage";
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import * as matchers from '@testing-library/jest-dom/matchers'
+import { cleanup, render, screen } from '@testing-library/react'
+import type React from 'react'
+import * as useLibraryModule from '../hooks/useLibrary'
+import * as tauri from '../lib/tauri'
+import LibraryPage from '../routes/LibraryPage'
 
-expect.extend(matchers);
+expect.extend(matchers)
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,23 +15,23 @@ const queryClient = new QueryClient({
       retry: false,
     },
   },
-});
+})
 
-describe("LibraryPage", () => {
-  const spies: any[] = [];
-  let currentMockValues: any = {};
+describe('LibraryPage', () => {
+  const spies: any[] = []
+  let currentMockValues: any = {}
 
   beforeEach(() => {
-    queryClient.clear();
-    cleanup();
-    mock.restore();
+    queryClient.clear()
+    cleanup()
+    mock.restore()
 
     currentMockValues = {
       booksQ: { data: [], isLoading: false },
       catalogQ: { isFetching: false, data: { results: [], count: 0 } },
-      catalogKey: "collection-all",
+      catalogKey: 'collection-all',
       setCatalogKey: mock(),
-      activeCatalog: { kind: "all", catalogKey: "collection-all" },
+      activeCatalog: { kind: 'all', catalogKey: 'collection-all' },
       catalogSearch: null,
       canQueryCatalog: false,
       hasQueueActivity: false,
@@ -42,7 +42,7 @@ describe("LibraryPage", () => {
       recentSearches: [],
       queue: [],
       setQueue: mock(),
-      libraryQuery: "",
+      libraryQuery: '',
       setLibraryQuery: mock(),
       deleteBook: mock(),
       sortedCatalogResults: [],
@@ -64,44 +64,42 @@ describe("LibraryPage", () => {
       clearRecentSearches: mock(),
       enqueue: mock(),
       active: null,
-      catalogQuery: "",
+      catalogQuery: '',
       setCatalogQuery: mock(),
-      sortBy: "relevance",
+      sortBy: 'relevance',
       setSortBy: mock(),
-    };
+    }
 
-    spies.push(spyOn(useLibraryModule, 'useLibrary').mockImplementation(() => currentMockValues));
-  });
+    spies.push(spyOn(useLibraryModule, 'useLibrary').mockImplementation(() => currentMockValues))
+  })
 
   afterEach(() => {
-    spies.forEach(s => s.mockRestore());
-    spies.length = 0;
-    cleanup();
-  });
+    spies.forEach((s) => s.mockRestore())
+    spies.length = 0
+    cleanup()
+  })
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  );
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  )
 
-  it("should display the Bauhaus LIBRARY header", async () => {
-    render(<LibraryPage />, { wrapper });
-    expect(screen.getByText("LIBRARY")).toBeInTheDocument();
-  });
+  it('should display the Bauhaus LIBRARY header', async () => {
+    render(<LibraryPage />, { wrapper })
+    expect(screen.getByText('LIBRARY')).toBeInTheDocument()
+  })
 
-  it("should display book title", async () => {
-    const mockBook = { id: 1, title: "Test Book", authors: "Test Author", gutenberg_id: 12345 };
-    currentMockValues.filteredBooks = [mockBook];
-    currentMockValues.booksQ = { data: [mockBook], isLoading: false };
+  it('should display book title', async () => {
+    const mockBook = { id: 1, title: 'Test Book', authors: 'Test Author', gutenberg_id: 12345 }
+    currentMockValues.filteredBooks = [mockBook]
+    currentMockValues.booksQ = { data: [mockBook], isLoading: false }
 
-    render(<LibraryPage />, { wrapper });
+    render(<LibraryPage />, { wrapper })
 
-    expect(screen.getByText("Test Book")).toBeInTheDocument();
-  });
+    expect(screen.getByText('Test Book')).toBeInTheDocument()
+  })
 
-  it("should display empty state when no books are found", async () => {
-    render(<LibraryPage />, { wrapper });
-    expect(screen.getByText("Your library is empty")).toBeInTheDocument();
-  });
-});
+  it('should display empty state when no books are found', async () => {
+    render(<LibraryPage />, { wrapper })
+    expect(screen.getByText('Your library is empty')).toBeInTheDocument()
+  })
+})
