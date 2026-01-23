@@ -1,11 +1,11 @@
 # Active Tracks
 
-- [~] **Track: Library Discovery Overhaul**
-*Link: [./tracks/library_discovery_overhaul_20260122/](./tracks/library_discovery_overhaul_20260122/)*
-
 ---
 
 # Archived Tracks
+
+- [x] **Track: Library Discovery Overhaul**
+*Link: [./archive/library_discovery_overhaul_20260122/](./archive/library_discovery_overhaul_20260122/)*
 
 - [x] **Track: switch db to postgres**
 *Link: [./archive/switch_db_to_postgres_20260119/](./archive/switch_db_to_postgres_20260119/)*
