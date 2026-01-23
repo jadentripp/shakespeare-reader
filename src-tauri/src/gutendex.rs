@@ -1,26 +1,5 @@
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
-use thiserror::Error;
-
-#[derive(Debug, Error)]
-pub enum GutendexError {
-    #[error("HTTP error: {0}")]
-    Http(#[from] reqwest::Error),
-
-    #[error("URL parse error: {0}")]
-    Url(#[from] url::ParseError),
-
-    #[error("Unknown catalog: {0}")]
-    UnknownCatalog(String),
-
-    #[error("Invalid URL: {0}")]
-    InvalidUrl(String),
-
-    #[allow(dead_code)]
-    #[error("{0}")]
-    Other(String),
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GutendexAuthor {
@@ -47,20 +26,18 @@ pub struct GutendexResponse {
     pub results: Vec<GutendexBook>,
 }
 
-fn catalog_base_url(catalog_key: &str) -> Option<&'static str> {
+fn catalog_base_url(catalog_key: &str) -> Option<String> {
     match catalog_key {
-        "all" => Some("https://gutendex.com/books/"),
-        "shakespeare" => Some("https://gutendex.com/books/?search=Shakespeare%2C%20William"),
-        "greek-tragedy" => {
-            Some("https://gutendex.com/books/?search=aeschylus%20sophocles%20euripides%20tragedy")
-        }
-        "greek-epic" => Some("https://gutendex.com/books/?search=homer%20hesiod%20epic%20myth"),
-        "roman-drama" => Some("https://gutendex.com/books/?search=roman%20drama"),
-        "mythology" => Some("https://gutendex.com/books/?search=mythology"),
-        "philosophy" => Some("https://gutendex.com/books/?search=philosophy"),
-        "gothic" => Some("https://gutendex.com/books/?search=gothic"),
-        "science-fiction" => Some("https://gutendex.com/books/?search=science%20fiction"),
-        "poetry" => Some("https://gutendex.com/books/?search=poetry"),
+        "all" => Some("https://gutendex.com/books/".to_string()),
+        "shakespeare" => Some("https://gutendex.com/books/?search=Shakespeare%2C%20William".to_string()),
+        "greek-tragedy" => Some("https://gutendex.com/books/?search=greek%20tragedy".to_string()),
+        "greek-epic" => Some("https://gutendex.com/books/?search=homer".to_string()),
+        "roman-drama" => Some("https://gutendex.com/books/?search=roman%20drama".to_string()),
+        "mythology" => Some("https://gutendex.com/books/?search=mythology".to_string()),
+        "philosophy" => Some("https://gutendex.com/books/?search=philosophy".to_string()),
+        "gothic" => Some("https://gutendex.com/books/?search=gothic".to_string()),
+        "science-fiction" => Some("https://gutendex.com/books/?search=science%20fiction".to_string()),
+        "poetry" => Some("https://gutendex.com/books/?search=poetry".to_string()),
         _ => None,
     }
 }
@@ -69,7 +46,7 @@ fn build_catalog_url(
     base_url: &str,
     search_query: Option<&str>,
     topic: Option<&str>,
-) -> Result<String, GutendexError> {
+) -> Result<String, anyhow::Error> {
     let mut url = Url::parse(base_url)?;
     let mut existing_search: Option<String> = None;
     let mut other_pairs: Vec<(String, String)> = Vec::new();
@@ -89,8 +66,7 @@ fn build_catalog_url(
             if combined_search.is_empty() {
                 combined_search = trimmed.to_string();
             } else {
-                combined_search.push(' ');
-                combined_search.push_str(trimmed);
+                combined_search = format!("{} {}", combined_search, trimmed);
             }
         }
     }
@@ -121,13 +97,11 @@ fn build_catalog_url(
     Ok(url.to_string())
 }
 
-fn sanitize_page_url(page_url: &str) -> Result<Cow<'_, str>, GutendexError> {
+fn sanitize_page_url(page_url: &str) -> Result<String, anyhow::Error> {
     if page_url.starts_with("https://gutendex.com/books/") {
-        Ok(Cow::Borrowed(page_url))
+        Ok(page_url.to_string())
     } else {
-        Err(GutendexError::InvalidUrl(
-            "Invalid catalog URL.".to_string(),
-        ))
+        Err(anyhow::anyhow!("Invalid catalog URL."))
     }
 }
 
@@ -136,40 +110,16 @@ pub async fn search_catalog(
     page_url: Option<String>,
     search_query: Option<String>,
     topic: Option<String>,
-) -> Result<GutendexResponse, GutendexError> {
-    let url: Cow<'_, str> = if let Some(ref page_url) = page_url {
-        sanitize_page_url(page_url)?
+) -> Result<GutendexResponse, anyhow::Error> {
+    let url = if let Some(page_url) = page_url {
+        sanitize_page_url(&page_url)?
     } else {
         let base_url = catalog_base_url(catalog_key)
-            .ok_or_else(|| GutendexError::UnknownCatalog(catalog_key.to_string()))?;
-        Cow::Owned(build_catalog_url(
-            base_url,
-            search_query.as_deref(),
-            topic.as_deref(),
-        )?)
+            .ok_or_else(|| anyhow::anyhow!("Unknown catalog"))?;
+        build_catalog_url(&base_url, search_query.as_deref(), topic.as_deref())?
     };
 
     let client = reqwest::Client::new();
-    let resp = client.get(url.as_ref()).send().await?.error_for_status()?;
+    let resp = client.get(url).send().await?.error_for_status()?;
     Ok(resp.json::<GutendexResponse>().await?)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_catalog_base_urls() {
-        // Greek Epic should include broader search
-        let epic = catalog_base_url("greek-epic").unwrap();
-        assert!(epic.contains("homer%20hesiod%20epic%20myth"));
-
-        // Greek Tragedy should include major playwrights
-        let tragedy = catalog_base_url("greek-tragedy").unwrap();
-        assert!(tragedy.contains("aeschylus%20sophocles%20euripides%20tragedy"));
-
-        // New categories
-        assert!(catalog_base_url("gothic").is_some());
-        assert!(catalog_base_url("philosophy").is_some());
-    }
 }

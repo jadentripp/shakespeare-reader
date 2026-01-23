@@ -1,24 +1,24 @@
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils"
 
 export function PulseDotLoader({
   className,
-  size = 'md',
+  size = "md",
 }: {
   className?: string
-  size?: 'sm' | 'md' | 'lg'
+  size?: "sm" | "md" | "lg"
 }) {
   const sizeClasses = {
-    sm: 'size-1',
-    md: 'size-2',
-    lg: 'size-3',
+    sm: "size-1",
+    md: "size-2",
+    lg: "size-3",
   }
 
   return (
     <div
       className={cn(
-        'bg-primary animate-[pulse-dot_1.2s_ease-in-out_infinite] rounded-full',
+        "bg-primary animate-[pulse-dot_1.2s_ease-in-out_infinite] rounded-full",
         sizeClasses[size],
-        className,
+        className
       )}
     >
       <span className="sr-only">Loading</span>

@@ -1,1 +1,1 @@
-export { useTTS } from '@/lib/reader/hooks/useTTS'
+export { useTTS } from "@/lib/reader/hooks/useTTS";

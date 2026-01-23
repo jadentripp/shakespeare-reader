@@ -2,6 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    dotenvy::dotenv().ok();
-    ai_reader_lib::run();
+    ai_reader_lib::run()
 }

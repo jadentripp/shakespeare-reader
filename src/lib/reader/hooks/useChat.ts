@@ -1,68 +1,63 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useRef, useState } from 'react'
-import { chat, generateThreadTitle } from '@/lib/openai'
-import { getPageContent, type PageMetrics } from '@/lib/readerUtils'
+import { useState, useCallback, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addBookMessage,
-  clearDefaultBookMessages,
-  createBookChatThread,
-  deleteBookChatThread,
-  deleteBookMessage,
-  deleteBookThreadMessages,
-  getThreadMaxCitationIndex,
-  listBookChatThreads,
   listBookMessages,
+  listBookChatThreads,
+  createBookChatThread,
   renameBookChatThread,
-} from '@/lib/tauri'
-import {
-  buildChatSystemPrompt,
-  type CitationMapping,
-  parseContextMapFromMessage,
-  processCitationsInResponse,
-} from '../citations'
+  deleteBookChatThread,
+  deleteBookThreadMessages,
+  deleteBookMessage,
+  clearDefaultBookMessages,
+  getThreadMaxCitationIndex,
+} from "@/lib/tauri";
+import { chat, generateThreadTitle } from "@/lib/openai";
+import { getPageContent, type PageMetrics } from "@/lib/readerUtils";
+import { buildChatSystemPrompt, processCitationsInResponse, parseContextMapFromMessage, type CitationMapping } from "../citations";
 
 export interface UseChatOptions {
-  bookId: number
-  getDoc: () => Document | null
-  getScrollRoot: () => HTMLElement | null
-  getPageMetrics: () => { pageWidth: number; gap: number }
-  currentPage: number
-  totalPages: number
-  columns: 1 | 2
-  selectedHighlight: { id?: number; text: string; note?: string } | null
-  attachedHighlights: Array<{ id: number; text: string; note?: string }>
-  stagedSnippets: Array<{ text: string }>
+  bookId: number;
+  getDoc: () => Document | null;
+  getScrollRoot: () => HTMLElement | null;
+  getPageMetrics: () => { pageWidth: number; gap: number };
+  currentPage: number;
+  totalPages: number;
+  columns: 1 | 2;
+  selectedHighlight: { id?: number; text: string; note?: string } | null;
+  attachedHighlights: Array<{ id: number; text: string; note?: string }>;
+  stagedSnippets: Array<{ text: string }>;
 }
 
 export interface ChatMessage {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  onCitationClick: (localId: number, snippet?: string) => void
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  onCitationClick: (localId: number, snippet?: string) => void;
 }
 
 export interface UseChatResult {
-  threads: any[] | undefined
-  messages: any[] | undefined
-  chatMessages: ChatMessage[]
-  currentThreadId: number | null
-  setCurrentThreadId: (id: number | null) => void
-  chatInput: string
-  setChatInput: (input: string) => void
-  chatSending: boolean
-  chatInputRef: React.RefObject<HTMLTextAreaElement | null>
-  contextMap: Record<number, CitationMapping>
-  sendChat: () => Promise<void>
-  handleNewChat: () => Promise<void>
-  handleDeleteThread: (threadId: number) => Promise<void>
-  handleRenameThread: (threadId: number, title: string) => Promise<void>
-  handleClearDefaultChat: () => Promise<void>
-  handleClearThreadChat: (threadId: number) => Promise<void>
-  handleDeleteMessage: (messageId: number) => Promise<void>
-  handleSelectThread: (threadId: number | null) => void
-  handleCitationClick: (citationId: number, snippet?: string) => void
-  contextHint: string
-  placeholder: string
+  threads: any[] | undefined;
+  messages: any[] | undefined;
+  chatMessages: ChatMessage[];
+  currentThreadId: number | null;
+  setCurrentThreadId: (id: number | null) => void;
+  chatInput: string;
+  setChatInput: (input: string) => void;
+  chatSending: boolean;
+  chatInputRef: React.RefObject<HTMLTextAreaElement | null>;
+  contextMap: Record<number, CitationMapping>;
+  sendChat: () => Promise<void>;
+  handleNewChat: () => Promise<void>;
+  handleDeleteThread: (threadId: number) => Promise<void>;
+  handleRenameThread: (threadId: number, title: string) => Promise<void>;
+  handleClearDefaultChat: () => Promise<void>;
+  handleClearThreadChat: (threadId: number) => Promise<void>;
+  handleDeleteMessage: (messageId: number) => Promise<void>;
+  handleSelectThread: (threadId: number | null) => void;
+  handleCitationClick: (citationId: number, snippet?: string) => void;
+  contextHint: string;
+  placeholder: string;
 }
 
 export function useChat(
@@ -72,7 +67,7 @@ export function useChat(
   activeAiQuote: string | null,
   setActiveAiQuote: (q: string | null) => void,
   setActiveAiBlockIndex: (i: number | null) => void,
-  setSelectedHighlightId: (id: number | null) => void,
+  setSelectedHighlightId: (id: number | null) => void
 ): UseChatResult {
   const {
     bookId,
@@ -85,70 +80,70 @@ export function useChat(
     selectedHighlight,
     attachedHighlights,
     stagedSnippets,
-  } = options
+  } = options;
 
-  const queryClient = useQueryClient()
-  const chatInputRef = useRef<HTMLTextAreaElement | null>(null)
+  const queryClient = useQueryClient();
+  const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const [currentThreadId, setCurrentThreadId] = useState<number | null>(null)
-  const [chatInput, setChatInput] = useState('')
-  const [chatSending, setChatSending] = useState(false)
-  const [contextMap, setContextMap] = useState<Record<number, CitationMapping>>({})
+  const [currentThreadId, setCurrentThreadId] = useState<number | null>(null);
+  const [chatInput, setChatInput] = useState("");
+  const [chatSending, setChatSending] = useState(false);
+  const [contextMap, setContextMap] = useState<Record<number, CitationMapping>>({});
 
   const bookChatThreadsQ = useQuery({
-    queryKey: ['bookChatThreads', bookId],
+    queryKey: ["bookChatThreads", bookId],
     queryFn: () => listBookChatThreads(bookId),
-  })
+  });
 
   const bookMessagesQ = useQuery({
-    queryKey: ['bookMessages', bookId, currentThreadId],
+    queryKey: ["bookMessages", bookId, currentThreadId],
     queryFn: () => listBookMessages(bookId, currentThreadId),
-  })
+  });
 
   const sendChat = useCallback(async () => {
-    if (!chatInput.trim()) return
-    const input = chatInput.trim()
-    setChatSending(true)
-    setChatInput('')
+    if (!chatInput.trim()) return;
+    const input = chatInput.trim();
+    setChatSending(true);
+    setChatInput("");
 
-    const threadId = currentThreadId
+    const threadId = currentThreadId;
 
     try {
-      const maxIdx = await getThreadMaxCitationIndex(bookId, threadId)
-      const localId = maxIdx + 1
+      const maxIdx = await getThreadMaxCitationIndex(bookId, threadId);
+      let localId = maxIdx + 1;
 
       const optimisticUserMsg: any = {
         id: Date.now(),
         book_id: bookId,
         thread_id: threadId,
-        role: 'user',
+        role: "user",
         content: input,
         created_at: new Date().toISOString(),
         isOptimistic: true,
-      }
+      };
 
-      queryClient.setQueryData(['bookMessages', bookId, threadId], (old: any) => {
-        return [...(old || []), optimisticUserMsg]
-      })
+      queryClient.setQueryData(["bookMessages", bookId, threadId], (old: any) => {
+        return [...(old || []), optimisticUserMsg];
+      });
 
       await addBookMessage({
         bookId,
         threadId,
-        role: 'user',
+        role: "user",
         content: input,
-      })
+      });
 
-      const blockIndexLookup: Array<{ text: string; blockIndex: number; pageNumber: number }> = []
+      const blockIndexLookup: Array<{ text: string; blockIndex: number; pageNumber: number }> = [];
 
-      const doc = getDoc()
-      const root = getScrollRoot()
-      const pageContent: Array<{ text: string; blockIndex: number; pageNumber: number }> = []
+      const doc = getDoc();
+      const root = getScrollRoot();
+      let pageContent: Array<{ text: string; blockIndex: number; pageNumber: number }> = [];
 
       if (doc && root) {
-        const { pageWidth, gap } = getPageMetrics()
-        const stride = pageWidth + gap
-        const rootRect = root.getBoundingClientRect()
-        const scrollLeft = root.scrollLeft
+        const { pageWidth, gap } = getPageMetrics();
+        const stride = pageWidth + gap;
+        const rootRect = root.getBoundingClientRect();
+        const scrollLeft = root.scrollLeft;
 
         const metrics: PageMetrics = {
           pageWidth,
@@ -156,109 +151,104 @@ export function useChat(
           stride,
           scrollLeft,
           rootRect,
-        }
+        };
 
-        const pagesToExtract: number[] =
-          columns === 2 ? [currentPage, Math.min(currentPage + 1, totalPages)] : [currentPage]
+        const pagesToExtract: number[] = columns === 2
+          ? [currentPage, Math.min(currentPage + 1, totalPages)]
+          : [currentPage];
 
         for (const pageNum of pagesToExtract) {
-          const pageContentResult = getPageContent(doc, pageNum, metrics)
-          pageContent.push(...pageContentResult.blocks)
+          const pageContentResult = getPageContent(doc, pageNum, metrics);
+          pageContent.push(...pageContentResult.blocks);
         }
-        pageContent.forEach((block) => blockIndexLookup.push(block))
+        pageContent.forEach((block) => blockIndexLookup.push(block));
       }
 
       const contextBlocks = buildChatSystemPrompt({
-        selectedHighlight: selectedHighlight
-          ? { id: selectedHighlight.id, text: selectedHighlight.text, note: selectedHighlight.note }
-          : null,
-        attachedHighlights: attachedHighlights.map((h) => ({
-          id: h.id,
-          text: h.text,
-          note: h.note,
-        })),
+        selectedHighlight: selectedHighlight ? { id: selectedHighlight.id, text: selectedHighlight.text, note: selectedHighlight.note } : null,
+        attachedHighlights: attachedHighlights.map((h) => ({ id: h.id, text: h.text, note: h.note })),
         stagedSnippets: stagedSnippets.map((s) => ({ text: s.text })),
         pageContent,
-      })
+      });
 
-      const systemContent = contextBlocks.join('\n')
-      const messages = bookMessagesQ.data ?? []
+      const systemContent = contextBlocks.join("\n");
+      const messages = bookMessagesQ.data ?? [];
 
       const response = await chat([
-        { role: 'system', content: systemContent },
+        { role: "system", content: systemContent },
         ...messages.map((message: any) => ({ role: message.role, content: message.content })),
-        { role: 'user', content: input },
-      ])
+        { role: "user", content: input },
+      ]);
 
       const { processedContent, mapping } = processCitationsInResponse(
         response.content,
         localId,
         blockIndexLookup,
-        currentPage,
-      )
+        currentPage
+      );
 
-      setContextMap(mapping)
+      setContextMap(mapping);
 
       await addBookMessage({
         bookId,
         threadId,
-        role: 'assistant',
+        role: "assistant",
         content: processedContent,
         contextMap: JSON.stringify(mapping),
-      })
+      });
 
       await queryClient.invalidateQueries({
-        queryKey: ['bookMessages', bookId, threadId],
-      })
+        queryKey: ["bookMessages", bookId, threadId],
+      });
 
-      console.log('[Chat:Title] sendChat finished assistant response. threadId:', threadId)
+      console.log("[Chat:Title] sendChat finished assistant response. threadId:", threadId);
 
       // AI Title Generation: If this is a real thread (not default chat)
       if (threadId !== null) {
-        // We look for the thread in the cache, but even if not found (stale cache),
+        // We look for the thread in the cache, but even if not found (stale cache), 
         // we can proceed if we know we just sent the first interaction.
-        const thread = bookChatThreadsQ.data?.find((t: any) => t.id === threadId)
-
-        console.log('[Chat:Title] Checking conditions...', {
-          threadFound: !!thread,
+        const thread = bookChatThreadsQ.data?.find((t: any) => t.id === threadId);
+        
+        console.log("[Chat:Title] Checking conditions...", { 
+          threadFound: !!thread, 
           title: thread?.title,
-          isNewChat: thread?.title === 'New Chat',
-        })
+          isNewChat: thread?.title === "New Chat"
+        });
 
-        // If we don't have the thread in cache yet, or it's named "New Chat",
+        // If we don't have the thread in cache yet, or it's named "New Chat", 
         // we should attempt to generate a title if this is the first interaction.
-        // We'll trust the logic that if we just got processedContent and it's a thread,
+        // We'll trust the logic that if we just got processedContent and it's a thread, 
         // and we haven't renamed it yet, it's time.
-        if (!thread || thread.title === 'New Chat') {
-          console.log('[Chat:Title] Triggering AI title generation...')
+        if (!thread || thread.title === "New Chat") {
+          console.log("[Chat:Title] Triggering AI title generation...");
           try {
             const aiTitle = await generateThreadTitle([
-              { role: 'user', content: input },
-              { role: 'assistant', content: processedContent },
-            ])
-
+              { role: "user", content: input },
+              { role: "assistant", content: processedContent }
+            ]);
+            
             if (aiTitle) {
-              console.log('[Chat:Title] Success. Renaming thread to:', aiTitle)
-              await handleRenameThread(threadId, aiTitle)
+              console.log("[Chat:Title] Success. Renaming thread to:", aiTitle);
+              await handleRenameThread(threadId, aiTitle);
             }
           } catch (e) {
-            console.error('[Chat:Title] Failed to generate AI title:', e)
+            console.error("[Chat:Title] Failed to generate AI title:", e);
           }
         }
       }
     } catch (error: any) {
-      const errorMessage = String(error?.message ?? error)
+      const errorMessage = String(error?.message ?? error);
       await addBookMessage({
         bookId,
         threadId: currentThreadId,
-        role: 'assistant',
+        role: "assistant",
         content: errorMessage,
-      })
+      });
       await queryClient.invalidateQueries({
-        queryKey: ['bookMessages', bookId, currentThreadId],
-      })
+        queryKey: ["bookMessages", bookId, currentThreadId],
+      });
     } finally {
-      setChatSending(false)
+      setChatSending(false);
     }
   }, [
     chatInput,
@@ -275,177 +265,151 @@ export function useChat(
     stagedSnippets,
     bookMessagesQ.data,
     queryClient,
-  ])
+  ]);
 
   const handleNewChat = useCallback(async () => {
-    if (selectedHighlight) return
-    const title = 'New Chat'
-    const thread = await createBookChatThread({ bookId, title })
-    setCurrentThreadId(thread.id)
-    await queryClient.invalidateQueries({ queryKey: ['bookChatThreads', bookId] })
-  }, [selectedHighlight, bookId, queryClient])
+    if (selectedHighlight) return;
+    const title = "New Chat";
+    const thread = await createBookChatThread({ bookId, title });
+    setCurrentThreadId(thread.id);
+    await queryClient.invalidateQueries({ queryKey: ["bookChatThreads", bookId] });
+  }, [selectedHighlight, bookId, queryClient]);
 
-  const handleDeleteThread = useCallback(
-    async (threadId: number) => {
-      await deleteBookChatThread(threadId)
-      if (currentThreadId === threadId) {
-        setCurrentThreadId(null)
-      }
-      await queryClient.invalidateQueries({ queryKey: ['bookChatThreads', bookId] })
-    },
-    [currentThreadId, bookId, queryClient],
-  )
+  const handleDeleteThread = useCallback(async (threadId: number) => {
+    await deleteBookChatThread(threadId);
+    if (currentThreadId === threadId) {
+      setCurrentThreadId(null);
+    }
+    await queryClient.invalidateQueries({ queryKey: ["bookChatThreads", bookId] });
+  }, [currentThreadId, bookId, queryClient]);
 
-  const handleRenameThread = useCallback(
-    async (threadId: number, title: string) => {
-      await renameBookChatThread({ threadId, title })
-      await queryClient.invalidateQueries({ queryKey: ['bookChatThreads', bookId] })
-    },
-    [bookId, queryClient],
-  )
+  const handleRenameThread = useCallback(async (threadId: number, title: string) => {
+    await renameBookChatThread({ threadId, title });
+    await queryClient.invalidateQueries({ queryKey: ["bookChatThreads", bookId] });
+  }, [bookId, queryClient]);
 
   const handleClearDefaultChat = useCallback(async () => {
-    await clearDefaultBookMessages(bookId)
-    await queryClient.invalidateQueries({ queryKey: ['bookMessages', bookId, null] })
-  }, [bookId, queryClient])
+    await clearDefaultBookMessages(bookId);
+    await queryClient.invalidateQueries({ queryKey: ["bookMessages", bookId, null] });
+  }, [bookId, queryClient]);
 
-  const handleClearThreadChat = useCallback(
-    async (threadId: number) => {
-      await deleteBookThreadMessages(threadId)
-      await queryClient.invalidateQueries({ queryKey: ['bookMessages', bookId, threadId] })
-    },
-    [bookId, queryClient],
-  )
+  const handleClearThreadChat = useCallback(async (threadId: number) => {
+    await deleteBookThreadMessages(threadId);
+    await queryClient.invalidateQueries({ queryKey: ["bookMessages", bookId, threadId] });
+  }, [bookId, queryClient]);
 
-  const handleDeleteMessage = useCallback(
-    async (messageId: number) => {
-      await deleteBookMessage(messageId)
-      await queryClient.invalidateQueries({ queryKey: ['bookMessages', bookId, currentThreadId] })
-    },
-    [bookId, currentThreadId, queryClient],
-  )
+  const handleDeleteMessage = useCallback(async (messageId: number) => {
+    await deleteBookMessage(messageId);
+    await queryClient.invalidateQueries({ queryKey: ["bookMessages", bookId, currentThreadId] });
+  }, [bookId, currentThreadId, queryClient]);
 
-  const handleSelectThread = useCallback(
-    (threadId: number | null) => {
-      setCurrentThreadId(threadId)
-      if (threadId !== null && bookChatThreadsQ.data) {
-        const thread = bookChatThreadsQ.data.find((t: any) => t.id === threadId)
-        if (thread?.last_cfi) {
-          setTimeout(() => {
-            navigation.scrollToCfi(thread.last_cfi!)
-          }, 100)
-        }
+  const handleSelectThread = useCallback((threadId: number | null) => {
+    setCurrentThreadId(threadId);
+    if (threadId !== null && bookChatThreadsQ.data) {
+      const thread = bookChatThreadsQ.data.find((t: any) => t.id === threadId);
+      if (thread?.last_cfi) {
+        setTimeout(() => {
+          navigation.scrollToCfi(thread.last_cfi!);
+        }, 100);
       }
-    },
-    [bookChatThreadsQ.data, navigation],
-  )
+    }
+  }, [bookChatThreadsQ.data, navigation]);
 
-  const handleCitationClick = useCallback(
-    (citationId: number, snippet?: string) => {
-      let value = contextMap[citationId]
+  const handleCitationClick = useCallback((citationId: number, snippet?: string) => {
+    let value = contextMap[citationId];
 
-      if (!value) {
-        const messages = bookMessagesQ.data ?? []
-        for (const msg of messages) {
-          if (msg.role === 'assistant' && msg.content.includes('<!-- context-map:')) {
-            try {
-              const mapStr = msg.content.split('<!-- context-map:')[1].split('-->')[0]
-              const parsedMap = JSON.parse(mapStr)
-              if (parsedMap[citationId]) {
-                value = parsedMap[citationId]
-                break
-              }
-            } catch (e) {
-              console.error('[Chat:Citation] Failed to parse historical context-map', e)
+    if (!value) {
+      const messages = bookMessagesQ.data ?? [];
+      for (const msg of messages) {
+        if (msg.role === "assistant" && msg.content.includes("<!-- context-map:")) {
+          try {
+            const mapStr = msg.content.split("<!-- context-map:")[1].split("-->")[0];
+            const parsedMap = JSON.parse(mapStr);
+            if (parsedMap[citationId]) {
+              value = parsedMap[citationId];
+              break;
             }
+          } catch (e) {
+            console.error("[Chat:Citation] Failed to parse historical context-map", e);
           }
         }
       }
+    }
 
-      const textToUse = snippet || (value && typeof value === 'object' ? value.text : null)
+    const textToUse = snippet || (value && typeof value === "object" ? value.text : null);
 
-      // Toggle off if clicking the same citation
-      if (activeAiQuote === textToUse && textToUse !== null) {
-        setActiveAiQuote(null)
-        setActiveAiBlockIndex(null)
-        return
-      }
+    // Toggle off if clicking the same citation
+    if (activeAiQuote === textToUse && textToUse !== null) {
+      setActiveAiQuote(null);
+      setActiveAiBlockIndex(null);
+      return;
+    }
 
-      if (textToUse) {
-        scrollToQuote(textToUse, value?.blockIndex)
-        setActiveAiQuote(textToUse)
-        setActiveAiBlockIndex(value?.blockIndex ?? null)
-        setSelectedHighlightId(null)
-        return
-      }
-    },
-    [
-      contextMap,
-      bookMessagesQ.data,
-      scrollToQuote,
-      activeAiQuote,
-      setActiveAiQuote,
-      setActiveAiBlockIndex,
-      setSelectedHighlightId,
-    ],
-  )
+    if (textToUse) {
+      scrollToQuote(textToUse, value?.blockIndex);
+      setActiveAiQuote(textToUse);
+      setActiveAiBlockIndex(value?.blockIndex ?? null);
+      setSelectedHighlightId(null);
+      return;
+    }
+  }, [contextMap, bookMessagesQ.data, scrollToQuote, activeAiQuote, setActiveAiQuote, setActiveAiBlockIndex, setSelectedHighlightId]);
 
   const chatMessages: ChatMessage[] = (bookMessagesQ.data ?? []).map((message: any) => {
-    let content = message.content
-    const mapping = parseContextMapFromMessage(message)
+    let content = message.content;
+    const mapping = parseContextMapFromMessage(message);
 
     if (!message.context_map) {
-      const mapMatch = content.match(/<!-- context-map: (\{.*?\}) -->/)
+      const mapMatch = content.match(/<!-- context-map: (\{.*?\}) -->/);
       if (mapMatch) {
-        content = content.replace(mapMatch[0], '').trim()
+        content = content.replace(mapMatch[0], "").trim();
       }
     }
 
     return {
       id: String(message.id),
-      role: message.role as 'user' | 'assistant',
+      role: message.role as "user" | "assistant",
       content,
       onCitationClick: (localId: number, snippet?: string) => {
-        const value = mapping[localId]
-        const textToUse = snippet || (value && typeof value === 'object' ? value.text : null)
+        const value = mapping[localId];
+        const textToUse = snippet || (value && typeof value === "object" ? value.text : null);
 
         // Toggle off if clicking the same citation
         if (activeAiQuote === textToUse && textToUse !== null) {
-          setActiveAiQuote(null)
-          setActiveAiBlockIndex(null)
-          return
+          setActiveAiQuote(null);
+          setActiveAiBlockIndex(null);
+          return;
         }
 
         if (value?.cfi) {
-          navigation.scrollToCfi(value.cfi)
-          if (textToUse) setActiveAiQuote(textToUse)
-          setActiveAiBlockIndex(value.blockIndex ?? null)
-          setSelectedHighlightId(null)
-          return
+          navigation.scrollToCfi(value.cfi);
+          if (textToUse) setActiveAiQuote(textToUse);
+          setActiveAiBlockIndex(value.blockIndex ?? null);
+          setSelectedHighlightId(null);
+          return;
         }
 
         if (textToUse) {
-          scrollToQuote(textToUse, value?.blockIndex)
-          setActiveAiQuote(textToUse)
-          setActiveAiBlockIndex(value?.blockIndex ?? null)
-          setSelectedHighlightId(null)
-          return
+          scrollToQuote(textToUse, value?.blockIndex);
+          setActiveAiQuote(textToUse);
+          setActiveAiBlockIndex(value?.blockIndex ?? null);
+          setSelectedHighlightId(null);
+          return;
         }
       },
-    }
-  })
+    };
+  });
 
   const contextHint = selectedHighlight
-    ? 'Using selected highlight as context'
+    ? "Using selected highlight as context"
     : columns === 2
       ? `Using pages ${currentPage}–${Math.min(currentPage + 1, totalPages)} as context`
-      : 'Using current page as context'
+      : "Using current page as context";
 
   const placeholder = selectedHighlight
-    ? 'Ask about this highlight...'
+    ? "Ask about this highlight..."
     : columns === 2
-      ? 'Ask about these pages...'
-      : 'Ask about the current page...'
+      ? "Ask about these pages..."
+      : "Ask about the current page...";
 
   return {
     threads: bookChatThreadsQ.data,
@@ -469,5 +433,5 @@ export function useChat(
     handleCitationClick,
     contextHint,
     placeholder,
-  }
+  };
 }

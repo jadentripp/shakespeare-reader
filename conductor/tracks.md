@@ -1,8 +1,5 @@
 # Active Tracks
 
-- [~] **Track: Library Discovery Overhaul**
-*Link: [./tracks/library_discovery_overhaul_20260122/](./tracks/library_discovery_overhaul_20260122/)*
-
 ---
 
 # Archived Tracks

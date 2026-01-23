@@ -1,18 +1,17 @@
-import { Canvas, extend, type ThreeElements } from '@react-three/fiber'
-import type React from 'react'
-import { Suspense } from 'react'
-import * as THREE from 'three/webgpu'
+import React, { Suspense } from 'react';
+import * as THREE from 'three/webgpu';
+import { Canvas, extend, ThreeElements } from '@react-three/fiber';
 
 // Extend R3F with Three.js WebGPU nodes if needed
-extend(THREE as any)
+extend(THREE as any);
 
 declare module '@react-three/fiber' {
-  interface ThreeElements extends ThreeToJSXElements<typeof THREE> {}
+  interface ThreeElements extends ThreeToJSXElements<typeof THREE> { }
 }
 
 interface WebGPUSceneProps {
-  children: React.ReactNode
-  className?: string
+  children: React.ReactNode;
+  className?: string;
 }
 
 const WebGPUScene: React.FC<WebGPUSceneProps> = ({ children, className }) => {
@@ -23,9 +22,9 @@ const WebGPUScene: React.FC<WebGPUSceneProps> = ({ children, className }) => {
           shadows
           gl={async (props) => {
             // Initialize WebGPURenderer
-            const renderer = new THREE.WebGPURenderer(props as any)
-            await renderer.init()
-            return renderer
+            const renderer = new THREE.WebGPURenderer(props as any);
+            await renderer.init();
+            return renderer;
           }}
           camera={{ position: [0, 3, 8], fov: 50 }}
         >
@@ -33,18 +32,14 @@ const WebGPUScene: React.FC<WebGPUSceneProps> = ({ children, className }) => {
         </Canvas>
       </Suspense>
     </div>
-  )
-}
+  );
+};
 
-export default WebGPUScene
+export default WebGPUScene;
 
 // Helper type for JSX elements
 type ThreeToJSXElements<T> = {
-  [K in keyof T as K extends string ? Uncapitalize<K> : never]: T[K] extends new (
-    ...args: any[]
-  ) => any
-    ?
-        | Partial<ThreeElements[K & keyof ThreeElements]>
-        | { [P in keyof InstanceType<T[K]> as P extends string ? `args` | P : never]?: any }
-    : never
-}
+  [K in keyof T as K extends string ? Uncapitalize<K> : never]: T[K] extends new (...args: any[]) => any
+  ? Partial<ThreeElements[K & keyof ThreeElements]> | { [P in keyof InstanceType<T[K]> as P extends string ? `args` | P : never]?: any }
+  : never;
+};

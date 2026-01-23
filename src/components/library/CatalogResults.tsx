@@ -1,38 +1,35 @@
-import { ArrowUpDown, BookOpen, Download, FileText, Sparkles } from 'lucide-react'
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import type { BulkScanState, DownloadTask } from '../../hooks/useLibrary'
+import { useState } from "react";
+import { ArrowUpDown, Sparkles, Download, BookOpen, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
-  authorsString,
-  bestMobiUrl,
-  coverUrl,
-  formatDownloadCount,
-  isPopular,
-  type SortOption,
-} from '../../lib/gutenbergUtils'
-import type { GutendexBook } from '../../lib/tauri'
-import { BookDetailModal } from './BookDetailModal'
-import { LibraryEmptyState } from './LibraryEmptyState'
-import { LibraryGrid, LibrarySkeleton } from './LibraryGrid'
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { LibraryEmptyState } from "./LibraryEmptyState";
+import { LibraryGrid, LibrarySkeleton } from "./LibraryGrid";
+import { BookDetailModal } from "./BookDetailModal";
+import { type GutendexBook } from "../../lib/tauri";
+import { type BulkScanState, type DownloadTask } from "../../hooks/useLibrary";
+import { type SortOption, bestMobiUrl, authorsString, coverUrl, isPopular, formatDownloadCount } from "../../lib/gutenbergUtils";
 
 interface CatalogResultsProps {
-  catalogSearch: string
-  activeCatalog: { label: string; kind: string; description?: string }
-  sortBy: SortOption
-  setSortBy: (s: SortOption) => void
-  canBulkScan: boolean
-  startOrResumeBulk: () => void
-  bulkScan: BulkScanState
-  showSearchPrompt: boolean
-  catalogQ: any
-  sortedCatalogResults: GutendexBook[]
-  localGutenbergIds: Set<number>
-  queue: DownloadTask[]
-  enqueue: (task: any) => void
-  setPaused: (p: boolean) => void
-  runQueue: () => void
-  setCatalogPageUrl: (url: string | null) => void
+  catalogSearch: string;
+  activeCatalog: { label: string; kind: string; description?: string };
+  sortBy: SortOption;
+  setSortBy: (s: SortOption) => void;
+  canBulkScan: boolean;
+  startOrResumeBulk: () => void;
+  bulkScan: BulkScanState;
+  showSearchPrompt: boolean;
+  catalogQ: any;
+  sortedCatalogResults: GutendexBook[];
+  localGutenbergIds: Set<number>;
+  queue: DownloadTask[];
+  enqueue: (task: any) => void;
+  setPaused: (p: boolean) => void;
+  runQueue: () => void;
+  setCatalogPageUrl: (url: string | null) => void;
 }
 
 // Catalog book card - simplified version that opens modal on click
@@ -42,15 +39,15 @@ function CatalogBookCard({
   isQueued,
   onClick,
 }: {
-  book: GutendexBook
-  isLocal: boolean
-  isQueued: boolean
-  onClick: () => void
+  book: GutendexBook;
+  isLocal: boolean;
+  isQueued: boolean;
+  onClick: () => void;
 }) {
-  const cover = coverUrl(book)
-  const authors = authorsString(book)
-  const popular = isPopular(book.download_count)
-  const downloadStr = formatDownloadCount(book.download_count)
+  const cover = coverUrl(book);
+  const authors = authorsString(book);
+  const popular = isPopular(book.download_count);
+  const downloadStr = formatDownloadCount(book.download_count);
 
   return (
     <button
@@ -126,7 +123,7 @@ function CatalogBookCard({
         </p>
       </div>
     </button>
-  )
+  );
 }
 
 export function CatalogResults({
@@ -147,18 +144,18 @@ export function CatalogResults({
   runQueue,
   setCatalogPageUrl,
 }: CatalogResultsProps) {
-  const [selectedBook, setSelectedBook] = useState<GutendexBook | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedBook, setSelectedBook] = useState<GutendexBook | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const handleBookClick = (book: GutendexBook) => {
-    setSelectedBook(book)
-    setModalOpen(true)
-  }
+    setSelectedBook(book);
+    setModalOpen(true);
+  };
 
   const handleAddToLibrary = () => {
-    if (!selectedBook) return
-    const mobiUrl = bestMobiUrl(selectedBook)
-    const cover = coverUrl(selectedBook)
+    if (!selectedBook) return;
+    const mobiUrl = bestMobiUrl(selectedBook);
+    const cover = coverUrl(selectedBook);
     enqueue({
       gutenbergId: selectedBook.id,
       title: selectedBook.title,
@@ -166,10 +163,10 @@ export function CatalogResults({
       publicationYear: null,
       coverUrl: cover,
       mobiUrl,
-    })
-    setPaused(false)
-    runQueue()
-  }
+    });
+    setPaused(false);
+    runQueue();
+  };
 
   return (
     <>
@@ -179,55 +176,38 @@ export function CatalogResults({
             <h2 className="font-sans text-3xl font-black uppercase tracking-tighter text-foreground [text-wrap:balance]">
               {catalogSearch ? `Results: ${catalogSearch}` : activeCatalog.label}
             </h2>
-            {!catalogSearch && activeCatalog.kind !== 'all' ? (
-              <p className="max-w-2xl font-mono text-xs uppercase tracking-widest text-muted-foreground leading-relaxed">
-                {activeCatalog.description}
-              </p>
+            {!catalogSearch && activeCatalog.kind !== "all" ? (
+              <p className="max-w-2xl font-mono text-xs uppercase tracking-widest text-muted-foreground leading-relaxed">{activeCatalog.description}</p>
             ) : (
               <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                {catalogQ.isLoading ? (
-                  'Loading…'
-                ) : (
-                  <span className="tabular-nums">{catalogQ.data?.count ?? 0} Titles Found</span>
-                )}
+                {catalogQ.isLoading ? "Loading…" : <span className="tabular-nums">{catalogQ.data?.count ?? 0} Titles Found</span>}
               </p>
             )}
           </div>
           <div className="flex items-center gap-3">
             <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-10 rounded-none border-2 border-black bg-background font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
-                >
+                <Button variant="outline" size="sm" className="h-10 rounded-none border-2 border-black bg-background font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black">
                   <ArrowUpDown className="h-3.5 w-3.5" />
                   <span>
-                    {sortBy === 'relevance'
-                      ? 'Best match'
-                      : sortBy === 'popular'
-                        ? 'Most popular'
-                        : sortBy === 'title'
-                          ? 'Title A-Z'
-                          : 'Author A-Z'}
+                    {sortBy === "relevance" ? "Best match" :
+                      sortBy === "popular" ? "Most popular" :
+                        sortBy === "title" ? "Title A-Z" : "Author A-Z"}
                   </span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                className="w-48 rounded-none border-2 border-black p-1 dark:border-white"
-              >
+              <PopoverContent align="end" className="w-48 rounded-none border-2 border-black p-1 dark:border-white">
                 {[
-                  { id: 'relevance', label: 'Best match', icon: Sparkles },
-                  { id: 'popular', label: 'Most popular', icon: Download },
-                  { id: 'title', label: 'Title A-Z', icon: BookOpen },
-                  { id: 'author', label: 'Author A-Z', icon: FileText },
+                  { id: "relevance", label: "Best match", icon: Sparkles },
+                  { id: "popular", label: "Most popular", icon: Download },
+                  { id: "title", label: "Title A-Z", icon: BookOpen },
+                  { id: "author", label: "Author A-Z", icon: FileText },
                 ].map((opt) => (
                   <button
                     key={opt.id}
                     type="button"
                     onClick={() => setSortBy(opt.id as SortOption)}
-                    className={`flex w-full items-center gap-2 px-3 py-2.5 font-mono text-[10px] uppercase tracking-widest transition-[color,background-color] ${sortBy === opt.id ? 'bg-black text-white dark:bg-white dark:text-black' : 'hover:bg-muted'}`}
+                    className={`flex w-full items-center gap-2 px-3 py-2.5 font-mono text-[10px] uppercase tracking-widest transition-[color,background-color] ${sortBy === opt.id ? "bg-black text-white dark:bg-white dark:text-black" : "hover:bg-muted"}`}
                   >
                     <opt.icon className="h-3 w-3" />
                     {opt.label}
@@ -245,7 +225,7 @@ export function CatalogResults({
                 disabled={bulkScan.running}
               >
                 <Download className="h-4 w-4" />
-                {bulkScan.running ? 'Scanning…' : 'Download All'}
+                {bulkScan.running ? "Scanning…" : "Download All"}
               </Button>
             )}
           </div>
@@ -257,9 +237,7 @@ export function CatalogResults({
           <LibrarySkeleton count={5} variant="minimal" />
         ) : catalogQ.isError ? (
           <div className="border-2 border-red-600 bg-red-50 py-12 text-center dark:bg-red-950/20">
-            <p className="font-mono text-xs font-bold uppercase tracking-widest text-red-600">
-              Failed to load catalog.
-            </p>
+            <p className="font-mono text-xs font-bold uppercase tracking-widest text-red-600">Failed to load catalog.</p>
           </div>
         ) : (
           <>
@@ -274,8 +252,8 @@ export function CatalogResults({
                 {sortedCatalogResults
                   .filter((b) => bestMobiUrl(b) !== null) // Only show downloadable books
                   .map((b) => {
-                    const already = localGutenbergIds.has(b.id)
-                    const queued = queue.some((t) => t.gutenbergId === b.id)
+                    const already = localGutenbergIds.has(b.id);
+                    const queued = queue.some((t) => t.gutenbergId === b.id);
 
                     return (
                       <CatalogBookCard
@@ -285,7 +263,7 @@ export function CatalogResults({
                         isQueued={queued}
                         onClick={() => handleBookClick(b)}
                       />
-                    )
+                    );
                   })}
               </LibraryGrid>
             )}
@@ -328,5 +306,5 @@ export function CatalogResults({
         onAdd={handleAddToLibrary}
       />
     </>
-  )
+  );
 }

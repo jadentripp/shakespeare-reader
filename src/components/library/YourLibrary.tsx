@@ -1,19 +1,17 @@
-import { Search, X } from 'lucide-react'
-import type { UseQueryResult } from '@tanstack/react-query'
-import type { Book } from '@/lib/tauri/types'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { BookCardMinimal } from './BookCardMinimal'
-import { LibraryEmptyState } from './LibraryEmptyState'
-import { LibraryGrid, LibrarySkeleton } from './LibraryGrid'
+import { Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LibraryGrid, LibrarySkeleton } from "./LibraryGrid";
+import { BookCardMinimal } from "./BookCardMinimal";
+import { LibraryEmptyState } from "./LibraryEmptyState";
 
 interface YourLibraryProps {
-  booksQ: UseQueryResult<Book[], Error>
-  libraryQuery: string
-  setLibraryQuery: (q: string) => void
-  filteredBooks: Book[]
-  progressByBookId: Map<number, number>
-  deleteBook: (id: number) => Promise<void>
+  booksQ: any;
+  libraryQuery: string;
+  setLibraryQuery: (q: string) => void;
+  filteredBooks: any[];
+  progressByBookId: Map<number, number>;
+  deleteBook: (id: number) => Promise<void>;
 }
 
 export function YourLibrary({
@@ -24,17 +22,15 @@ export function YourLibrary({
   progressByBookId,
   deleteBook,
 }: YourLibraryProps) {
-  const totalBooks = (booksQ.data ?? []).length
+  const totalBooks = (booksQ.data ?? []).length;
 
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-black pb-4 dark:border-white">
         <div className="space-y-1">
-          <h2 className="font-sans text-3xl font-black uppercase tracking-tighter text-foreground [text-wrap:balance]">
-            Your Library
-          </h2>
+          <h2 className="font-sans text-3xl font-black uppercase tracking-tighter text-foreground [text-wrap:balance]">Your Library</h2>
           <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground tabular-nums">
-            {totalBooks} {totalBooks === 1 ? 'book' : 'books'}
+            {totalBooks} {totalBooks === 1 ? "book" : "books"}
           </p>
         </div>
         <div className="relative w-full sm:w-72">
@@ -54,7 +50,7 @@ export function YourLibrary({
               size="icon"
               aria-label="Clear search"
               className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              onClick={() => setLibraryQuery('')}
+              onClick={() => setLibraryQuery("")}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -86,5 +82,5 @@ export function YourLibrary({
         </LibraryGrid>
       )}
     </section>
-  )
+  );
 }

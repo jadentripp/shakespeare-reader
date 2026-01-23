@@ -1,83 +1,83 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 
 // Define mocks first
-const mockCreateResponse = mock(() => ({}))
-const mockListModels = mock(() => ({}))
-const mockGetSetting = mock(() => Promise.resolve(null))
+const mockCreateResponse = mock(() => ({}));
+const mockListModels = mock(() => ({}));
+const mockGetSetting = mock(() => Promise.resolve(null));
 
 // Mock the OpenAI library logic function
 const mockOpenAIFactory = () => {
   return {
     default: class OpenAI {
-      constructor(opts: any) {}
+      constructor(opts: any) { }
       models = {
-        list: mockListModels,
-      }
+        list: mockListModels
+      };
       responses = {
-        create: mockCreateResponse,
-      }
-    },
-  }
-}
+        create: mockCreateResponse
+      };
+    }
+  };
+};
 
 // Mock the settings dependency logic function
 const mockSettingsFactory = () => {
   return {
-    getSetting: mockGetSetting,
-  }
-}
+    getSetting: mockGetSetting
+  };
+};
 
 // Apply mocks initially
-mock.module('openai', mockOpenAIFactory)
-mock.module('@/lib/tauri/settings', mockSettingsFactory)
+mock.module("openai", mockOpenAIFactory);
+mock.module("@/lib/tauri/settings", mockSettingsFactory);
 
 // Import the module under test
-import { chat, listModels, openAIService, resolveApiKey } from '../lib/openai'
+import { resolveApiKey, listModels, chat, openAIService } from '../lib/openai';
 
 describe('OpenAI Service', () => {
   beforeEach(() => {
     // Re-apply mocks to ensure clean state and isolation from other tests
-    mock.module('openai', mockOpenAIFactory)
-    mock.module('@/lib/tauri/settings', mockSettingsFactory)
+    mock.module("openai", mockOpenAIFactory);
+    mock.module("@/lib/tauri/settings", mockSettingsFactory);
 
-    mockCreateResponse.mockClear()
-    mockListModels.mockClear()
-    mockGetSetting.mockClear()
+    mockCreateResponse.mockClear();
+    mockListModels.mockClear();
+    mockGetSetting.mockClear();
 
     // Reset the singleton client cache so it picks up the new Mock class
-    openAIService.reset()
-  })
+    openAIService.reset();
+  });
 
   afterEach(() => {
-    mock.restore()
-  })
+    mock.restore();
+  });
 
   describe('resolveApiKey', () => {
     it('should resolve key from Tauri settings first', async () => {
-      mockGetSetting.mockResolvedValue('saved-key')
-      const key = await resolveApiKey()
-      expect(key).toBe('saved-key')
-      expect(mockGetSetting).toHaveBeenCalledWith('openai_api_key')
-    })
+      mockGetSetting.mockResolvedValue('saved-key');
+      const key = await resolveApiKey();
+      expect(key).toBe('saved-key');
+      expect(mockGetSetting).toHaveBeenCalledWith('openai_api_key');
+    });
 
     it('should fallback to environment variables if no saved key', async () => {
-      mockGetSetting.mockResolvedValue(null)
+      mockGetSetting.mockResolvedValue(null);
       try {
-        await resolveApiKey()
+        await resolveApiKey();
       } catch (e: any) {
-        expect(e.message).toContain('Missing OpenAI API key')
+        expect(e.message).toContain('Missing OpenAI API key');
       }
-    })
+    });
 
     it('should throw error if no key found', async () => {
-      mockGetSetting.mockResolvedValue(null)
-      await expect(resolveApiKey()).rejects.toThrow('Missing OpenAI API key')
-    })
-  })
+      mockGetSetting.mockResolvedValue(null);
+      await expect(resolveApiKey()).rejects.toThrow('Missing OpenAI API key');
+    });
+  });
 
   describe('listModels', () => {
     it('should filter and sort gpt models correctly', async () => {
-      mockGetSetting.mockResolvedValue('key')
+      mockGetSetting.mockResolvedValue('key');
 
       mockListModels.mockResolvedValue({
         data: [
@@ -94,35 +94,35 @@ describe('OpenAI Service', () => {
           { id: 'gpt-image-1-mini', created: 1800000000 },
           { id: 'gpt-4o-mini-transcribe', created: 1810000000 },
         ],
-      })
+      });
 
-      const models = await listModels()
+      const models = await listModels();
 
-      expect(models).toContain('gpt-4o')
-      expect(models).toContain('gpt-4')
-      expect(models).toContain('gpt-5.2')
-      expect(models).toContain('gpt-3.5-turbo')
+      expect(models).toContain('gpt-4o');
+      expect(models).toContain('gpt-4');
+      expect(models).toContain('gpt-5.2');
+      expect(models).toContain('gpt-3.5-turbo');
 
-      expect(models).not.toContain('claude-3')
-      expect(models).not.toContain('gpt-4o-realtime-preview')
-      expect(models).not.toContain('gpt-5-search-api')
-      expect(models).not.toContain('gpt-4o-mini-tts')
-      expect(models).not.toContain('gpt-5-codex')
-      expect(models).not.toContain('gpt-4o-audio-preview')
-      expect(models).not.toContain('gpt-image-1-mini')
-      expect(models).not.toContain('gpt-4o-mini-transcribe')
+      expect(models).not.toContain('claude-3');
+      expect(models).not.toContain('gpt-4o-realtime-preview');
+      expect(models).not.toContain('gpt-5-search-api');
+      expect(models).not.toContain('gpt-4o-mini-tts');
+      expect(models).not.toContain('gpt-5-codex');
+      expect(models).not.toContain('gpt-4o-audio-preview');
+      expect(models).not.toContain('gpt-image-1-mini');
+      expect(models).not.toContain('gpt-4o-mini-transcribe');
 
-      expect(models[0]).toBe('gpt-5.2')
-    })
-  })
+      expect(models[0]).toBe('gpt-5.2');
+    });
+  });
 
   describe('chat', () => {
     it('should call openai.responses.create and format result', async () => {
       mockGetSetting.mockImplementation(async (key: string) => {
-        if (key === 'openai_api_key') return 'api-key'
-        if (key === 'openai_model') return 'gpt-5.2'
-        return null
-      })
+        if (key === 'openai_api_key') return 'api-key';
+        if (key === 'openai_model') return 'gpt-5.2';
+        return null;
+      });
 
       mockCreateResponse.mockResolvedValue({
         output: [
@@ -135,17 +135,15 @@ describe('OpenAI Service', () => {
             summary: 'I thought about it',
           },
         ],
-      })
+      });
 
-      const result = await chat([{ role: 'user', content: 'Hi' }])
+      const result = await chat([{ role: 'user', content: 'Hi' }]);
 
-      expect(result.content).toBe('Hello world')
-      expect(mockCreateResponse).toHaveBeenCalledWith(
-        expect.objectContaining({
-          model: 'gpt-5.2',
-          input: [{ role: 'user', content: 'Hi' }],
-        }),
-      )
-    })
-  })
-})
+      expect(result.content).toBe('Hello world');
+      expect(mockCreateResponse).toHaveBeenCalledWith(expect.objectContaining({
+        model: 'gpt-5.2',
+        input: [{ role: 'user', content: 'Hi' }],
+      }));
+    });
+  });
+});

@@ -1,10 +1,10 @@
-import type { useMobiReader } from '@/lib/reader/hooks/useMobiReader'
-import ReaderTopBar from './ReaderTopBar'
+import ReaderTopBar from "./ReaderTopBar";
+import { useMobiReader } from "@/lib/reader/hooks/useMobiReader";
 
 type ReaderToolbarProps = {
-  reader: ReturnType<typeof useMobiReader>
-  onTtsSettings: () => void
-}
+  reader: ReturnType<typeof useMobiReader>;
+  onTtsSettings: () => void;
+};
 
 export function ReaderToolbar({ reader, onTtsSettings }: ReaderToolbarProps) {
   const {
@@ -18,7 +18,7 @@ export function ReaderToolbar({ reader, onTtsSettings }: ReaderToolbarProps) {
     jumpPage,
     setJumpPage,
     tts,
-  } = reader
+  } = reader;
 
   return (
     <ReaderTopBar
@@ -41,26 +41,26 @@ export function ReaderToolbar({ reader, onTtsSettings }: ReaderToolbarProps) {
       onJumpPageChange={setJumpPage}
       onJumpPageGo={() => {
         // Extract the first number from the input (handles "42", "42-43", etc.)
-        const match = jumpPage.match(/\d+/)
-        const value = match ? Number(match[0]) : NaN
+        const match = jumpPage.match(/\d+/);
+        const value = match ? Number(match[0]) : NaN;
 
         if (Number.isFinite(value) && value >= 1) {
-          pagination.scrollToPage(Math.min(value, pagination.totalPages))
-          setJumpPage('') // Clear after jumping to show the current page(s) in the placeholder
+          pagination.scrollToPage(Math.min(value, pagination.totalPages));
+          setJumpPage(""); // Clear after jumping to show the current page(s) in the placeholder
         }
       }}
       onBack={() => window.history.back()}
       ttsState={tts.state}
       onTtsPlay={() => {
         if (tts.state === 'paused') {
-          tts.resume()
+          tts.resume();
         } else {
-          tts.playCurrentPage()
+          tts.playCurrentPage();
         }
       }}
       onTtsPause={tts.pause}
       onTtsStop={tts.stop}
       onTtsSettings={onTtsSettings}
     />
-  )
+  );
 }

@@ -1,34 +1,27 @@
-import { Trash2, X } from 'lucide-react'
-import React from 'react'
-import type { StagedSnippet } from '@/lib/readerTypes'
-import { cn } from '@/lib/utils'
+import React from "react";
+import { X, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { StagedSnippet } from "@/lib/readerTypes";
 
 interface ContextTrayProps {
-  snippets: StagedSnippet[]
-  onRemove: (id: string) => void
-  onClear: () => void
-  className?: string
+  snippets: StagedSnippet[];
+  onRemove: (id: string) => void;
+  onClear: () => void;
+  className?: string;
 }
 
 export function ContextTray({ snippets, onRemove, onClear, className }: ContextTrayProps) {
-  if (snippets.length === 0) return null
+  if (snippets.length === 0) return null;
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-2 p-3 bg-white dark:bg-black border-2 border-black dark:border-white mb-2',
-        className,
-      )}
-    >
+    <div className={cn("flex flex-col gap-2 p-3 bg-white dark:bg-black border-2 border-black dark:border-white mb-2", className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-2">
           <div className="bg-[#0055A4] px-1.5 py-0.5">
-            <span className="text-[10px] font-black uppercase tracking-tighter text-white leading-none">
-              CONTEXT
-            </span>
+            <span className="text-[10px] font-black uppercase tracking-tighter text-white leading-none">CONTEXT</span>
           </div>
           <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            {snippets.length} SNIPPET{snippets.length !== 1 ? 'S' : ''} STAGED
+            {snippets.length} SNIPPET{snippets.length !== 1 ? "S" : ""} STAGED
           </span>
         </div>
         <button
@@ -37,9 +30,7 @@ export function ContextTray({ snippets, onRemove, onClear, className }: ContextT
           title="Clear Context"
         >
           <Trash2 className="h-3 w-3 group-hover:text-white" />
-          <span className="text-[9px] font-black uppercase tracking-widest group-hover:text-white">
-            CLEAR
-          </span>
+          <span className="text-[9px] font-black uppercase tracking-widest group-hover:text-white">CLEAR</span>
         </button>
       </div>
 
@@ -64,5 +55,5 @@ export function ContextTray({ snippets, onRemove, onClear, className }: ContextT
         ))}
       </div>
     </div>
-  )
+  );
 }

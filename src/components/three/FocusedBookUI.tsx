@@ -1,22 +1,22 @@
-import { BookOpen, Download, Loader2, Trash2, X } from 'lucide-react'
-import type React from 'react'
-import { Button } from '@/components/ui/button'
-import type { BookStatus } from './BookMesh'
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { BookOpen, Download, Trash2, X, Loader2 } from "lucide-react";
+import type { BookStatus } from "./BookMesh";
 
 interface FocusedBookUIProps {
   book: {
-    id: number
-    title: string
-    author?: string
-    cover_url?: string
-    gutenberg_id?: number
-  }
-  status: BookStatus
-  progress?: number
-  onRead: () => void
-  onDownload: () => void
-  onDelete: () => void
-  onClose: () => void
+    id: number;
+    title: string;
+    author?: string;
+    cover_url?: string;
+    gutenberg_id?: number;
+  };
+  status: BookStatus;
+  progress?: number;
+  onRead: () => void;
+  onDownload: () => void;
+  onDelete: () => void;
+  onClose: () => void;
 }
 
 export const FocusedBookUI: React.FC<FocusedBookUIProps> = ({
@@ -105,9 +105,7 @@ export const FocusedBookUI: React.FC<FocusedBookUIProps> = ({
             {status === 'local' && progress > 0 && (
               <div className="mb-4">
                 <div className="flex items-center justify-between text-[10px] mb-1">
-                  <span className="text-white/30 uppercase tracking-wider font-medium">
-                    Progress
-                  </span>
+                  <span className="text-white/30 uppercase tracking-wider font-medium">Progress</span>
                   <span className="text-amber-400 font-semibold">{Math.round(progress)}%</span>
                 </div>
                 <div className="h-1 bg-white/10 rounded-full overflow-hidden">
@@ -128,7 +126,7 @@ export const FocusedBookUI: React.FC<FocusedBookUIProps> = ({
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 h-10 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-sm shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 hover:scale-[1.02] active:scale-[0.98] transition-[transform,box-shadow,background-color]"
                   >
                     <BookOpen className="h-4 w-4" />
-                    {progress > 0 ? 'Continue' : 'Read'}
+                    {progress > 0 ? "Continue" : "Read"}
                   </Button>
                   <Button
                     variant="ghost"
@@ -163,5 +161,5 @@ export const FocusedBookUI: React.FC<FocusedBookUIProps> = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

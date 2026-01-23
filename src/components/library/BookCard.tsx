@@ -1,5 +1,7 @@
-import { Link } from '@tanstack/react-router'
-import { BookMarked, BookOpen, Download, FileText, Sparkles, Trash2 } from 'lucide-react'
+import { Link } from "@tanstack/react-router";
+import { BookOpen, Trash2, Download, Sparkles, FileText, BookMarked } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,30 +12,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+} from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 interface BookCardProps {
-  id: number
-  gutenbergId: number
-  title: string
-  authors: string
-  coverUrl: string | null
-  progress?: number
-  isLocal: boolean
-  onDelete?: (id: number) => Promise<void>
+  id: number;
+  gutenbergId: number;
+  title: string;
+  authors: string;
+  coverUrl: string | null;
+  progress?: number;
+  isLocal: boolean;
+  onDelete?: (id: number) => Promise<void>;
   // For catalog results
-  mobiUrl?: string | null
-  alreadyInLibrary?: boolean
-  isQueued?: boolean
-  onAdd?: () => void
-  popular?: boolean
-  downloadCount?: string
-  resultType?: 'primary' | 'related' | 'tangential'
-  catalogSearch?: string
-  variant?: 'grid' | 'list'
+  mobiUrl?: string | null;
+  alreadyInLibrary?: boolean;
+  isQueued?: boolean;
+  onAdd?: () => void;
+  popular?: boolean;
+  downloadCount?: string;
+  resultType?: "primary" | "related" | "tangential";
+  catalogSearch?: string;
+  variant?: "grid" | "list";
 }
 
 export function BookCard({
@@ -55,12 +55,10 @@ export function BookCard({
   catalogSearch,
   variant,
 }: BookCardProps) {
-  const effectiveVariant = variant || (isLocal ? 'grid' : 'list')
+  const effectiveVariant = variant || (isLocal ? "grid" : "list");
 
-  const CoverImage = ({ className = '' }: { className?: string }) => (
-    <div
-      className={`relative overflow-hidden bg-gradient-to-br from-stone-100 to-stone-200 shadow-sm transition-shadow group-hover:shadow-md dark:from-stone-800 dark:to-stone-900 ${className}`}
-    >
+  const CoverImage = ({ className = "" }: { className?: string }) => (
+    <div className={`relative overflow-hidden bg-gradient-to-br from-stone-100 to-stone-200 shadow-sm transition-shadow group-hover:shadow-md dark:from-stone-800 dark:to-stone-900 ${className}`}>
       {coverUrl ? (
         <img
           src={coverUrl}
@@ -74,7 +72,7 @@ export function BookCard({
           <BookOpen className="h-8 w-8 text-stone-300 dark:text-stone-600" />
         </div>
       )}
-      {popular && resultType === 'primary' && effectiveVariant === 'list' && (
+      {popular && resultType === "primary" && effectiveVariant === "list" && (
         <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] shadow-sm">
           ⭐
         </div>
@@ -90,9 +88,9 @@ export function BookCard({
         />
       )}
     </div>
-  )
+  );
 
-  if (effectiveVariant === 'grid') {
+  if (effectiveVariant === "grid") {
     return (
       <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border/40 bg-card transition-[transform,border-color,box-shadow] duration-500 hover:-translate-y-1 hover:border-border/80 hover:shadow-2xl">
         <Link to="/book/$bookId" params={{ bookId: String(id) }} className="block flex-1">
@@ -116,15 +114,10 @@ export function BookCard({
           </div>
         </Link>
         <div className="flex items-center justify-between border-t border-border/40 bg-stone-50/50 px-4 py-2 dark:bg-stone-900/50">
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="h-8 gap-1.5 px-2 text-xs font-medium"
-          >
+          <Button asChild variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs font-medium">
             <Link to="/book/$bookId" params={{ bookId: String(id) }}>
               <BookOpen className="h-3.5 w-3.5" />
-              {progress !== undefined && progress > 0 ? 'Continue' : 'Read'}
+              {progress !== undefined && progress > 0 ? "Continue" : "Read"}
             </Link>
           </Button>
           <AlertDialog>
@@ -158,19 +151,18 @@ export function BookCard({
           </AlertDialog>
         </div>
       </div>
-    )
+    );
   }
 
   // List Variant (Default for Catalog)
   return (
     <div
-      className={`group flex gap-4 rounded-xl border p-4 transition-[box-shadow,border-color,background-color] duration-300 hover:shadow-md ${
-        resultType === 'primary' && popular
-          ? 'border-amber-200/60 bg-amber-50/10 dark:border-amber-800/40 dark:bg-amber-900/5'
-          : resultType === 'tangential'
-            ? 'border-border/20 opacity-75'
-            : 'border-border/40 bg-card'
-      }`}
+      className={`group flex gap-4 rounded-xl border p-4 transition-[box-shadow,border-color,background-color] duration-300 hover:shadow-md ${resultType === "primary" && popular
+        ? "border-amber-200/60 bg-amber-50/10 dark:border-amber-800/40 dark:bg-amber-900/5"
+        : resultType === "tangential"
+          ? "border-border/20 opacity-75"
+          : "border-border/40 bg-card"
+        }`}
     >
       <CoverImage className="h-28 w-20 flex-shrink-0 rounded-lg" />
 
@@ -185,26 +177,20 @@ export function BookCard({
         <p className="text-sm text-muted-foreground line-clamp-1">{authors}</p>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          {resultType === 'primary' && catalogSearch && (
-            <Badge
-              variant="secondary"
-              className="h-5 gap-1 border-emerald-200/50 bg-emerald-50 text-[10px] font-medium text-emerald-800 dark:border-emerald-800/30 dark:bg-emerald-900/20 dark:text-emerald-300"
-            >
+          {resultType === "primary" && catalogSearch && (
+            <Badge variant="secondary" className="h-5 gap-1 border-emerald-200/50 bg-emerald-50 text-[10px] font-medium text-emerald-800 dark:border-emerald-800/30 dark:bg-emerald-900/20 dark:text-emerald-300">
               <BookMarked className="h-2.5 w-2.5" />
               Primary work
             </Badge>
           )}
-          {resultType === 'related' && catalogSearch && (
+          {resultType === "related" && catalogSearch && (
             <Badge variant="outline" className="h-5 gap-1 text-[10px] font-medium">
               <FileText className="h-2.5 w-2.5" />
               Related
             </Badge>
           )}
-          {popular && resultType === 'primary' && (
-            <Badge
-              variant="secondary"
-              className="h-5 gap-1 border-amber-200/50 bg-amber-50 text-[10px] font-medium text-amber-800 dark:border-amber-800/30 dark:bg-amber-900/20 dark:text-amber-300"
-            >
+          {popular && resultType === "primary" && (
+            <Badge variant="secondary" className="h-5 gap-1 border-amber-200/50 bg-amber-50 text-[10px] font-medium text-amber-800 dark:border-amber-800/30 dark:bg-amber-900/20 dark:text-amber-300">
               <Sparkles className="h-2.5 w-2.5" />
               Popular
             </Badge>
@@ -216,10 +202,7 @@ export function BookCard({
             </span>
           )}
           {alreadyInLibrary && (
-            <Badge
-              variant="secondary"
-              className="h-5 border-stone-200 bg-stone-100 text-[10px] font-medium dark:border-stone-800 dark:bg-stone-800/50"
-            >
+            <Badge variant="secondary" className="h-5 border-stone-200 bg-stone-100 text-[10px] font-medium dark:border-stone-800 dark:bg-stone-800/50">
               In Library
             </Badge>
           )}
@@ -235,19 +218,24 @@ export function BookCard({
         {mobiUrl ? (
           <Button
             size="sm"
-            variant={alreadyInLibrary ? 'secondary' : 'default'}
+            variant={alreadyInLibrary ? "secondary" : "default"}
             disabled={alreadyInLibrary || isQueued}
             onClick={onAdd}
             className="h-8 min-w-[70px] text-xs font-medium"
           >
-            {alreadyInLibrary ? 'Added' : isQueued ? 'Queued' : 'Add'}
+            {alreadyInLibrary ? "Added" : isQueued ? "Queued" : "Add"}
           </Button>
         ) : (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="cursor-not-allowed opacity-50">
-                  <Button size="sm" variant="outline" disabled className="h-8 min-w-[70px] text-xs">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled
+                    className="h-8 min-w-[70px] text-xs"
+                  >
                     N/A
                   </Button>
                 </div>
@@ -260,5 +248,5 @@ export function BookCard({
         )}
       </div>
     </div>
-  )
+  );
 }

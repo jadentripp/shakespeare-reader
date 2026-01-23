@@ -1,5 +1,6 @@
-import { Link } from '@tanstack/react-router'
-import { BookOpen, Check, Download, Loader2 } from 'lucide-react'
+import { Link } from "@tanstack/react-router";
+import { BookOpen, Download, Check, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,28 +11,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
+} from "@/components/ui/alert-dialog";
 
 export interface BookCardProps {
-  id: number
-  gutenbergId: number
-  title: string
-  authors: string
-  coverUrl: string | null
-  progress?: number | undefined
-  isLocal: boolean
-  onDelete?: (id: number) => Promise<void>
+  id: number;
+  gutenbergId: number;
+  title: string;
+  authors: string;
+  coverUrl: string | null;
+  progress?: number;
+  isLocal: boolean;
+  onDelete?: (id: number) => Promise<void>;
   // Catalog/download props
-  mobiUrl?: string | null
-  alreadyInLibrary?: boolean
-  isQueued?: boolean
-  onAdd?: () => void
-  popular?: boolean
-  downloadCount?: string
-  resultType?: 'primary' | 'related' | 'tangential'
-  catalogSearch?: string
-  variant?: 'grid' | 'list'
+  mobiUrl?: string | null;
+  alreadyInLibrary?: boolean;
+  isQueued?: boolean;
+  onAdd?: () => void;
+  popular?: boolean;
+  downloadCount?: string;
+  resultType?: "primary" | "related" | "tangential";
+  catalogSearch?: string;
+  variant?: "grid" | "list";
 }
 
 export function BookCardMinimal({
@@ -50,8 +50,8 @@ export function BookCardMinimal({
   downloadCount,
 }: BookCardProps) {
   // Determine if this is a downloadable catalog book
-  const canDownload = !isLocal && !alreadyInLibrary && mobiUrl && onAdd
-  const showAsLocal = isLocal || alreadyInLibrary
+  const canDownload = !isLocal && !alreadyInLibrary && mobiUrl && onAdd;
+  const showAsLocal = isLocal || alreadyInLibrary;
 
   return (
     <div className="group relative flex w-full flex-col bg-background">
@@ -116,18 +116,13 @@ export function BookCardMinimal({
                   </AlertDialogTrigger>
                   <AlertDialogContent className="rounded-none border-2 border-black dark:border-white">
                     <AlertDialogHeader>
-                      <AlertDialogTitle className="font-sans text-xl font-bold uppercase">
-                        Delete Book?
-                      </AlertDialogTitle>
+                      <AlertDialogTitle className="font-sans text-xl font-bold uppercase">Delete Book?</AlertDialogTitle>
                       <AlertDialogDescription className="font-mono text-xs">
-                        This action cannot be undone. This will permanently delete “{title}” from
-                        your library.
+                        This action cannot be undone. This will permanently delete “{title}” from your library.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel className="rounded-none border-2 border-transparent hover:underline">
-                        Cancel
-                      </AlertDialogCancel>
+                      <AlertDialogCancel className="rounded-none border-2 border-transparent hover:underline">Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         className="rounded-none bg-red-600 font-bold uppercase text-white hover:bg-red-700"
                         onClick={() => onDelete?.(id)}
@@ -196,5 +191,6 @@ export function BookCardMinimal({
         </p>
       </div>
     </div>
-  )
+  );
 }
+
