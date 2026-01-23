@@ -18,8 +18,8 @@ pub struct Book {
     pub authors: String,
     pub publication_year: Option<i32>,
     pub cover_url: Option<String>,
-    pub mobi_path: Option<String>,
-    pub html_path: Option<String>,
+    pub mobi_data: Option<Vec<u8>>,
+    pub html_content: Option<String>,
     pub first_image_index: Option<i32>,
     pub created_at: String,
 }
@@ -79,7 +79,8 @@ pub struct BookChatThread {
 // RE-EXPORTS: All operations delegate to postgres
 // ============================================================================
 
-pub use postgres::init_pool;
+pub use postgres::init;
+pub use postgres::get_pool;
 pub use postgres::upsert_book;
 pub use postgres::list_books;
 pub use postgres::get_book;
