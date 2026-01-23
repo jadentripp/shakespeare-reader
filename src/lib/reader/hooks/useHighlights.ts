@@ -156,8 +156,17 @@ export function useHighlights(options: UseHighlightsOptions): UseHighlightsResul
     (activeId?: number | null, activeQuote?: string | null, activeBlockIndex?: number | null) => {
       const doc = getDoc()
       const root = getScrollRoot()
+
+      console.log('[useHighlights] renderHighlights called', {
+        hasDoc: !!doc,
+        hasRoot: !!root,
+        activeId,
+        stagedSnippetsCount: stagedSnippets.length
+      })
+
       if (!doc || !root) return
 
+      console.log('[useHighlights] clearing existing highlights')
       clearExistingHighlights(doc)
 
       const highlights = highlightsQ.data ?? []
@@ -186,7 +195,7 @@ export function useHighlights(options: UseHighlightsOptions): UseHighlightsResul
               `span.readerHighlight[data-highlight-id="${highlight.id}"]`,
             )
             activeEls.forEach((el: any) => {
-              ;(el as HTMLElement).classList.add('readerHighlightActive')
+              ; (el as HTMLElement).classList.add('readerHighlightActive')
             })
           }
         } catch (e) {
@@ -229,7 +238,7 @@ export function useHighlights(options: UseHighlightsOptions): UseHighlightsResul
           applyHighlightToRange(range, -999)
           const activeEls = doc.querySelectorAll(`span.readerHighlight[data-highlight-id="-999"]`)
           activeEls.forEach((el: any) => {
-            ;(el as HTMLElement).classList.add('readerHighlightActive')
+            ; (el as HTMLElement).classList.add('readerHighlightActive')
           })
         }
       }

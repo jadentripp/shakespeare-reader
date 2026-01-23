@@ -24,6 +24,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "data-encoding",
+ "dotenvy",
  "encoding_rs",
  "once_cell",
  "reqwest",

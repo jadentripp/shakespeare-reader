@@ -8,7 +8,6 @@ import {
   SIDEBAR_WIDTH,
 } from '@/lib/reader/constants'
 import type { useMobiReader } from '@/lib/reader/hooks/useMobiReader'
-import { cn } from '@/lib/utils'
 import ChatSidebar from './ChatSidebar'
 import HighlightsSidebar from './HighlightsSidebar'
 import ReaderPane from './ReaderPane'
@@ -27,7 +26,6 @@ export function ReaderContent({ reader }: ReaderContentProps) {
     highlights,
     toc,
     scrollToHighlight,
-    readerWidth,
     iframe,
     srcDoc,
     handleIframeLoad,
@@ -105,7 +103,6 @@ export function ReaderContent({ reader }: ReaderContentProps) {
       <div className="min-w-0 overflow-hidden h-full">
         <ReaderPane
           columns={columns}
-          readerWidth={readerWidth}
           iframeRef={iframe.iframeRef}
           containerRef={iframe.containerRef}
           srcDoc={srcDoc}

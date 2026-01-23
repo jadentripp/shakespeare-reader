@@ -15,9 +15,7 @@ export default function BookPage() {
     return <div className="px-4 py-6 text-sm text-destructive">Failed to load book.</div>
 
   const book = bookQ.data
-  const isTauri = typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined
-
-  if (book && (isTauri ? book.mobi_path && book.html_path : true))
+  if (book)
     return <MobiBookPage bookId={id} />
 
   return (

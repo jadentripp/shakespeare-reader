@@ -78,6 +78,7 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
   // Track state transitions for auto-advance
   const prevStateRef = useRef(state)
   useEffect(() => {
+    if (prevStateRef.current === state) return
     console.log(`[useTTS] State transition: ${prevStateRef.current} -> ${state}`)
     if (state === 'idle' && prevStateRef.current === 'playing') {
       const reason = audioPlayer.getLastEndReason()
