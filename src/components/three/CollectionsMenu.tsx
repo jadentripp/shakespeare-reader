@@ -1,4 +1,4 @@
-import { BookOpen, ChevronDown, Feather, FlaskConical, Globe, Sparkles } from 'lucide-react'
+import { BookOpen, ChevronDown, Feather, FlaskConical, Globe, Sparkles, Ghost, Lightbulb } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -6,10 +6,11 @@ import { cn } from '@/lib/utils'
 import { CATALOG_GROUPS, type CatalogEntry } from '../../lib/gutenberg'
 
 const QUICK_COLLECTIONS = [
-  { key: 'collection-all', icon: BookOpen, label: 'All Books' },
+  { key: 'collection-popular', icon: Sparkles, label: 'Popular' },
   { key: 'collection-shakespeare', icon: Feather, label: 'Shakespeare' },
+  { key: 'collection-gothic', icon: Ghost, label: 'Gothic' },
+  { key: 'collection-philosophy', icon: Lightbulb, label: 'Philosophy' },
   { key: 'collection-greek-tragedy', icon: Globe, label: 'Greek Tragedy' },
-  { key: 'collection-greek-epic', icon: Sparkles, label: 'Greek Epics' },
 ]
 
 const CATEGORY_SHORTCUTS = [

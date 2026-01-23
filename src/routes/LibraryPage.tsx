@@ -11,6 +11,7 @@ import { useLibrary } from '../hooks/useLibrary'
 
 export default function LibraryPage() {
   const {
+    viewMode,
     booksQ,
     catalogKey,
     setCatalogKey,
@@ -56,13 +57,15 @@ export default function LibraryPage() {
   } = useLibrary()
 
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const showDiscoverFirst =
-    catalogSearch || (activeCatalog.kind !== 'all' && catalogKey !== 'collection-all')
 
   return (
     <TooltipProvider>
       <div className="min-h-full bg-background">
         <BauhausHeader
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          libraryQuery={libraryQuery}
+          setLibraryQuery={setLibraryQuery}
           catalogQuery={catalogQuery}
           setCatalogQuery={setCatalogQuery}
           handleSearch={handleSearch}
@@ -88,33 +91,8 @@ export default function LibraryPage() {
           )}
 
           <div className="space-y-20">
-            <LibraryCollections
-              catalogKey={catalogKey}
-              setCatalogKey={setCatalogKey}
-              showAllCategories={showAllCategories}
-              setShowAllCategories={setShowAllCategories}
-            />
-
-            {showDiscoverFirst ? (
+            {viewMode === 'local' ? (
               <>
-                <CatalogResults
-                  catalogSearch={catalogSearch}
-                  activeCatalog={activeCatalog}
-                  sortBy={sortBy}
-                  setSortBy={setSortBy}
-                  canBulkScan={canBulkScan}
-                  startOrResumeBulk={startOrResumeBulk}
-                  bulkScan={bulkScan}
-                  showSearchPrompt={!canQueryCatalog}
-                  catalogQ={catalogQ}
-                  sortedCatalogResults={sortedCatalogResults}
-                  localGutenbergIds={localGutenbergIds}
-                  queue={queue}
-                  enqueue={enqueue}
-                  setPaused={setPaused}
-                  runQueue={resumeAll}
-                  setCatalogPageUrl={setCatalogPageUrl}
-                />
                 <ContinueReading
                   booksInProgress={booksInProgress}
                   progressByBookId={progressByBookId}
@@ -130,17 +108,11 @@ export default function LibraryPage() {
               </>
             ) : (
               <>
-                <ContinueReading
-                  booksInProgress={booksInProgress}
-                  progressByBookId={progressByBookId}
-                />
-                <YourLibrary
-                  booksQ={booksQ}
-                  libraryQuery={libraryQuery}
-                  setLibraryQuery={setLibraryQuery}
-                  filteredBooks={filteredBooks}
-                  progressByBookId={progressByBookId}
-                  deleteBook={deleteBook}
+                <LibraryCollections
+                  catalogKey={catalogKey}
+                  setCatalogKey={setCatalogKey}
+                  showAllCategories={showAllCategories}
+                  setShowAllCategories={setShowAllCategories}
                 />
                 <CatalogResults
                   catalogSearch={catalogSearch}
