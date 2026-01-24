@@ -6,6 +6,7 @@ mod types;
 
 use anyhow::Context;
 use db::{Book, BookChatThread, BookMessage, BookPosition, Highlight, HighlightMessage};
+use qwen::SidecarState;
 use sqlx::{Pool, Postgres};
 use std::fs;
 use tauri::{AppHandle, Manager, State};
@@ -674,6 +675,7 @@ pub fn run() {
                 tauri::Error::Io(std::io::Error::other(format!("Database pool failed: {e}")))
             })?;
             app.manage(pool.clone());
+            app.manage(SidecarState::new());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -708,6 +710,9 @@ pub fn run() {
             delete_book_message,
             clear_default_book_messages,
             delete_book_thread_messages,
+            qwen::get_qwen_status,
+            qwen::start_qwen_sidecar,
+            qwen::stop_qwen_sidecar,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
