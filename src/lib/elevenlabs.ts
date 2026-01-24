@@ -632,9 +632,10 @@ export class AudioPlayer {
   /**
    * Play using Qwen3-TTS local server.
    * Falls back to this when ElevenLabs quota is exceeded or user prefers local.
+   * @param instruct - Style instruction for how to read (e.g., "Read with dramatic expression")
    */
-  async playWithQwen(text: string, speaker?: string, language?: string) {
-    console.log(`[AudioPlayer] playWithQwen requested for text length: ${text.length}, speaker: ${speaker ?? 'Aiden'}`)
+  async playWithQwen(text: string, speaker?: string, language?: string, instruct?: string) {
+    console.log(`[AudioPlayer] playWithQwen requested for text length: ${text.length}, speaker: ${speaker ?? 'Aiden'}, instruct: ${instruct ? instruct.substring(0, 50) + '...' : 'none'}`)
     const ctx = this.initContext()
     if (ctx.state === 'suspended') {
       console.log(`[AudioPlayer] Resuming suspended AudioContext`)
@@ -660,7 +661,7 @@ export class AudioPlayer {
       this._pausedAt = 0
 
       console.log(`[AudioPlayer] Calling Qwen TTS service`)
-      const response = await qwenTTSService.textToSpeech(text, speaker, language)
+      const response = await qwenTTSService.textToSpeech(text, speaker, language, instruct)
 
       // Decode base64 WAV audio
       const binaryString = atob(response.audio_base64)
@@ -686,12 +687,32 @@ export class AudioPlayer {
   }
 
   /**
+   * Qwen TTS settings interface
+   */
+  private _qwenSettings: { speaker?: string; language?: string; instruct?: string } = {}
+
+  setQwenSettings(settings: { speaker?: string; language?: string; instruct?: string }) {
+    this._qwenSettings = settings
+  }
+
+  getQwenSettings() {
+    return this._qwenSettings
+  }
+
+  /**
    * Smart play that uses configured TTS provider.
    * Falls back to Qwen if ElevenLabs fails with quota error.
    */
-  async playWithProvider(text: string, voiceId?: string, settings?: VoiceSettings, qwenSpeaker?: string) {
+  async playWithProvider(
+    text: string,
+    voiceId?: string,
+    settings?: VoiceSettings,
+    qwenOptions?: { speaker?: string; language?: string; instruct?: string }
+  ) {
+    const qwenSettings = qwenOptions ?? this._qwenSettings
+
     if (this._ttsProvider === 'qwen') {
-      return this.playWithQwen(text, qwenSpeaker)
+      return this.playWithQwen(text, qwenSettings.speaker, qwenSettings.language, qwenSettings.instruct)
     }
 
     try {
@@ -700,7 +721,7 @@ export class AudioPlayer {
       // Auto-fallback to Qwen on quota exceeded
       if (e.message?.includes('quota_exceeded') || e.message?.includes('quota')) {
         console.log(`[AudioPlayer] ElevenLabs quota exceeded, falling back to Qwen TTS`)
-        return this.playWithQwen(text, qwenSpeaker)
+        return this.playWithQwen(text, qwenSettings.speaker, qwenSettings.language, qwenSettings.instruct)
       }
       throw e
     }

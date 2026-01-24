@@ -15,8 +15,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
-import { elevenLabsService, type Voice } from '@/lib/elevenlabs'
+import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
+import { audioPlayer, elevenLabsService, type TTSProvider, type Voice } from '@/lib/elevenlabs'
 import { listModels } from '@/lib/openai'
+import { QWEN_SPEAKERS, qwenTTSService } from '@/lib/qwen-tts'
 import { cn } from '@/lib/utils'
 import { getSetting, openAiKeyStatus, setSetting } from '../lib/tauri'
 
@@ -94,6 +97,15 @@ function StatusBadge({ status, type }: { status: string; type: 'success' | 'info
   )
 }
 
+function ProgressBar({ loading }: { loading: boolean }) {
+  if (!loading) return <div className="h-1 w-full" />
+  return (
+    <div className="h-1 w-full bg-muted/30 overflow-hidden rounded-full">
+      <div className="h-full w-full bg-primary/40 animate-progress" />
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const [apiKey, setApiKey] = useState('')
   const [elevenLabsApiKey, setElevenLabsApiKey] = useState('')
@@ -118,9 +130,47 @@ export default function SettingsPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance')
 
+  // TTS Provider settings
+  const [ttsProvider, setTtsProvider] = useState<TTSProvider>('elevenlabs')
+  const [qwenServerStatus, setQwenServerStatus] = useState<'checking' | 'online' | 'offline'>('checking')
+  const [qwenSpeaker, setQwenSpeaker] = useState('Aiden')
+  const [qwenVoiceActingMode, setQwenVoiceActingMode] = useState(false)
+  const [qwenInstructTemplate, setQwenInstructTemplate] = useState('')
+  const [qwenPreviewing, setQwenPreviewing] = useState(false)
+  const [qwenLoadingPreview, setQwenLoadingPreview] = useState(false)
+  const [loadingModels, setLoadingModels] = useState(false)
+
   useEffect(() => {
     console.log('[Settings] voiceId changed:', voiceId)
   }, [voiceId])
+
+  // Load TTS provider settings and check Qwen server status
+  useEffect(() => {
+    ;(async () => {
+      const savedProvider = await getSetting('tts_provider')
+      if (savedProvider === 'qwen' || savedProvider === 'elevenlabs') {
+        setTtsProvider(savedProvider)
+      }
+      const savedQwenSpeaker = await getSetting('qwen_speaker')
+      if (savedQwenSpeaker) setQwenSpeaker(savedQwenSpeaker)
+      const savedQwenVoiceActingMode = await getSetting('qwen_voice_acting_mode')
+      if (savedQwenVoiceActingMode !== null) setQwenVoiceActingMode(savedQwenVoiceActingMode === 'true')
+      const savedQwenInstructTemplate = await getSetting('qwen_instruct_template')
+      if (savedQwenInstructTemplate) setQwenInstructTemplate(savedQwenInstructTemplate)
+    })()
+  }, [])
+
+  // Check Qwen server status when provider is qwen or on mount
+  useEffect(() => {
+    async function checkQwenStatus() {
+      setQwenServerStatus('checking')
+      const isOnline = await qwenTTSService.healthCheck()
+      setQwenServerStatus(isOnline ? 'online' : 'offline')
+    }
+    if (ttsProvider === 'qwen') {
+      checkQwenStatus()
+    }
+  }, [ttsProvider])
 
   useEffect(() => {
     if (elevenLabsApiKey.trim()) {
@@ -172,6 +222,43 @@ export default function SettingsPage() {
       }
     }
   }, [])
+
+  async function onPreviewQwenVoice() {
+    if (qwenPreviewing || qwenLoadingPreview) {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        setQwenPreviewing(false)
+        setQwenLoadingPreview(false)
+      }
+      return
+    }
+
+    setQwenLoadingPreview(true)
+    try {
+      const response = await qwenTTSService.textToSpeech(
+        'This is a preview of the Qwen voice.',
+        qwenSpeaker,
+      )
+      setQwenLoadingPreview(false)
+      setQwenPreviewing(true)
+
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
+
+      const audio = new Audio(`data:audio/wav;base64,${response.audio_base64}`)
+      audioRef.current = audio
+      audio.play().catch((e) => {
+        console.error('Failed to play Qwen preview:', e)
+        setQwenPreviewing(false)
+      })
+      audio.onended = () => setQwenPreviewing(false)
+    } catch (e) {
+      console.error('Failed to generate Qwen preview:', e)
+      setQwenLoadingPreview(false)
+      setQwenPreviewing(false)
+    }
+  }
 
   async function onPreviewVoice(voice: Voice) {
     if (!voice.preview_url) return
@@ -257,6 +344,26 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleTtsProviderChange(provider: TTSProvider) {
+    setTtsProvider(provider)
+    await audioPlayer.setTTSProvider(provider)
+  }
+
+  async function handleQwenSpeakerChange(speaker: string) {
+    setQwenSpeaker(speaker)
+    await setSetting({ key: 'qwen_speaker', value: speaker })
+  }
+
+  async function handleQwenVoiceActingModeChange(enabled: boolean) {
+    setQwenVoiceActingMode(enabled)
+    await setSetting({ key: 'qwen_voice_acting_mode', value: enabled.toString() })
+  }
+
+  async function handleQwenInstructTemplateChange(template: string) {
+    setQwenInstructTemplate(template)
+    await setSetting({ key: 'qwen_instruct_template', value: template })
+  }
+
   async function onSave() {
     setStatus(null)
     setLoading(true)
@@ -274,6 +381,11 @@ export default function SettingsPage() {
       await setSetting({ key: 'appearance_font_size', value: fontSize.toString() })
       await setSetting({ key: 'appearance_font_family', value: fontFamily })
       await setSetting({ key: 'appearance_theme', value: theme })
+
+      // Save TTS provider settings
+      await setSetting({ key: 'qwen_speaker', value: qwenSpeaker })
+      await setSetting({ key: 'qwen_voice_acting_mode', value: qwenVoiceActingMode.toString() })
+      await setSetting({ key: 'qwen_instruct_template', value: qwenInstructTemplate })
 
       try {
         const savedKeyStatus = await openAiKeyStatus()
@@ -329,6 +441,7 @@ export default function SettingsPage() {
   async function loadModels() {
     console.log('[Settings] loadModels called')
     setModelsStatus(null)
+    setLoadingModels(true)
     try {
       const list = await listModels()
       console.log('[Settings] listModels result:', list)
@@ -338,6 +451,8 @@ export default function SettingsPage() {
       console.error('[Settings] loadModels error:', e)
       const message = e instanceof Error ? e.message : String(e)
       setModelsStatus(message)
+    } finally {
+      setLoadingModels(false)
     }
   }
   const keyConfigured = keyStatus?.has_env_key || keyStatus?.has_saved_key || apiKey.trim()
@@ -438,7 +553,7 @@ export default function SettingsPage() {
                     >
                       <Slider
                         value={[fontSize]}
-                        onValueChange={([v]) => setFontSize(v)}
+                        onValueChange={([v]) => v !== undefined && setFontSize(v)}
                         min={12}
                         max={32}
                         step={1}
@@ -580,10 +695,11 @@ export default function SettingsPage() {
                             ))}
                           </SelectContent>{' '}
                         </Select>
-                        <Button variant="outline" onClick={loadModels} disabled={!keyConfigured}>
-                          Refresh
+                        <Button variant="outline" onClick={loadModels} disabled={!keyConfigured || loadingModels}>
+                          {loadingModels ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Refresh'}
                         </Button>
                       </div>
+                      <ProgressBar loading={loadingModels} />
                       {modelsStatus && (
                         <p className="text-xs text-muted-foreground">{modelsStatus}</p>
                       )}
@@ -597,160 +713,280 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <SettingsSection
                   icon={<Headphones className="h-5 w-5" />}
-                  title="Service Connection"
-                  description="Connect to ElevenLabs for high-quality TTS"
+                  title="TTS Provider"
+                  description="Choose your text-to-speech engine"
                 >
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
-                      <span className="text-sm text-muted-foreground">Connection Status</span>
-                      {elevenLabsKeyConfigured ? (
-                        <StatusBadge status="Connected" type="success" />
-                      ) : (
-                        <StatusBadge status="Not configured" type="info" />
-                      )}
-                    </div>
-
-                    <SettingsRow
-                      label="API Key"
-                      description="Enter your ElevenLabs API key"
-                      vertical
-                    >
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <Input
-                            type={showElevenLabsApiKey ? 'text' : 'password'}
-                            value={elevenLabsApiKey}
-                            onChange={(e) => setElevenLabsApiKey(e.currentTarget.value)}
-                            placeholder="Enter your API key"
-                            className="font-mono text-sm"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowElevenLabsApiKey(!showElevenLabsApiKey)}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
-                          >
-                            {showElevenLabsApiKey ? 'Hide' : 'Show'}
-                          </Button>
-                        </div>
-                        {elevenLabsKeyConfigured && (
-                          <Button variant="outline" onClick={onClearElevenLabsKey}>
-                            Clear
-                          </Button>
-                        )}
-                      </div>
-                    </SettingsRow>
-                  </div>
+                  <SettingsRow
+                    label="TTS Provider"
+                    description="Select which TTS service to use for reading"
+                    vertical
+                  >
+                    <Select value={ttsProvider} onValueChange={handleTtsProviderChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="elevenlabs">
+                          <SelectItemText>ElevenLabs</SelectItemText>
+                        </SelectItem>
+                        <SelectItem value="qwen">
+                          <SelectItemText>Qwen (Local)</SelectItemText>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </SettingsRow>
                 </SettingsSection>
 
-                <SettingsSection
-                  icon={<Volume2 className="h-5 w-5" />}
-                  title="Voice & Style"
-                  description="Configure the narrator's voice"
-                >
-                  <div className="space-y-6">
-                    <SettingsRow
-                      label="Narrator Voice"
-                      description="Select the voice for reading"
-                      vertical
-                    >
-                      <div className="flex gap-2">
-                        <Select
-                          value={voiceId}
-                          onValueChange={setVoiceId}
-                          disabled={!elevenLabsKeyConfigured || voices.length === 0}
-                        >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Select a voice" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(groupedVoices).map(([category, categoryVoices]) => (
-                              <SelectGroup key={category}>
-                                <SelectLabel className="capitalize text-[10px] tracking-widest opacity-70">
-                                  {category}
-                                </SelectLabel>
-                                {categoryVoices.map((v) => {
-                                  const [name, ...descParts] = v.name.split(' - ')
-                                  const description = descParts.join(' - ')
+                {ttsProvider === 'qwen' && (
+                  <SettingsSection
+                    icon={<Volume2 className="h-5 w-5" />}
+                    title="Qwen TTS Settings"
+                    description="Configure local Qwen TTS server"
+                  >
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
+                        <span className="text-sm text-muted-foreground">Server Status</span>
+                        {qwenServerStatus === 'checking' ? (
+                          <StatusBadge status="Checking..." type="info" />
+                        ) : qwenServerStatus === 'online' ? (
+                          <StatusBadge status="Online" type="success" />
+                        ) : (
+                          <StatusBadge status="Offline" type="error" />
+                        )}
+                      </div>
 
-                                  return (
-                                    <SelectItem
-                                      key={v.voice_id}
-                                      value={v.voice_id}
-                                      className="py-2.5"
-                                    >
-                                      <div className="flex flex-col gap-0.5">
-                                        <SelectItemText>
-                                          <span className="font-medium text-sm">{name}</span>
-                                        </SelectItemText>
-                                        <span className="text-[10px] text-muted-foreground line-clamp-1">
-                                          {v.category ? `${v.category} • ` : ''}
-                                          {description}
-                                        </span>
-                                      </div>
-                                    </SelectItem>
-                                  )
-                                })}
-                              </SelectGroup>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <SettingsRow
+                        label="Speaker"
+                        description="Select the Qwen voice speaker"
+                        vertical
+                      >
+                        <div className="flex gap-2">
+                          <Select value={qwenSpeaker} onValueChange={handleQwenSpeakerChange}>
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Select a speaker" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {QWEN_SPEAKERS.map((speaker) => (
+                                <SelectItem key={speaker.id} value={speaker.id}>
+                                  <div className="flex flex-col gap-0.5">
+                                    <SelectItemText>
+                                      <span className="font-medium text-sm">{speaker.name}</span>
+                                    </SelectItemText>
+                                    <span className="text-[10px] text-muted-foreground line-clamp-1">
+                                      {speaker.language} • {speaker.description}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
 
-                        {selectedVoice?.preview_url && (
                           <Button
                             variant="outline"
                             size="icon"
-                            onClick={() => onPreviewVoice(selectedVoice)}
-                            className={cn(previewingId === voiceId && 'text-primary')}
+                            onClick={onPreviewQwenVoice}
+                            disabled={qwenServerStatus !== 'online'}
+                            className={cn((qwenPreviewing || qwenLoadingPreview) && 'text-primary')}
                             title="Preview voice"
                           >
-                            {previewingId === voiceId ? (
+                            {qwenLoadingPreview ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : qwenPreviewing ? (
                               <Volume2 className="h-4 w-4 animate-pulse" />
                             ) : (
                               <Play className="h-4 w-4" />
                             )}
                           </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          onClick={loadVoices}
-                          disabled={!elevenLabsKeyConfigured}
-                        >
-                          Refresh
-                        </Button>
-                      </div>
-                    </SettingsRow>
+                        </div>
+                        <ProgressBar loading={qwenLoadingPreview} />
+                      </SettingsRow>
 
-                    <div className="space-y-4 pt-4 border-t border-border/40">
                       <SettingsRow
-                        label="Stability"
-                        description={<span className="tabular-nums">{stability.toFixed(2)}</span>}
-                        vertical
+                        label="Voice Acting Mode"
+                        description="Enable AI-powered dynamic voice style"
                       >
-                        <Slider
-                          value={[stability]}
-                          onValueChange={([v]) => setStability(v)}
-                          min={0}
-                          max={1}
-                          step={0.01}
+                        <Switch
+                          checked={qwenVoiceActingMode}
+                          onCheckedChange={handleQwenVoiceActingModeChange}
                         />
                       </SettingsRow>
+
                       <SettingsRow
-                        label="Similarity Boost"
-                        description={<span className="tabular-nums">{similarity.toFixed(2)}</span>}
+                        label="Base Voice Style"
+                        description="Instruct template for voice style (e.g., 'Read in a clear, engaging audiobook style')"
                         vertical
                       >
-                        <Slider
-                          value={[similarity]}
-                          onValueChange={([v]) => setSimilarity(v)}
-                          min={0}
-                          max={1}
-                          step={0.01}
+                        <Textarea
+                          value={qwenInstructTemplate}
+                          onChange={(e) => handleQwenInstructTemplateChange(e.currentTarget.value)}
+                          placeholder="Read in a clear, engaging audiobook style"
+                          className="min-h-20 resize-none"
                         />
                       </SettingsRow>
                     </div>
-                  </div>
-                </SettingsSection>
+                  </SettingsSection>
+                )}
+
+                {ttsProvider === 'elevenlabs' && (
+                  <>
+                    <SettingsSection
+                      icon={<Headphones className="h-5 w-5" />}
+                      title="Service Connection"
+                      description="Connect to ElevenLabs for high-quality TTS"
+                    >
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
+                          <span className="text-sm text-muted-foreground">Connection Status</span>
+                          {elevenLabsKeyConfigured ? (
+                            <StatusBadge status="Connected" type="success" />
+                          ) : (
+                            <StatusBadge status="Not configured" type="info" />
+                          )}
+                        </div>
+
+                        <SettingsRow
+                          label="API Key"
+                          description="Enter your ElevenLabs API key"
+                          vertical
+                        >
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <Input
+                                type={showElevenLabsApiKey ? 'text' : 'password'}
+                                value={elevenLabsApiKey}
+                                onChange={(e) => setElevenLabsApiKey(e.currentTarget.value)}
+                                placeholder="Enter your API key"
+                                className="font-mono text-sm"
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowElevenLabsApiKey(!showElevenLabsApiKey)}
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
+                              >
+                                {showElevenLabsApiKey ? 'Hide' : 'Show'}
+                              </Button>
+                            </div>
+                            {elevenLabsKeyConfigured && (
+                              <Button variant="outline" onClick={onClearElevenLabsKey}>
+                                Clear
+                              </Button>
+                            )}
+                          </div>
+                        </SettingsRow>
+                      </div>
+                    </SettingsSection>
+
+                    <SettingsSection
+                      icon={<Volume2 className="h-5 w-5" />}
+                      title="Voice & Style"
+                      description="Configure the narrator's voice"
+                    >
+                      <div className="space-y-6">
+                        <SettingsRow
+                          label="Narrator Voice"
+                          description="Select the voice for reading"
+                          vertical
+                        >
+                          <div className="flex gap-2">
+                            <Select
+                              value={voiceId}
+                              onValueChange={setVoiceId}
+                              disabled={!elevenLabsKeyConfigured || voices.length === 0}
+                            >
+                              <SelectTrigger className="flex-1">
+                                <SelectValue placeholder="Select a voice" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(groupedVoices).map(([category, categoryVoices]) => (
+                                  <SelectGroup key={category}>
+                                    <SelectLabel className="capitalize text-[10px] tracking-widest opacity-70">
+                                      {category}
+                                    </SelectLabel>
+                                    {categoryVoices.map((v) => {
+                                      const [name, ...descParts] = v.name.split(' - ')
+                                      const description = descParts.join(' - ')
+
+                                      return (
+                                        <SelectItem
+                                          key={v.voice_id}
+                                          value={v.voice_id}
+                                          className="py-2.5"
+                                        >
+                                          <div className="flex flex-col gap-0.5">
+                                            <SelectItemText>
+                                              <span className="font-medium text-sm">{name}</span>
+                                            </SelectItemText>
+                                            <span className="text-[10px] text-muted-foreground line-clamp-1">
+                                              {v.category ? `${v.category} • ` : ''}
+                                              {description}
+                                            </span>
+                                          </div>
+                                        </SelectItem>
+                                      )
+                                    })}
+                                  </SelectGroup>
+                                ))}
+                              </SelectContent>
+                            </Select>
+
+                            {selectedVoice?.preview_url && (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => onPreviewVoice(selectedVoice)}
+                                className={cn(previewingId === voiceId && 'text-primary')}
+                                title="Preview voice"
+                              >
+                                {previewingId === voiceId ? (
+                                  <Volume2 className="h-4 w-4 animate-pulse" />
+                                ) : (
+                                  <Play className="h-4 w-4" />
+                                )}
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              onClick={loadVoices}
+                              disabled={!elevenLabsKeyConfigured}
+                            >
+                              Refresh
+                            </Button>
+                          </div>
+                        </SettingsRow>
+
+                        <div className="space-y-4 pt-4 border-t border-border/40">
+                          <SettingsRow
+                            label="Stability"
+                            description={<span className="tabular-nums">{stability.toFixed(2)}</span>}
+                            vertical
+                          >
+                            <Slider
+                              value={[stability]}
+                              onValueChange={([v]) => v !== undefined && setStability(v)}
+                              min={0}
+                              max={1}
+                              step={0.01}
+                            />
+                          </SettingsRow>
+                          <SettingsRow
+                            label="Similarity Boost"
+                            description={<span className="tabular-nums">{similarity.toFixed(2)}</span>}
+                            vertical
+                          >
+                            <Slider
+                              value={[similarity]}
+                              onValueChange={([v]) => v !== undefined && setSimilarity(v)}
+                              min={0}
+                              max={1}
+                              step={0.01}
+                            />
+                          </SettingsRow>
+                        </div>
+                      </div>
+                    </SettingsSection>
+                  </>
+                )}
               </div>
             )}
           </div>

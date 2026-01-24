@@ -151,3 +151,12 @@
     @apply list-decimal list-inside my-3 space-y-1;
   }
 }
+
+@keyframes progress-loading {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-progress {
+  animation: progress-loading 1.5s infinite linear;
+}

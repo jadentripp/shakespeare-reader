@@ -27,3 +27,13 @@
 
 - [x] **Track: TTS UI Enhancement**
 *Link: [./archive/tts_ui_20260119/](./archive/tts_ui_20260119/)*
+
+---
+
+- [~] **Track: Qwen TTS Production Sidecar**
+*Link: [./tracks/qwen_sidecar_20260123/](./tracks/qwen_sidecar_20260123/)*
+
+---
+
+- [~] **Track: Qwen TTS 0.6B Model Switch**
+*Link: [./tracks/qwen_06b_switch_20260123/](./tracks/qwen_06b_switch_20260123/)*

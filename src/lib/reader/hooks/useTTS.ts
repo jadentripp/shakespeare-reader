@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { audioPlayer, type TTSProvider, type VoiceSettings, type WordTiming } from '@/lib/elevenlabs'
 import { type CharacterMapping, getPageContent, type PageMetrics } from '@/lib/readerUtils'
 import { getSetting } from '@/lib/tauri'
+import { generateVoiceInstruction } from '@/lib/voiceActing'
 
 interface UseTTSOptions {
   getDoc: () => Document | null
@@ -44,6 +45,10 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
   const [autoNext, setAutoNext] = useState(false)
   const [voiceId, setVoiceId] = useState<string | undefined>()
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings | undefined>()
+  const [ttsProvider, setTTSProviderState] = useState<TTSProvider>('elevenlabs')
+  const [qwenSpeaker, setQwenSpeaker] = useState<string>('Aiden')
+  const [voiceActingMode, setVoiceActingMode] = useState(false)
+  const [qwenInstructTemplate, setQwenInstructTemplate] = useState<string>('')
 
   useEffect(() => {
     Promise.all([
@@ -54,7 +59,11 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
       getSetting('elevenlabs_speaker_boost'),
       getSetting('tts_playback_speed'),
       getSetting('tts_volume'),
-    ]).then(([id, stability, similarity, style, boost, speed, volume]) => {
+      getSetting('tts_provider'),
+      getSetting('qwen_speaker'),
+      getSetting('qwen_voice_acting_mode'),
+      getSetting('qwen_instruct_template'),
+    ]).then(([id, stability, similarity, style, boost, speed, volume, provider, speaker, actingMode, template]) => {
       if (id) setVoiceId(id)
       if (stability) {
         setVoiceSettings({
@@ -72,6 +81,14 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
       if (volume) {
         audioPlayer.setVolume(parseFloat(volume))
       }
+
+      // Load TTS provider settings
+      if (provider === 'qwen' || provider === 'elevenlabs') {
+        setTTSProviderState(provider)
+      }
+      if (speaker) setQwenSpeaker(speaker)
+      if (actingMode === 'true') setVoiceActingMode(true)
+      if (template) setQwenInstructTemplate(template)
     })
   }, [])
 
@@ -128,7 +145,7 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
   const playCurrentPage = useCallback(async () => {
     const { text, charMap } = getPageText(currentPage)
     console.log(
-      `[useTTS] playCurrentPage called. Page: ${currentPage}, Text length: ${text.length}, CharMap length: ${charMap.length}`,
+      `[useTTS] playCurrentPage called. Page: ${currentPage}, Text length: ${text.length}, CharMap length: ${charMap.length}, Provider: ${ttsProvider}`,
     )
     console.log(`[useTTS] Text preview (first 200 chars): "${text.substring(0, 200)}"`)
     console.log(`[useTTS] Text preview (last 200 chars): "${text.substring(text.length - 200)}"`)
@@ -139,22 +156,41 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
       setAutoNext(true)
       setCurrentPageText(text) // Store the text for precise word highlighting
       setCurrentCharMap(charMap) // Store the character-to-DOM mapping
-      // Use playWithTimestamps for word-level highlighting
-      await audioPlayer.playWithTimestamps(text, voiceId, voiceSettings)
+
+      // Use provider-aware playback
+      if (ttsProvider === 'qwen') {
+        let instruct = qwenInstructTemplate || undefined
+
+        // Generate dynamic voice acting instruction if enabled
+        if (voiceActingMode && qwenInstructTemplate) {
+          console.log('[useTTS] Voice Acting mode enabled, generating dynamic instruction...')
+          instruct = await generateVoiceInstruction(text, qwenInstructTemplate)
+          console.log(`[useTTS] Generated instruction: "${instruct}"`)
+        }
+
+        await audioPlayer.playWithQwen(text, qwenSpeaker, 'English', instruct)
+      } else {
+        // ElevenLabs with word timestamps
+        await audioPlayer.playWithTimestamps(text, voiceId, voiceSettings)
+      }
     } catch (e) {
       setAutoNext(false)
       console.error('[useTTS] playCurrentPage failed:', e)
     }
-  }, [currentPage, getPageText, voiceId, voiceSettings])
+  }, [currentPage, getPageText, voiceId, voiceSettings, ttsProvider, qwenSpeaker, voiceActingMode, qwenInstructTemplate])
 
   const playText = useCallback(
     async (text: string) => {
       if (text) {
         setAutoNext(false) // One-off playback should not auto-advance
-        await audioPlayer.play(text, voiceId, voiceSettings)
+        if (ttsProvider === 'qwen') {
+          await audioPlayer.playWithQwen(text, qwenSpeaker, 'English', qwenInstructTemplate || undefined)
+        } else {
+          await audioPlayer.play(text, voiceId, voiceSettings)
+        }
       }
     },
-    [voiceId, voiceSettings],
+    [voiceId, voiceSettings, ttsProvider, qwenSpeaker, qwenInstructTemplate],
   )
 
   const pause = useCallback(() => {
@@ -213,5 +249,7 @@ export function useTTS({ getDoc, getPageMetrics, currentPage, onPageTurnNeeded }
     currentPageText,
     currentCharMap,
     wordTimings: audioPlayer.getWordTimings(),
+    ttsProvider,
+    voiceActingMode,
   }
 }

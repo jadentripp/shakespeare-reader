@@ -4,10 +4,16 @@ Local text-to-speech server using [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TT
 
 ## Requirements
 
-- Python 3.11+
+- Python 3.11+ (3.12 recommended)
 - [uv](https://docs.astral.sh/uv/) package manager
-- ~8GB VRAM (GPU) for 1.7B model, or ~4GB for 0.6B model
+- ~8GB RAM for 1.7B model (CPU), or ~4GB for 0.6B model
 - ~3GB disk space for model weights (downloaded on first run)
+
+**Platform Support:**
+- macOS (Apple Silicon M1/M2/M3) ✅
+- macOS (Intel x86_64) ✅ (uses PyTorch 2.2.2 - last Intel-compatible version)
+- Linux x86_64 ✅
+- Windows x86_64 ✅
 
 ## Quick Start
 
