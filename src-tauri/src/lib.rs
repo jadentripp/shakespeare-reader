@@ -675,7 +675,11 @@ pub fn run() {
                 tauri::Error::Io(std::io::Error::other(format!("Database pool failed: {e}")))
             })?;
             app.manage(pool.clone());
-            app.manage(SidecarState::new());
+            
+            let qwen_state = SidecarState::new();
+            let _ = qwen::start_qwen_sidecar_internal(app.app_handle(), &qwen_state);
+            app.manage(qwen_state);
+            
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

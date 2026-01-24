@@ -37,6 +37,13 @@ pub async fn start_qwen_sidecar(
     app: AppHandle,
     state: State<'_, SidecarState>,
 ) -> Result<SidecarStatus, String> {
+    start_qwen_sidecar_internal(&app, &state)
+}
+
+pub fn start_qwen_sidecar_internal(
+    app: &AppHandle,
+    state: &SidecarState,
+) -> Result<SidecarStatus, String> {
     let mut status = state.status.lock().unwrap();
 
     if *status == SidecarStatus::Running || *status == SidecarStatus::Starting {
@@ -74,7 +81,7 @@ pub async fn start_qwen_sidecar(
     *child_guard = Some(child);
     *status = SidecarStatus::Running;
 
-    println!("[Sidecar] qwen-tts sidecar is now running.");
+    println!("[Sidecar] qwen-tts sidecar process spawned.");
     Ok(*status)
 }
 
