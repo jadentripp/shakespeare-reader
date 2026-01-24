@@ -10,9 +10,9 @@
         {
           "args": [
             { "validator": "--host" },
-            { "validator": "\d+\.\d+\.\d+\.\d+" },
+            { "validator": "\\d+\\.\\d+\\.\\d+\\.\\d+" },
             { "validator": "--port" },
-            { "validator": "\d+" }
+            { "validator": "\\d+" }
           ],
           "name": "binaries/qwen-tts",
           "sidecar": true

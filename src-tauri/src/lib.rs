@@ -1,6 +1,7 @@
 mod books;
 mod db;
 mod gutendex;
+mod qwen;
 mod types;
 
 use anyhow::Context;
