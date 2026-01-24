@@ -23,7 +23,8 @@
 
 ## AI & Services
 - **LLM Provider:** OpenAI API (utilizing the Responses API for agentic reasoning)
-- **TTS Provider:** ElevenLabs API (via `@elevenlabs/elevenlabs-js`)
+- **TTS Provider:** ElevenLabs API (via `@elevenlabs/elevenlabs-js`) and Qwen3-TTS (Local Sidecar)
+- **Local AI Sidecar:** Qwen3-TTS 0.6B (PyTorch-based Python server)
 - **Book Source:** Project Gutenberg (via Gutendex API)
 
 ## Development & Infrastructure
