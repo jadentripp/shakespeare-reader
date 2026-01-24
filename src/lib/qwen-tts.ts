@@ -39,21 +39,23 @@ export class QwenTTSService {
 
   private async ensureSidecar(): Promise<boolean> {
     try {
-      let status = await getQwenStatus()
-      if (status === "running") return true
+      const status = await getQwenStatus()
+      const isActuallyOnline = await this.healthCheck()
+      
+      if (status === "running" && isActuallyOnline) return true
 
-      if (status === "stopped" || status === "errored") {
+      if (status !== "running") {
         await startQwenSidecar()
       }
 
-      // Poll until running or timeout (30 seconds)
+      // Poll until running or timeout (60 seconds)
       const start = Date.now()
-      while (status !== "running" && Date.now() - start < 30000) {
-        await new Promise((r) => setTimeout(r, 1000))
-        status = await getQwenStatus()
+      while (Date.now() - start < 60000) {
+        if (await this.healthCheck()) return true
+        await new Promise((r) => setTimeout(r, 2000))
       }
 
-      return status === "running"
+      return false
     } catch (e) {
       console.error("[QwenTTS] Failed to ensure sidecar is running:", e)
       return false

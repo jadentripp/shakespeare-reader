@@ -143,22 +143,40 @@ export default function SettingsPage() {
   async function ensureSidecarRunning() {
     try {
       let status = await getQwenStatus()
-      if (status === 'running') return true
-      if (status === 'stopped' || status === 'errored') {
-        status = await startQwenSidecar()
+      
+      // Even if Rust says running, check if Flask is actually responding
+      const isActuallyOnline = await qwenTTSService.healthCheck()
+      if (status === 'running' && isActuallyOnline) {
+        setQwenServerStatus('running')
+        return true
       }
 
-      setQwenServerStatus(status)
+      if (status === 'stopped' || status === 'errored' || !isActuallyOnline) {
+        if (status !== 'running') {
+          status = await startQwenSidecar()
+        }
+        setQwenServerStatus('starting')
+      }
 
-      // Poll until running or timeout (30 seconds)
+      // Poll until running AND health check passes, or timeout (60 seconds)
       const start = Date.now()
-      while (status !== 'running' && Date.now() - start < 30000) {
-        await new Promise((r) => setTimeout(r, 1000))
-        status = await getQwenStatus()
-        setQwenServerStatus(status)
+      while (Date.now() - start < 60000) {
+        const isOnline = await qwenTTSService.healthCheck()
+        if (isOnline) {
+          setQwenServerStatus('running')
+          return true
+        }
+        await new Promise((r) => setTimeout(r, 2000))
+        
+        // Update status from backend in case it crashed
+        const currentStatus = await getQwenStatus()
+        if (currentStatus === 'errored') {
+          setQwenServerStatus('errored')
+          return false
+        }
       }
 
-      return status === 'running'
+      return false
     } catch (e) {
       console.error('Failed to ensure sidecar is running:', e)
       setQwenServerStatus('errored')

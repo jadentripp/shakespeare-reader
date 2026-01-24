@@ -52,9 +52,23 @@ pub async fn start_qwen_sidecar(
         .map_err(|e| format!("Failed to create sidecar: {e}"))?
         .args(["--host", "127.0.0.1", "--port", "5123"]);
 
-    let (mut _rx, child) = sidecar
+    let (mut rx, child) = sidecar
         .spawn()
         .map_err(|e| format!("Failed to spawn sidecar: {e}"))?;
+
+    tauri::async_runtime::spawn(async move {
+        while let Some(event) = rx.recv().await {
+            match event {
+                tauri_plugin_shell::process::CommandEvent::Stdout(line) => {
+                    print!("{}", String::from_utf8_lossy(&line));
+                }
+                tauri_plugin_shell::process::CommandEvent::Stderr(line) => {
+                    eprint!("{}", String::from_utf8_lossy(&line));
+                }
+                _ => {}
+            }
+        }
+    });
 
     let mut child_guard = state.child.lock().unwrap();
     *child_guard = Some(child);
