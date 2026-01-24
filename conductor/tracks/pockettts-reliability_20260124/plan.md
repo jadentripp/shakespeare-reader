@@ -4,7 +4,7 @@
 - [x] Task: Review PocketTTS upstream guidance and web player behavior (a3be0aa)
     - [ ] Identify loading/streaming/voice registration best practices
     - [ ] Note any thread-safety or streaming constraints
-- [ ] Task: Audit current PocketTTS integration and state flow
+- [x] Task: Audit current PocketTTS integration and state flow (8cff951)
     - [ ] Map model load lifecycle, voice registration, playback calls
     - [ ] Identify where “ready” is set vs actually ready
 - [ ] Task: Reproduce failures and capture diagnostics
