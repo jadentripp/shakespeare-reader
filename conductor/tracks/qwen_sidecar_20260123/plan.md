@@ -2,11 +2,11 @@
 
 This plan covers the transition of the local Qwen TTS Python server into a production-ready Tauri sidecar, focusing on standalone bundling, Rust-managed lifecycle, and frontend state synchronization.
 
-## Phase 1: PyInstaller Packaging (Standalone Binary)
+## Phase 1: PyInstaller Packaging (Standalone Binary) [checkpoint: b822ff2]
 - [x] Task: Create a standalone Python build script in `conductor/qwen-tts/bundle.py` that uses PyInstaller to bundle the server. f4a4a45
 - [x] Task: Verify the standalone binary runs correctly on the current platform (macOS) without the virtual environment. 3f01edb
 - [x] Task: Update `tauri.conf.json` to include the sidecar binary and configure the required naming convention (e.g., `qwen-tts-aarch64-apple-darwin`). 63c7f81
-- [~] Task: Conductor - User Manual Verification 'Phase 1: PyInstaller Packaging' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: PyInstaller Packaging' (Protocol in workflow.md) 0f5eed7
 
 ## Phase 2: Rust Sidecar Manager (Tauri Integration)
 - [ ] Task: Implement a Rust-based `SidecarState` struct and `SidecarStatus` enum in `src-tauri/src/lib.rs` (or a new module).
