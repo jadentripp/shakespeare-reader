@@ -29,5 +29,6 @@
 
 ## Development & Infrastructure
 - **Package Manager:** Bun
+- **Python Bundling:** PyInstaller (for standalone sidecar execution)
 - **Testing:** Bun Test, React Testing Library
-- **Language:** TypeScript 5.x, Rust 2021 Edition
+- **Language:** TypeScript 5.x, Rust 2021 Edition, Python 3.11+ (Sidecar)
