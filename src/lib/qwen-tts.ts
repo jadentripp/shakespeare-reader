@@ -3,6 +3,8 @@
  * Connects to the Python server running at localhost:5123.
  */
 
+import { getQwenStatus, startQwenSidecar } from "./tauri/settings"
+
 export interface QwenVoice {
   id: string
   name: string
@@ -35,6 +37,29 @@ export class QwenTTSService {
     this.baseUrl = baseUrl
   }
 
+  private async ensureSidecar(): Promise<boolean> {
+    try {
+      let status = await getQwenStatus()
+      if (status === "running") return true
+
+      if (status === "stopped" || status === "errored") {
+        await startQwenSidecar()
+      }
+
+      // Poll until running or timeout (30 seconds)
+      const start = Date.now()
+      while (status !== "running" && Date.now() - start < 30000) {
+        await new Promise((r) => setTimeout(r, 1000))
+        status = await getQwenStatus()
+      }
+
+      return status === "running"
+    } catch (e) {
+      console.error("[QwenTTS] Failed to ensure sidecar is running:", e)
+      return false
+    }
+  }
+
   async healthCheck(): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseUrl}/health`, { signal: AbortSignal.timeout(2000) })
@@ -51,6 +76,8 @@ export class QwenTTSService {
     instruct?: string
   ): Promise<QwenTTSResponse> {
     console.log(`[QwenTTS] textToSpeech called for ${text.length} chars, speaker=${speaker ?? "Aiden"}`)
+
+    await this.ensureSidecar()
 
     const response = await fetch(`${this.baseUrl}/tts`, {
       method: "POST",
@@ -80,6 +107,8 @@ export class QwenTTSService {
     instruct?: string
   ): AsyncGenerator<QwenTTSResponse> {
     console.log(`[QwenTTS] streamTextToSpeech called for ${text.length} chars`)
+
+    await this.ensureSidecar()
 
     const response = await fetch(`${this.baseUrl}/tts/stream`, {
       method: "POST",
@@ -127,6 +156,7 @@ export class QwenTTSService {
   }
 
   async getVoices(): Promise<QwenVoice[]> {
+    await this.ensureSidecar()
     const response = await fetch(`${this.baseUrl}/voices`)
     if (!response.ok) throw new Error("Failed to fetch voices")
     const data = await response.json()
