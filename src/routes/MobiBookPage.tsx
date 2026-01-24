@@ -11,7 +11,7 @@ export default function MobiBookPage(props: { bookId: number }) {
   const [ttsExpanded, setTtsExpanded] = useState(false)
 
   if (htmlQ.isLoading) {
-    return <div className="px-4 py-6 text-sm text-muted-foreground">Loading book content...</div>
+    return <div className="px-4 py-6 text-sm text-muted-foreground">Loading book content…</div>
   }
 
   if (htmlQ.isError) {

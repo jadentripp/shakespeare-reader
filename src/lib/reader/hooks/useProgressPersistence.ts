@@ -14,6 +14,7 @@ export interface UseProgressPersistenceOptions {
 }
 
 export interface UseProgressPersistenceResult {
+  saveProgress: (page: number) => void
   scheduleSaveProgress: (page: number) => void
   scheduleSaveThreadProgress: () => void
   cleanup: () => void
@@ -26,6 +27,14 @@ export function useProgressPersistence(
 
   const saveTimeoutRef = useRef<number | null>(null)
   const threadSaveTimeoutRef = useRef<number | null>(null)
+
+  const saveProgress = useCallback(
+    (page: number) => {
+      if (!progressKey) return
+      localStorage.setItem(progressKey, JSON.stringify({ page }))
+    },
+    [progressKey],
+  )
 
   const scheduleSaveProgress = useCallback(
     (page: number) => {
@@ -81,6 +90,7 @@ export function useProgressPersistence(
   }, [cleanup])
 
   return {
+    saveProgress,
     scheduleSaveProgress,
     scheduleSaveThreadProgress,
     cleanup,

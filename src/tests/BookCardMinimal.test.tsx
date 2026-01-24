@@ -1,9 +1,5 @@
 import { describe, expect, it, mock } from 'bun:test'
 import { render, screen } from '@testing-library/react'
-import type React from 'react'
-
-
-// Import the component (which doesn't exist yet)
 import { BookCardMinimal } from '../components/library/BookCardMinimal'
 
 describe('BookCardMinimal', () => {

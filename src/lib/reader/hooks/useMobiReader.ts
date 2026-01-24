@@ -38,6 +38,7 @@ export function useMobiReader(bookId: number) {
 
   const restoredRef = useRef(false)
   const pendingRestoreRef = useRef<{ page?: number } | null>(null)
+  const progressPersistenceRef = useRef<ReturnType<typeof useProgressPersistence> | null>(null)
 
   const { fontFamily, lineHeight, margin, setFontFamily, setLineHeight, setMargin } =
     useReaderAppearance(bookId)
@@ -66,8 +67,8 @@ export function useMobiReader(bookId: number) {
     getScrollRoot,
     fallbackWidth: typeof window !== 'undefined' ? window.innerWidth : 1200,
     onPageChange: (page) => {
-      progressPersistence.scheduleSaveProgress(page)
-      progressPersistence.scheduleSaveThreadProgress()
+      progressPersistenceRef.current?.saveProgress(page)
+      progressPersistenceRef.current?.scheduleSaveThreadProgress()
     },
   })
 
@@ -79,6 +80,8 @@ export function useMobiReader(bookId: number) {
     getScrollRoot,
     queryClient: queryClient as any,
   })
+
+  progressPersistenceRef.current = progressPersistence
 
   const navigation = useNavigation({
     getScrollRoot,
@@ -226,7 +229,7 @@ export function useMobiReader(bookId: number) {
     }
   }, [tts.currentWord, tts.currentWordIndex, tts.state, tts.currentCharMap, pagination.currentPage])
 
-  const { handleIframeLoad } = useMobiIframe({
+  const { handleIframeLoad: originalHandleIframeLoad } = useMobiIframe({
     iframeRef,
     rootRef,
     containerRef,
@@ -241,6 +244,12 @@ export function useMobiReader(bookId: number) {
     setActiveCitation,
     setLightboxImage,
   })
+
+  const handleIframeLoad = () => {
+    originalHandleIframeLoad()
+    // Mark as in-progress immediately on load
+    progressPersistence.saveProgress(pagination.currentPage)
+  }
 
   const processedHtml = useMemo(() => {
     if (!htmlQ.data) return ''

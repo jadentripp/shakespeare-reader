@@ -27,18 +27,21 @@ export function YourLibrary({
   const totalBooks = (booksQ.data ?? []).length
 
   return (
-    <section className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-black pb-4 dark:border-white">
+    <section className="space-y-8">
+      <div className="flex flex-wrap items-end justify-between gap-6 border-b-2 border-black pb-4 dark:border-white">
         <div className="space-y-1">
-          <h2 className="font-sans text-3xl font-black uppercase tracking-tighter text-foreground [text-wrap:balance]">
+          <h2 className="font-sans text-2xl font-black uppercase tracking-tighter text-foreground [text-wrap:balance]">
             Your Library
           </h2>
-          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground tabular-nums">
-            {totalBooks} {totalBooks === 1 ? 'book' : 'books'}
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground tabular-nums">
+            {totalBooks} {totalBooks === 1 ? 'Book' : 'Books'}
           </p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/40" />
+        <div className="relative w-full sm:w-64">
+          <Search
+            className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/40"
+            aria-hidden="true"
+          />
           <Input
             type="search"
             placeholder="Search collection…"
@@ -46,17 +49,17 @@ export function YourLibrary({
             aria-label="Search your library"
             value={libraryQuery}
             onChange={(e) => setLibraryQuery(e.target.value)}
-            className="h-10 rounded-none border-2 border-black bg-background pl-9 pr-9 focus:ring-0 dark:border-white"
+            className="h-9 rounded-none border-2 border-black bg-background pl-9 pr-9 text-xs focus:ring-0 dark:border-white"
           />
           {libraryQuery && (
             <Button
               variant="ghost"
               size="icon"
               aria-label="Clear search"
-              className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               onClick={() => setLibraryQuery('')}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>

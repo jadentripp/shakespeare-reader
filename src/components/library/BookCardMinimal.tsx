@@ -97,7 +97,7 @@ export function BookCardMinimal({
               <Link to="/book/$bookId" params={{ bookId: String(id) }}>
                 <Button
                   variant="outline"
-                  className="h-10 w-32 rounded-none border-2 border-white bg-transparent text-xs font-bold uppercase tracking-widest text-white hover:bg-white hover:text-black hover:border-white"
+                  className="h-10 w-32 rounded-none border-2 border-white bg-transparent text-xs font-bold uppercase tracking-widest text-white hover:bg-white hover:text-black hover:border-white focus-visible:ring-2 focus-visible:ring-white"
                 >
                   Read
                 </Button>
@@ -109,7 +109,7 @@ export function BookCardMinimal({
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="h-10 w-32 rounded-none text-xs font-bold uppercase tracking-widest text-stone-400 hover:bg-red-900/30 hover:text-red-500"
+                      className="h-10 w-32 rounded-none text-xs font-bold uppercase tracking-widest text-stone-400 hover:bg-red-900/30 hover:text-red-500 focus-visible:ring-2 focus-visible:ring-red-500"
                     >
                       Delete
                     </Button>
@@ -143,16 +143,16 @@ export function BookCardMinimal({
             /* Catalog book - Download button */
             <Button
               variant="outline"
-              className="h-10 w-40 rounded-none border-2 border-amber-500 bg-transparent text-xs font-bold uppercase tracking-widest text-amber-500 hover:bg-amber-500 hover:text-black"
+              className="h-10 w-40 rounded-none border-2 border-amber-500 bg-transparent text-xs font-bold uppercase tracking-widest text-amber-500 hover:bg-amber-500 hover:text-black focus-visible:ring-2 focus-visible:ring-amber-500"
               onClick={onAdd}
             >
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="mr-2 h-4 w-4" aria-hidden="true" />
               Add to Library
             </Button>
           ) : isQueued ? (
             /* Already queued */
             <div className="flex items-center gap-2 px-4 py-2">
-              <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+              <Loader2 className="h-4 w-4 animate-spin text-amber-500" aria-hidden="true" />
               <span className="font-mono text-xs font-bold uppercase tracking-widest text-amber-500">
                 Downloading…
               </span>
@@ -160,7 +160,7 @@ export function BookCardMinimal({
           ) : alreadyInLibrary ? (
             /* Already in library indicator */
             <div className="flex items-center gap-2 px-4 py-2">
-              <Check className="h-4 w-4 text-green-500" />
+              <Check className="h-4 w-4 text-green-500" aria-hidden="true" />
               <span className="font-mono text-xs font-bold uppercase tracking-widest text-green-500">
                 In Library
               </span>

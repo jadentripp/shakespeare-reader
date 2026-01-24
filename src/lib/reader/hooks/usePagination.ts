@@ -84,10 +84,14 @@ export function usePagination(options: UsePaginationOptions): UsePaginationResul
       const stride = pageWidth + gap
       const target = computeScrollTarget(page, stride)
 
-      pageLockRef.current = page
+      if (page !== currentPage) {
+        pageLockRef.current = page
+        setCurrentPage(page)
+        onPageChange?.(page)
+      }
       root.scrollTo({ left: target, behavior: 'smooth' })
     },
-    [getScrollRoot, getPageMetrics],
+    [getScrollRoot, getPageMetrics, currentPage, onPageChange],
   )
 
   const scrollToPageInstant = useCallback(

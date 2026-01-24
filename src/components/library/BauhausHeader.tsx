@@ -122,11 +122,14 @@ export function BauhausHeader({
               Active Search:
             </div>
             <div className="font-sans text-sm font-black uppercase tracking-tight text-foreground">
-              "{catalogSearch}"
+              “{catalogSearch}”
             </div>
             <button
               type="button"
-              onClick={() => setCatalogQuery('')}
+              onClick={() => {
+                setCatalogQuery('')
+                handleSearch('')
+              }}
               className="ml-auto text-[10px] font-bold uppercase tracking-widest text-red-600 hover:underline"
             >
               Clear

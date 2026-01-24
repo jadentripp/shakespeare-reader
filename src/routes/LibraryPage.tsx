@@ -22,9 +22,6 @@ export default function LibraryPage() {
     setShowAllCategories,
     sortBy,
     setSortBy,
-    searchFocused,
-    setSearchFocused,
-    recentSearches,
     setCatalogPageUrl,
     queue,
     setQueue,
@@ -45,7 +42,6 @@ export default function LibraryPage() {
     booksInProgress,
     hasQueueActivity,
     handleSearch,
-    clearRecentSearches,
     enqueue,
     retryFailed,
     clearFailed,
@@ -95,30 +91,43 @@ export default function LibraryPage() {
               setShowAllCategories={setShowAllCategories}
             />
 
-            {showDiscoverFirst ? (
-              <>
-                <CatalogResults
-                  catalogSearch={catalogSearch}
-                  activeCatalog={activeCatalog}
-                  sortBy={sortBy}
-                  setSortBy={setSortBy}
-                  canBulkScan={canBulkScan}
-                  startOrResumeBulk={startOrResumeBulk}
-                  bulkScan={bulkScan}
-                  showSearchPrompt={!canQueryCatalog}
-                  catalogQ={catalogQ}
-                  sortedCatalogResults={sortedCatalogResults}
-                  localGutenbergIds={localGutenbergIds}
-                  queue={queue}
-                  enqueue={enqueue}
-                  setPaused={setPaused}
-                  runQueue={resumeAll}
-                  setCatalogPageUrl={setCatalogPageUrl}
-                />
-                <ContinueReading
-                  booksInProgress={booksInProgress}
-                  progressByBookId={progressByBookId}
-                />
+            {showDiscoverFirst && (
+              <CatalogResults
+                catalogSearch={catalogSearch}
+                activeCatalog={activeCatalog}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                canBulkScan={canBulkScan}
+                startOrResumeBulk={startOrResumeBulk}
+                bulkScan={bulkScan}
+                showSearchPrompt={!canQueryCatalog}
+                catalogQ={catalogQ}
+                sortedCatalogResults={sortedCatalogResults}
+                localGutenbergIds={localGutenbergIds}
+                queue={queue}
+                enqueue={enqueue}
+                setPaused={setPaused}
+                runQueue={resumeAll}
+                setCatalogPageUrl={setCatalogPageUrl}
+              />
+            )}
+
+            <div
+              className={
+                booksInProgress.length > 0
+                  ? 'grid grid-cols-1 items-start gap-12 lg:grid-cols-4 xl:gap-20'
+                  : ''
+              }
+            >
+              {booksInProgress.length > 0 && (
+                <aside className="lg:col-span-1">
+                  <ContinueReading
+                    booksInProgress={booksInProgress}
+                    progressByBookId={progressByBookId}
+                  />
+                </aside>
+              )}
+              <div className={booksInProgress.length > 0 ? 'lg:col-span-3' : ''}>
                 <YourLibrary
                   booksQ={booksQ}
                   libraryQuery={libraryQuery}
@@ -127,40 +136,28 @@ export default function LibraryPage() {
                   progressByBookId={progressByBookId}
                   deleteBook={deleteBook}
                 />
-              </>
-            ) : (
-              <>
-                <ContinueReading
-                  booksInProgress={booksInProgress}
-                  progressByBookId={progressByBookId}
-                />
-                <YourLibrary
-                  booksQ={booksQ}
-                  libraryQuery={libraryQuery}
-                  setLibraryQuery={setLibraryQuery}
-                  filteredBooks={filteredBooks}
-                  progressByBookId={progressByBookId}
-                  deleteBook={deleteBook}
-                />
-                <CatalogResults
-                  catalogSearch={catalogSearch}
-                  activeCatalog={activeCatalog}
-                  sortBy={sortBy}
-                  setSortBy={setSortBy}
-                  canBulkScan={canBulkScan}
-                  startOrResumeBulk={startOrResumeBulk}
-                  bulkScan={bulkScan}
-                  showSearchPrompt={!canQueryCatalog}
-                  catalogQ={catalogQ}
-                  sortedCatalogResults={sortedCatalogResults}
-                  localGutenbergIds={localGutenbergIds}
-                  queue={queue}
-                  enqueue={enqueue}
-                  setPaused={setPaused}
-                  runQueue={resumeAll}
-                  setCatalogPageUrl={setCatalogPageUrl}
-                />
-              </>
+              </div>
+            </div>
+
+            {!showDiscoverFirst && (
+              <CatalogResults
+                catalogSearch={catalogSearch}
+                activeCatalog={activeCatalog}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                canBulkScan={canBulkScan}
+                startOrResumeBulk={startOrResumeBulk}
+                bulkScan={bulkScan}
+                showSearchPrompt={!canQueryCatalog}
+                catalogQ={catalogQ}
+                sortedCatalogResults={sortedCatalogResults}
+                localGutenbergIds={localGutenbergIds}
+                queue={queue}
+                enqueue={enqueue}
+                setPaused={setPaused}
+                runQueue={resumeAll}
+                setCatalogPageUrl={setCatalogPageUrl}
+              />
             )}
 
             {/* Download Queue at the bottom for full width */}

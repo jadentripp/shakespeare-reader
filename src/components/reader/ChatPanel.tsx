@@ -41,7 +41,7 @@ export default function ChatPanel({
           variant={chatSending ? 'secondary' : 'outline'}
           className={cn(chatSending && 'bg-primary/10 text-primary')}
         >
-          {chatSending ? 'Thinking...' : 'Ready'}
+          {chatSending ? 'Thinking…' : 'Ready'}
         </Badge>
       </div>
 
@@ -128,7 +128,7 @@ export default function ChatPanel({
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">Press Cmd/Ctrl + Enter to send</span>
           <Button onClick={onSend} disabled={chatSending}>
-            {chatSending ? 'Sending...' : 'Send'}
+            {chatSending ? 'Sending…' : 'Send'}
           </Button>
         </div>
       </div>
