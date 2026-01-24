@@ -7,7 +7,7 @@
 - [x] Task: Audit current PocketTTS integration and state flow (8cff951)
     - [ ] Map model load lifecycle, voice registration, playback calls
     - [ ] Identify where “ready” is set vs actually ready
-- [ ] Task: Reproduce failures and capture diagnostics
+- [x] Task: Reproduce failures and capture diagnostics (0e93492)
     - [ ] Tauri dev: capture model load failure stack traces
     - [ ] Web dev: capture garbled output scenario
     - [ ] Add temporary instrumentation for timing and state transitions
