@@ -779,7 +779,17 @@ export default function SettingsPage() {
                         ) : qwenServerStatus === 'starting' ? (
                           <StatusBadge status="Starting..." type="info" />
                         ) : qwenServerStatus === 'errored' ? (
-                          <StatusBadge status="Error" type="error" />
+                          <div className="flex items-center gap-2">
+                            <StatusBadge status="Error" type="error" />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-[10px] uppercase tracking-wider"
+                              onClick={() => ensureSidecarRunning()}
+                            >
+                              Try Again
+                            </Button>
+                          </div>
                         ) : (
                           <StatusBadge status="Offline" type="info" />
                         )}
