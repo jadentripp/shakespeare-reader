@@ -8,11 +8,11 @@ This plan covers the transition of the local Qwen TTS Python server into a produ
 - [x] Task: Update `tauri.conf.json` to include the sidecar binary and configure the required naming convention (e.g., `qwen-tts-aarch64-apple-darwin`). 63c7f81
 - [x] Task: Conductor - User Manual Verification 'Phase 1: PyInstaller Packaging' (Protocol in workflow.md) 0f5eed7
 
-## Phase 2: Rust Sidecar Manager (Tauri Integration)
+## Phase 2: Rust Sidecar Manager (Tauri Integration) [checkpoint: 6a0dfd4]
 - [x] Task: Implement a Rust-based `SidecarState` struct and `SidecarStatus` enum in `src-tauri/src/lib.rs` (or a new module). 5245cdd
 - [x] Task: Implement Tauri commands `start_qwen_sidecar`, `stop_qwen_sidecar`, and `get_qwen_status`. 554dbb0
 - [x] Task: Integrate sidecar lifecycle management in the Rust backend to ensure the process starts on demand and stops cleanly on app exit. ab9d17f
-- [~] Task: Conductor - User Manual Verification 'Phase 2: Rust Sidecar Manager' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Rust Sidecar Manager' (Protocol in workflow.md) eb83815
 
 ## Phase 3: Frontend Status & Lifecycle Control
 - [ ] Task: Write unit tests for the sidecar lifecycle events in the React frontend.
