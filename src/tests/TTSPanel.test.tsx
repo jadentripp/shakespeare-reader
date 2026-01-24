@@ -14,31 +14,17 @@ const mockSetVolume = mock(() => {})
 const mockSeek = mock(() => {})
 const mockChangeVoice = mock(() => {})
 
-// Mock elevenLabsService
-mock.module('@/lib/elevenlabs', () => {
+mock.module('@/lib/pocket-tts', () => {
   return {
-    elevenLabsService: {
+    pocketTTSService: {
       getVoices: mock(() =>
         Promise.resolve([
-          { voice_id: 'v1', name: 'Voice 1' },
-          { voice_id: 'v2', name: 'Voice 2' },
+          { id: 'v1', name: 'Voice 1' },
+          { id: 'v2', name: 'Voice 2' },
         ]),
       ),
-      textToSpeech: mock(() =>
-        Promise.resolve(
-          new ReadableStream({
-            start(controller) {
-              controller.close()
-            },
-          }),
-        ),
-      ),
-    },
-    audioPlayer: {
-      subscribe: mock(() => () => {}),
-      subscribeProgress: mock(() => () => {}),
-      getState: mock(() => 'idle'),
-      getProgress: mock(() => ({ currentTime: 0, duration: 0, isBuffering: false })),
+      healthCheck: mock(() => Promise.resolve(true)),
+      subscribeStatus: mock(() => () => {}),
     },
   }
 })

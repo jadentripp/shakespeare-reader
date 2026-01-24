@@ -3,10 +3,11 @@ import { cleanup, render, screen } from '@testing-library/react'
 import React from 'react'
 import { TTSPanel } from '../components/reader/TTSPanel'
 
-// Mock elevenLabsService
-mock.module('../lib/elevenlabs', () => ({
-  elevenLabsService: {
+mock.module('../lib/pocket-tts', () => ({
+  pocketTTSService: {
     getVoices: mock(() => Promise.resolve([])),
+    healthCheck: mock(() => Promise.resolve(true)),
+    subscribeStatus: mock(() => () => {}),
   },
 }))
 
