@@ -22,7 +22,7 @@ This plan covers the transition of the local Qwen TTS Python server into a produ
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Frontend Status & Lifecycle Control' (Protocol in workflow.md) 2ecb84f
 
 ## Phase 4: Verification & Polishing
-- [ ] Task: Verify end-to-end audio generation using the bundled sidecar.
+- [x] Task: Verify end-to-end audio generation using the bundled sidecar. 7ec7d3b
 - [ ] Task: Implement graceful error handling in the UI if the sidecar fails to start (e.g., port conflict or missing binary).
 - [ ] Task: Final audit of the `tauri.conf.json` and CSP settings for production security.
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Verification & Polishing' (Protocol in workflow.md)
