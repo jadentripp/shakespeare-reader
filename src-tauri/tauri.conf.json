@@ -33,7 +33,7 @@
       "icons/icon.ico"
     ],
     "externalBin": [
-      "binaries/qwen-tts-x86_64-apple-darwin/qwen-tts"
+      "binaries/qwen-tts"
     ]
   }
 }

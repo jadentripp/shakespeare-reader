@@ -55,7 +55,7 @@ pub fn start_qwen_sidecar_internal(
 
     let sidecar = app
         .shell()
-        .sidecar("qwen-tts-x86_64-apple-darwin/qwen-tts")
+        .sidecar("qwen-tts")
         .map_err(|e| format!("Failed to create sidecar: {e}"))?
         .args(["--host", "127.0.0.1", "--port", "5123", "--preload"]);
 
