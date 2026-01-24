@@ -1,0 +1,23 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "sidecar-capability",
+  "description": "Capability for running the qwen-tts sidecar",
+  "windows": ["main"],
+  "permissions": [
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "args": [
+            { "validator": "--host" },
+            { "validator": "\d+\.\d+\.\d+\.\d+" },
+            { "validator": "--port" },
+            { "validator": "\d+" }
+          ],
+          "name": "binaries/qwen-tts",
+          "sidecar": true
+        }
+      ]
+    }
+  ]
+}
