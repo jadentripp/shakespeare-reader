@@ -32,7 +32,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Reliability Fixes (Model Load + Playback Stability)' (Protocol in workflow.md) (3a3e7f6)
 
 ## Phase 3: UX Loading State + Word Highlighting
-- [ ] Task: Write failing tests for loading UX and highlight behavior
+- [x] Task: Write failing tests for loading UX and highlight behavior (3cbf12b)
     - [ ] Loading state visible during model/voice prep
     - [ ] Highlight timing advances with playback clock
 - [ ] Task: Implement loading UX state machine
