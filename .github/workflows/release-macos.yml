@@ -45,6 +45,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Download PocketTTS assets
+        run: |
+          curl -L -o /tmp/pocket-tts-assets.zip https://github.com/jadentripp/ai-reader/releases/download/pocket-tts-assets/pocket-tts-assets.zip
+          unzip -q /tmp/pocket-tts-assets.zip -d .
+
       - name: Build and Publish
         uses: tauri-apps/tauri-action@v0
         env:

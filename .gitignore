@@ -31,6 +31,9 @@ tmp/
 coverage/
 Thumbs.db
 
+public/pocket-tts/
+conductor/qwen-tts/build/
+
 .agent/skills
 .agents/skills
 .codex/skills
