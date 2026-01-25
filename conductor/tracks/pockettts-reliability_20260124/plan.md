@@ -35,7 +35,7 @@
 - [x] Task: Write failing tests for loading UX and highlight behavior (3cbf12b)
     - [ ] Loading state visible during model/voice prep
     - [ ] Highlight timing advances with playback clock
-- [ ] Task: Implement loading UX state machine
+- [x] Task: Implement loading UX state machine (02326d7)
     - [ ] Disable controls during load/prepare
     - [ ] Provide long-load fallback messaging
 - [ ] Task: Implement word-level highlighting
