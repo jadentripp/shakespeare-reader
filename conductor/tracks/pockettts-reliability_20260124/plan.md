@@ -31,7 +31,7 @@
     - [ ] Ensure play button reflects loading/locked state
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Reliability Fixes (Model Load + Playback Stability)' (Protocol in workflow.md) (3a3e7f6)
 
-## Phase 3: UX Loading State + Word Highlighting
+## Phase 3: UX Loading State + Word Highlighting [checkpoint: 93d441a]
 - [x] Task: Write failing tests for loading UX and highlight behavior (3cbf12b)
     - [ ] Loading state visible during model/voice prep
     - [ ] Highlight timing advances with playback clock
