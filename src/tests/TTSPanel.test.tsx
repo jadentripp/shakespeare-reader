@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import * as matchers from '@testing-library/jest-dom/matchers'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 
 expect.extend(matchers)
@@ -54,6 +54,7 @@ describe('TTSPanel', () => {
     mockPause.mockClear()
     mockChangeVoice.mockClear()
   })
+
 
   it('renders the player bar when playing', async () => {
     render(<TTSPanel tts={createMockTts()} />)
@@ -131,5 +132,20 @@ describe('TTSPanel', () => {
     expect(screen.getByText(/loading/i)).toBeInTheDocument()
     const playButton = screen.getByLabelText('Play')
     expect(playButton).toBeDisabled()
+  })
+
+  it('shows a slow-load hint after prolonged buffering', async () => {
+    const tts = createMockTts({
+      state: 'buffering',
+      progress: { currentTime: 0, duration: 0, isBuffering: true },
+    })
+
+    render(<TTSPanel tts={tts} />)
+    expect(screen.queryByText(/still loading/i)).not.toBeInTheDocument()
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 2100))
+    })
+    expect(screen.getByText(/still loading/i)).toBeInTheDocument()
   })
 })

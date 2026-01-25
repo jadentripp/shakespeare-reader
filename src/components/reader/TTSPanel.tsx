@@ -44,6 +44,7 @@ const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] as const
 type PlaybackSpeed = (typeof SPEED_OPTIONS)[number]
 
 const getSpeedLabel = (speed: PlaybackSpeed): string => `${speed}x`
+const LONG_LOAD_MS = 2000
 
 const VolumeIcon = ({ volume }: { volume: number }) => {
   if (volume === 0) return <VolumeX className="h-4 w-4" />
@@ -88,6 +89,7 @@ export function TTSPanel({
   const [playbackRate, setPlaybackRateLocal] = useState<PlaybackSpeed>(1)
   const [volume, setVolumeLocal] = useState(1)
   const [voices, setVoices] = useState<Voice[]>([])
+  const [showSlowLoad, setShowSlowLoad] = useState(false)
 
   useEffect(() => {
     pocketTTSService
@@ -108,11 +110,21 @@ export function TTSPanel({
       .catch(console.error)
   }, [voiceId, changeVoice])
 
+
   const isPlaying = state === 'playing'
   const isPaused = state === 'paused'
   const isBuffering = state === 'buffering'
   const currentVoice = voices.find((v) => v.voice_id === voiceId)
   const currentVoiceName = currentVoice?.name || 'Select a Voice'
+
+  useEffect(() => {
+    if (!isBuffering) {
+      setShowSlowLoad(false)
+      return
+    }
+    const timer = setTimeout(() => setShowSlowLoad(true), LONG_LOAD_MS)
+    return () => clearTimeout(timer)
+  }, [isBuffering])
 
   const handleTogglePlayPause = () => {
     if (isBuffering) return
@@ -217,8 +229,15 @@ export function TTSPanel({
           {/* Left: Info & Voice (Conditional) */}
           <div className="flex items-center gap-3 flex-1 min-w-0 justify-start">
             {isBuffering && (
-              <div className="px-2 py-1 border-2 border-black dark:border-white text-[10px] font-black uppercase tracking-[0.2em]">
-                Loading...
+              <div className="flex flex-col gap-1">
+                <div className="px-2 py-1 border-2 border-black dark:border-white text-[10px] font-black uppercase tracking-[0.2em]">
+                  Loading...
+                </div>
+                {showSlowLoad && (
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/80">
+                    Still loading...
+                  </div>
+                )}
               </div>
             )}
             {showSettings && (
