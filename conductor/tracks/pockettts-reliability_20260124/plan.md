@@ -38,7 +38,7 @@
 - [x] Task: Implement loading UX state machine (02326d7)
     - [ ] Disable controls during load/prepare
     - [ ] Provide long-load fallback messaging
-- [ ] Task: Implement word-level highlighting
+- [x] Task: Implement word-level highlighting (8f568dd)
     - [ ] Connect word timing data to reader rendering
     - [ ] Ensure highlights reset on stop/seek
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: UX Loading State + Word Highlighting' (Protocol in workflow.md)
