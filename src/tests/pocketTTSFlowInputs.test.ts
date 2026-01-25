@@ -22,4 +22,11 @@ describe("PocketTTS flow input shape coercion", () => {
 
     expect(coerceDims(inputDims, expected)).toBeNull()
   })
+
+  it("treats non-numeric dimensions as dynamic", () => {
+    const inputDims = [1, 10, 32]
+    const expected = [1, "seq", 32] as unknown as number[]
+
+    expect(coerceDims(inputDims, expected)).toEqual([1, 10, 32])
+  })
 })
