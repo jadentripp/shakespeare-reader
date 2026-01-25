@@ -33,6 +33,7 @@ Thumbs.db
 
 public/pocket-tts/
 conductor/qwen-tts/build/
+src-tauri/binaries/
 
 .agent/skills
 .agents/skills
