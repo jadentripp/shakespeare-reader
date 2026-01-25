@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { act, renderHook } from '@testing-library/react'
-import { audioPlayer } from '@/lib/elevenlabs'
+import { audioPlayer } from '@/lib/tts'
 import * as readerUtils from '@/lib/readerUtils'
 import * as tauri from '@/lib/tauri'
 import { useTTS } from '../lib/reader/hooks/useTTS'
 
 describe('useTTS auto-advance', () => {
-  const mockGetDoc = mock(() => null as unknown as Document)
-  const mockGetPageMetrics = mock(() => ({} as any))
-  const mockOnPageTurnNeeded = mock(() => { })
+  const mockGetDoc = mock(() => document)
+  const mockGetPageMetrics = mock(() => ({}) as any)
+  const mockOnPageTurnNeeded = mock(() => {})
   let subscribeCallback: ((state: any) => void) | null = null
   let mockStateValue = 'idle'
   const spies: any[] = []
@@ -18,17 +18,15 @@ describe('useTTS auto-advance', () => {
     subscribeCallback = null
     mockStateValue = 'idle'
 
-    // Mock audioPlayer - include playWithTimestamps which is now used
     spies.push(spyOn(audioPlayer, 'play').mockResolvedValue(undefined as any))
-    spies.push(spyOn(audioPlayer, 'playWithTimestamps').mockResolvedValue(undefined as any))
-    spies.push(spyOn(audioPlayer, 'pause').mockImplementation(() => { }))
-    spies.push(spyOn(audioPlayer, 'resume').mockImplementation(() => { }))
-    spies.push(spyOn(audioPlayer, 'stop').mockImplementation(() => { }))
+    spies.push(spyOn(audioPlayer, 'pause').mockImplementation(() => {}))
+    spies.push(spyOn(audioPlayer, 'resume').mockImplementation(() => {}))
+    spies.push(spyOn(audioPlayer, 'stop').mockImplementation(() => {}))
     spies.push(spyOn(audioPlayer, 'getState').mockImplementation(() => mockStateValue as any))
     spies.push(
       spyOn(audioPlayer, 'subscribe').mockImplementation((cb: any) => {
         subscribeCallback = cb
-        return () => { }
+        return () => {}
       }),
     )
     spies.push(spyOn(audioPlayer, 'getLastEndReason').mockReturnValue('ended' as any))

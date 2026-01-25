@@ -73,10 +73,11 @@ export function LibraryCollections({
                             setCatalogKey(cat.key)
                             setShowAllCategories(false)
                           }}
-                          className={`px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-widest border-2 transition-[background-color,border-color,color] ${isActive
+                          className={`px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-widest border-2 transition-[background-color,border-color,color] ${
+                            isActive
                               ? 'bg-black border-black text-white dark:bg-white dark:border-white dark:text-black'
                               : 'bg-transparent border-stone-200 text-stone-500 hover:border-black hover:text-black dark:border-stone-800 dark:hover:border-white dark:hover:text-white'
-                            }`}
+                          }`}
                         >
                           {cat.label}
                         </button>

@@ -3,6 +3,7 @@ import AppLayout from './App'
 import BookPage from './routes/BookPage'
 import LibraryPage from './routes/LibraryPage'
 import SettingsPage from './routes/SettingsPage'
+import TtsDemoPage from './routes/TtsDemoPage'
 import ThreeDLibraryPage from './routes/ThreeDLibraryPage'
 
 const rootRoute = new RootRoute({
@@ -39,7 +40,19 @@ const settingsRoute = new Route({
   component: SettingsPage,
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, threeDLibraryRoute, bookRoute, settingsRoute])
+const ttsDemoRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: '/tts-demo',
+  component: TtsDemoPage,
+})
+
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  threeDLibraryRoute,
+  bookRoute,
+  settingsRoute,
+  ttsDemoRoute,
+])
 
 export const router = new Router({
   routeTree,

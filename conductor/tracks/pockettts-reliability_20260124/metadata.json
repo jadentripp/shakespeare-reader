@@ -1,0 +1,8 @@
+{
+  "track_id": "pockettts-reliability_20260124",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-01-24T21:29:11Z",
+  "updated_at": "2026-01-24T21:29:11Z",
+  "description": "Fix PocketTTS reliability issues (model load failures, garbled output) and improve TTS loading UX + word highlighting in Tauri/web dev without a Python sidecar."
+}

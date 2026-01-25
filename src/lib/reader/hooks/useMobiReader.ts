@@ -360,7 +360,7 @@ export function useMobiReader(bookId: number) {
     if (!iframeReady) return
     console.log('[useMobiReader] Triggering renderHighlights effect', {
       selectedHighlightId: highlightsHook.selectedHighlightId,
-      stagedSnippetsLen: highlightsHook.stagedSnippets.length
+      stagedSnippetsLen: highlightsHook.stagedSnippets.length,
     })
     highlightsHook.renderHighlights(
       highlightsHook.selectedHighlightId,

@@ -38,14 +38,14 @@ export async function getSetting(key: string): Promise<string | null> {
 
 export type SidecarStatus = 'stopped' | 'starting' | 'running' | 'errored'
 
-export async function startQwenSidecar(): Promise<SidecarStatus> {
-  return await invoke<SidecarStatus>('start_qwen_sidecar')
+export async function startPocketSidecar(): Promise<SidecarStatus> {
+  return await invoke<SidecarStatus>('start_pocket_sidecar')
 }
 
-export async function stopQwenSidecar(): Promise<SidecarStatus> {
-  return await invoke<SidecarStatus>('stop_qwen_sidecar')
+export async function stopPocketSidecar(): Promise<SidecarStatus> {
+  return await invoke<SidecarStatus>('stop_pocket_sidecar')
 }
 
-export async function getQwenStatus(): Promise<SidecarStatus> {
-  return await invoke<SidecarStatus>('get_qwen_status')
+export async function getPocketStatus(): Promise<SidecarStatus> {
+  return await invoke<SidecarStatus>('get_pocket_status')
 }

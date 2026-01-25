@@ -1,7 +1,32 @@
 // Bun Fullstack Dev Server with HMR
 // Uses HTML imports for automatic bundling, transpilation, and hot reloading
 
+import { join } from 'node:path'
 import homepage from './index.html'
+
+const publicRoot = join(process.cwd(), 'public')
+
+const sharedHeaders = {
+  'Cross-Origin-Resource-Policy': 'same-origin',
+}
+
+const servePocketTts = async (req: Request) => {
+  const url = new URL(req.url)
+  const filePath = join(publicRoot, decodeURIComponent(url.pathname))
+  if (!filePath.startsWith(publicRoot)) {
+    return new Response('Not found', { status: 404 })
+  }
+  const file = Bun.file(filePath)
+  if (!(await file.exists())) {
+    return new Response('Not found', { status: 404 })
+  }
+  const headers = new Headers(sharedHeaders)
+  if (file.type) headers.set('Content-Type', file.type)
+  console.log(
+    `[DEV-SERVER] /pocket-tts asset: ${url.pathname} (${file.type || 'unknown'}, ${file.size} bytes)`,
+  )
+  return new Response(file, { headers })
+}
 
 const server = Bun.serve({
   port: 1420,
@@ -12,29 +37,17 @@ const server = Bun.serve({
 
   routes: {
     '/': homepage,
-    // Client-side routes - all serve the same SPA
     '/library': homepage,
     '/library/*': homepage,
     '/book/*': homepage,
     '/settings': homepage,
-    // Wildcard fallback for SPA
-    '/*': homepage,
-  },
-
-  async fetch(req) {
-    const url = new URL(req.url)
-    // console.log(`[DEV-SERVER] Request: ${url.pathname}`);
-
-    // API routes can go here
-    if (url.pathname.startsWith('/api/')) {
-      return new Response(JSON.stringify({ error: 'Not found' }), {
+    '/tts-demo': homepage,
+    '/pocket-tts/*': servePocketTts,
+    '/api/*': () =>
+      new Response(JSON.stringify({ error: 'Not found' }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Fallback if routes/static doesn't catch it (though /* should)
-    return new Response('Not Found', { status: 404 })
+        headers: { 'Content-Type': 'application/json', ...sharedHeaders },
+      }),
   },
 })
 

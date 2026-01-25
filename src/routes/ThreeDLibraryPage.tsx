@@ -518,9 +518,7 @@ const ThreeDLibraryPage: React.FC = () => {
         focusedBook.gutenberg_id ?? focusedBook.gutenbergId ?? Math.abs(focusedBook.id)
       const realBook = filteredBooks.find(
         (b: any) =>
-          (b.gutenberg_id ?? b.gutenbergId) === gutenbergId &&
-          typeof b.id === 'number' &&
-          b.id > 0,
+          (b.gutenberg_id ?? b.gutenbergId) === gutenbergId && typeof b.id === 'number' && b.id > 0,
       )
       if (realBook) {
         bookIdToNavigate = realBook.id

@@ -105,8 +105,9 @@ export function BauhausHeader({
                       isActive && fc.key !== 'collection-all' ? 'collection-all' : fc.key,
                     )
                   }
-                  className={`font-mono text-[10px] font-bold uppercase tracking-[0.2em] transition-[color,text-decoration-color] hover:text-amber-500 ${isActive ? 'text-amber-500 underline underline-offset-8' : 'text-stone-400'
-                    }`}
+                  className={`font-mono text-[10px] font-bold uppercase tracking-[0.2em] transition-[color,text-decoration-color] hover:text-amber-500 ${
+                    isActive ? 'text-amber-500 underline underline-offset-8' : 'text-stone-400'
+                  }`}
                 >
                   {fc.label}
                 </button>

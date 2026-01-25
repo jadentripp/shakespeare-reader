@@ -41,7 +41,7 @@
 - [x] Task: Implement word-level highlighting (8f568dd)
     - [ ] Connect word timing data to reader rendering
     - [ ] Ensure highlights reset on stop/seek
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: UX Loading State + Word Highlighting' (Protocol in workflow.md)
+- [~] Task: Conductor - User Manual Verification 'Phase 3: UX Loading State + Word Highlighting' (Protocol in workflow.md)
 
 ## Phase 4: Cleanup & Coverage
 - [ ] Task: Remove temporary instrumentation and finalize logging

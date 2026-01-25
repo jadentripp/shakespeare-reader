@@ -2,7 +2,6 @@ import { describe, expect, it, mock } from 'bun:test'
 import { render, screen } from '@testing-library/react'
 import type React from 'react'
 
-
 import { BookCard } from '../components/library/BookCard'
 
 describe('BookCard', () => {

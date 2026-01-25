@@ -13,7 +13,9 @@
     "check": "bun run typecheck && bun run lint",
     "tauri": "tauri",
     "db:reset": "rm -f ./tmp/ai-reader.sqlite ./src-tauri/tmp/ai-reader.sqlite && rm -rf ./tmp/books ./src-tauri/tmp/books",
-    "test": "bun test"
+    "test": "bun test",
+    "tts:verify": "bun run scripts/verify-pocket-tts.ts",
+    "tts:demo": "bun run dev"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.31.0",

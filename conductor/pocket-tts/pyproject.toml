@@ -1,0 +1,18 @@
+[project]
+name = "pocket-tts-server"
+version = "0.1.0"
+description = "Local Pocket TTS server for AI Reader"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0.0",
+    "flask-cors>=4.0.0",
+    "pocket-tts>=1.0.0",
+    "soundfile>=0.12.0",
+    "torch==2.1.2; platform_system == 'Darwin' and platform_machine == 'x86_64'",
+]
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.18.0",
+    "pytest>=9.0.2",
+]

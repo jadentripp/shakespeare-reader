@@ -145,7 +145,7 @@ export default function ChatSidebar({
                         className={cn(
                           'group flex items-center gap-1 rounded-none px-2 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors',
                           currentThreadId === null &&
-                          'bg-black text-white dark:bg-white dark:text-black',
+                            'bg-black text-white dark:bg-white dark:text-black',
                         )}
                       >
                         <button onClick={() => onSelectThread(null)} className="flex-1 text-left">
@@ -171,7 +171,7 @@ export default function ChatSidebar({
                           className={cn(
                             'group flex flex-col gap-0.5 rounded-none px-2 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors',
                             currentThreadId === thread.id &&
-                            'bg-black text-white dark:bg-white dark:text-black',
+                              'bg-black text-white dark:bg-white dark:text-black',
                           )}
                         >
                           <div className="flex items-center gap-1">

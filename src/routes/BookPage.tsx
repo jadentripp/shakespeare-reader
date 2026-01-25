@@ -15,8 +15,7 @@ export default function BookPage() {
     return <div className="px-4 py-6 text-sm text-destructive">Failed to load book.</div>
 
   const book = bookQ.data
-  if (book)
-    return <MobiBookPage bookId={id} />
+  if (book) return <MobiBookPage bookId={id} />
 
   return (
     <div className="px-4 py-6">

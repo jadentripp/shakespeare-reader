@@ -272,7 +272,7 @@ impl Url {
 #[serde(rename_all = "snake_case")]
 pub enum SettingKey {
     OpenaiApiKey,
-    ElevenlabsApiKey,
+    PocketVoiceId,
     DefaultModel,
     DefaultVoice,
     // Add new settings here as enum variants
@@ -282,7 +282,7 @@ impl SettingKey {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::OpenaiApiKey => "openai_api_key",
-            Self::ElevenlabsApiKey => "elevenlabs_api_key",
+            Self::PocketVoiceId => "pocket_voice_id",
             Self::DefaultModel => "default_model",
             Self::DefaultVoice => "default_voice",
         }
@@ -291,7 +291,7 @@ impl SettingKey {
     pub const fn all() -> &'static [Self] {
         &[
             Self::OpenaiApiKey,
-            Self::ElevenlabsApiKey,
+            Self::PocketVoiceId,
             Self::DefaultModel,
             Self::DefaultVoice,
         ]
@@ -310,7 +310,7 @@ impl std::str::FromStr for SettingKey {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "openai_api_key" => Ok(Self::OpenaiApiKey),
-            "elevenlabs_api_key" => Ok(Self::ElevenlabsApiKey),
+            "pocket_voice_id" => Ok(Self::PocketVoiceId),
             "default_model" => Ok(Self::DefaultModel),
             "default_voice" => Ok(Self::DefaultVoice),
             _ => Err(TypeValidationError::InvalidSettingKey(s.to_string())),

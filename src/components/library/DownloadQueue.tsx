@@ -37,14 +37,15 @@ export function DownloadQueue({ queue, setQueue }: DownloadQueueProps) {
                   <div className="mt-1 flex items-center gap-3 font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                     <span className="tabular-nums">#{t.gutenbergId}</span>
                     <span
-                      className={`px-2 py-0.5 border rounded-none ${t.status === 'failed'
+                      className={`px-2 py-0.5 border rounded-none ${
+                        t.status === 'failed'
                           ? 'border-red-600 text-red-600 bg-red-50 dark:bg-red-950/20'
                           : t.status === 'done'
                             ? 'border-stone-400 text-stone-500'
                             : t.status === 'downloading'
                               ? 'border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/20'
                               : 'border-stone-200 text-stone-400'
-                        }`}
+                      }`}
                     >
                       {t.status}
                     </span>

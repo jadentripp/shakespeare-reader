@@ -7,3 +7,6 @@
 /gen/
 .env
 .env.*
+
+# Bundled sidecar binaries
+/binaries/

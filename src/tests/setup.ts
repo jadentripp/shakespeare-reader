@@ -18,17 +18,17 @@ if (typeof global.window === 'undefined') {
 // ResizeObserver mock
 if (!global.ResizeObserver) {
   global.ResizeObserver = class {
-    observe() { }
-    unobserve() { }
-    disconnect() { }
+    observe() {}
+    unobserve() {}
+    disconnect() {}
   }
 }
 
 // MutationObserver mock
 if (!global.MutationObserver) {
   global.MutationObserver = class {
-    observe() { }
-    disconnect() { }
+    observe() {}
+    disconnect() {}
     takeRecords() {
       return []
     }
@@ -36,12 +36,12 @@ if (!global.MutationObserver) {
 }
 
 if (!Element.prototype.scrollIntoView) {
-  Element.prototype.scrollIntoView = () => { }
+  Element.prototype.scrollIntoView = () => {}
 }
 
 // Global Library Mocks to prevent module leakage and crashes
 mock.module('@react-three/fiber', () => ({
-  useFrame: mock(() => { }),
+  useFrame: mock(() => {}),
   useThree: mock(() => ({
     camera: {},
     scene: { add: mock(), remove: mock() },
@@ -51,7 +51,7 @@ mock.module('@react-three/fiber', () => ({
     size: { width: 1000, height: 1000 },
   })),
   Canvas: ({ children }: any) => React.createElement('div', { 'data-testid': 'canvas' }, children),
-  extend: mock(() => { }),
+  extend: mock(() => {}),
 }))
 
 mock.module('@react-three/drei', () => ({
@@ -68,7 +68,7 @@ mock.module('@react-three/drei', () => ({
 }))
 
 mock.module('@tanstack/react-router', () => ({
-  useNavigate: mock(() => mock(() => { })),
+  useNavigate: mock(() => mock(() => {})),
   Link: ({ children, to, params }: any) => {
     let href = to
     if (params) {
@@ -96,3 +96,17 @@ beforeEach(() => {
 afterEach(() => {
   mock.restore()
 })
+
+const originalConsoleError = console.error
+console.error = (...args: any[]) => {
+  const [first] = args
+  if (typeof first === 'string') {
+    if (
+      first.includes('is using incorrect casing') ||
+      first.includes('Received `true` for a non-boolean attribute `transparent`')
+    ) {
+      return
+    }
+  }
+  originalConsoleError(...args)
+}

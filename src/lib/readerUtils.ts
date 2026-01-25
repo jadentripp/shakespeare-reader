@@ -96,9 +96,9 @@ export function getCanonicalTextPosition(
     isTextOrHighlight(node.parentNode)
   ) {
     targetNode = node.parentNode
-    // If the span contains a text node (which it should), the offset provided 
-    // is usually relative to that text node. 
-    // If the input `node` was the text node, we don't need to adjust offset 
+    // If the span contains a text node (which it should), the offset provided
+    // is usually relative to that text node.
+    // If the input `node` was the text node, we don't need to adjust offset
     // *relative to the text node*, but we need to account for previous siblings within the span?
     // Usually applyHighlightToRange creates <span>text</span>. So offset is correct.
   }
@@ -161,7 +161,7 @@ export function getCanonicalTextPosition(
 
   return {
     path: [...parentPath, finalPathIndex],
-    offset: finalOffset
+    offset: finalOffset,
   }
 }
 

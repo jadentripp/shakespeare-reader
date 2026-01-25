@@ -122,7 +122,7 @@ export function processGutenbergContent(
         // Index blocks
         const blocks = doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, blockquote, pre, table, li')
         blocks.forEach((block, index) => {
-          ; (block as HTMLElement).setAttribute('data-block-index', index.toString())
+          ;(block as HTMLElement).setAttribute('data-block-index', index.toString())
         })
 
         html = doc.body.innerHTML

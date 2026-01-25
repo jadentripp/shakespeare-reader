@@ -74,7 +74,7 @@ export function useMobiIframe(params: {
         if (bId && relativeIndex) {
           try {
             const dataUrl = await getBookImageData(parseInt(bId), parseInt(relativeIndex))
-              ; (img as HTMLImageElement).src = dataUrl
+            ;(img as HTMLImageElement).src = dataUrl
           } catch (e) {
             console.error('Failed to resolve image:', e)
           }
@@ -316,8 +316,6 @@ export function useMobiIframe(params: {
 
   useEffect(() => {
     return () => {
-
-
       if (selectionTimeoutRef.current !== null) {
         window.clearTimeout(selectionTimeoutRef.current)
         selectionTimeoutRef.current = null

@@ -1,20 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { act, renderHook } from '@testing-library/react'
-import { audioPlayer } from '@/lib/elevenlabs'
+import { audioPlayer } from '@/lib/tts'
 import * as readerUtils from '@/lib/readerUtils'
 import * as tauri from '@/lib/tauri'
 import { useTTS } from '../lib/reader/hooks/useTTS'
 
 describe('useTTS Persistence', () => {
-  const mockGetDoc = mock(() => null as unknown as Document)
-  const mockGetPageMetrics = mock(() => ({} as any))
+  const mockGetDoc = mock(() => document)
+  const mockGetPageMetrics = mock(() => ({}) as any)
   const spies: any[] = []
 
   // Mock settings values
   const mockSettings: Record<string, string> = {
     tts_playback_speed: '1.5',
     tts_volume: '0.8',
-    elevenlabs_voice_id: 'v1',
+    pocket_voice_id: 'v1',
   }
 
   beforeEach(() => {
@@ -22,10 +22,10 @@ describe('useTTS Persistence', () => {
 
     // Setup spies
     spies.push(spyOn(audioPlayer, 'play').mockResolvedValue(undefined as any))
-    spies.push(spyOn(audioPlayer, 'setVolume').mockImplementation(() => { }))
-    spies.push(spyOn(audioPlayer, 'setPlaybackRate').mockImplementation(() => { }))
+    spies.push(spyOn(audioPlayer, 'setVolume').mockImplementation(() => {}))
+    spies.push(spyOn(audioPlayer, 'setPlaybackRate').mockImplementation(() => {}))
     spies.push(spyOn(audioPlayer, 'getState').mockReturnValue('idle'))
-    spies.push(spyOn(audioPlayer, 'subscribe').mockReturnValue(() => { }))
+    spies.push(spyOn(audioPlayer, 'subscribe').mockReturnValue(() => {}))
     spies.push(
       spyOn(audioPlayer, 'getProgress').mockReturnValue({
         currentTime: 0,
@@ -33,7 +33,7 @@ describe('useTTS Persistence', () => {
         isBuffering: false,
       }),
     )
-    spies.push(spyOn(audioPlayer, 'subscribeProgress').mockReturnValue(() => { }))
+    spies.push(spyOn(audioPlayer, 'subscribeProgress').mockReturnValue(() => {}))
 
     spies.push(
       spyOn(readerUtils, 'getPageContent').mockReturnValue({ text: 'Mocked page text' } as any),

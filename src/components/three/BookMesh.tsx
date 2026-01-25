@@ -79,7 +79,7 @@ const loadImageWithProxy = async (url: string): Promise<string | null> => {
         reader.onerror = () => reject(new Error('FileReader failed'))
         reader.readAsDataURL(blob)
       })
-    } catch { }
+    } catch {}
   }
   return null
 }
@@ -156,7 +156,11 @@ const BookMesh: React.FC<BookMeshProps> = ({
     return null
   })
 
-  const colors = useMemo(() => getBookColors(index) || { spine: '#333', cover: '#444', accent: '#fff', material: 'cloth' }, [index])
+  const colors = useMemo(
+    () =>
+      getBookColors(index) || { spine: '#333', cover: '#444', accent: '#fff', material: 'cloth' },
+    [index],
+  )
   const [materializeOpacity, setMaterializeOpacity] = useState(status === 'downloading' ? 0.3 : 1)
   const glowRef = useRef<THREE.PointLight>(null)
 

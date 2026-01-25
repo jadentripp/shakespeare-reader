@@ -7,21 +7,21 @@ import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectItemText,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
-import { Switch } from '@/components/ui/switch'
-import { Textarea } from '@/components/ui/textarea'
-import { audioPlayer, elevenLabsService, type TTSProvider, type Voice } from '@/lib/elevenlabs'
+import { type Voice } from '@/lib/tts'
 import { listModels } from '@/lib/openai'
-import { QWEN_SPEAKERS, qwenTTSService } from '@/lib/qwen-tts'
+import { POCKET_VOICES, pocketTTSService, type PocketTTSStatus } from '@/lib/pocket-tts'
 import { cn } from '@/lib/utils'
-import { getSetting, openAiKeyStatus, setSetting, getQwenStatus, startQwenSidecar, stopQwenSidecar, type SidecarStatus } from '../lib/tauri'
+import {
+  getSetting,
+  openAiKeyStatus,
+  setSetting,
+} from '../lib/tauri'
 
 function SettingsSection({
   icon,
@@ -108,13 +108,8 @@ function ProgressBar({ loading }: { loading: boolean }) {
 
 export default function SettingsPage() {
   const [apiKey, setApiKey] = useState('')
-  const [elevenLabsApiKey, setElevenLabsApiKey] = useState('')
   const [voiceId, setVoiceId] = useState('')
   const [voices, setVoices] = useState<Voice[]>([])
-  const [stability, setStability] = useState(0.5)
-  const [similarity, setSimilarity] = useState(0.75)
-  const [style, setStyle] = useState(0.0)
-  const [speakerBoost, setSpeakerBoost] = useState(true)
   const [model, setModel] = useState('gpt-5.2')
   const [status, setStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [models, setModels] = useState<string[]>([])
@@ -124,62 +119,26 @@ export default function SettingsPage() {
     has_saved_key: boolean
   } | null>(null)
   const [showApiKey, setShowApiKey] = useState(false)
-  const [showElevenLabsApiKey, setShowElevenLabsApiKey] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [previewingId, setPreviewingId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance')
 
-  // TTS Provider settings
-  const [ttsProvider, setTtsProvider] = useState<TTSProvider>('elevenlabs')
-  const [qwenServerStatus, setQwenServerStatus] = useState<SidecarStatus | 'checking'>('checking')
-  const [qwenSpeaker, setQwenSpeaker] = useState('Aiden')
-  const [qwenVoiceActingMode, setQwenVoiceActingMode] = useState(false)
-  const [qwenInstructTemplate, setQwenInstructTemplate] = useState('')
-  const [qwenPreviewing, setQwenPreviewing] = useState(false)
-  const [qwenLoadingPreview, setQwenLoadingPreview] = useState(false)
+  const [pocketStatus, setPocketStatus] = useState<PocketTTSStatus>('idle')
+  const [pocketStatusMessage, setPocketStatusMessage] = useState<string | null>(null)
+  const [pocketPreviewing, setPocketPreviewing] = useState(false)
+  const [pocketLoadingPreview, setPocketLoadingPreview] = useState(false)
+  const [lsdSteps, setLsdSteps] = useState(2)
   const [loadingModels, setLoadingModels] = useState(false)
 
-  async function ensureSidecarRunning() {
+  async function ensurePocketReady() {
     try {
-      let status = await getQwenStatus()
-      
-      // Even if Rust says running, check if Flask is actually responding
-      const isActuallyOnline = await qwenTTSService.healthCheck()
-      if (status === 'running' && isActuallyOnline) {
-        setQwenServerStatus('running')
-        return true
-      }
-
-      if (status === 'stopped' || status === 'errored' || !isActuallyOnline) {
-        if (status !== 'running') {
-          status = await startQwenSidecar()
-        }
-        setQwenServerStatus('starting')
-      }
-
-      // Poll until running AND health check passes, or timeout (60 seconds)
-      const start = Date.now()
-      while (Date.now() - start < 60000) {
-        const isOnline = await qwenTTSService.healthCheck()
-        if (isOnline) {
-          setQwenServerStatus('running')
-          return true
-        }
-        await new Promise((r) => setTimeout(r, 2000))
-        
-        // Update status from backend in case it crashed
-        const currentStatus = await getQwenStatus()
-        if (currentStatus === 'errored') {
-          setQwenServerStatus('errored')
-          return false
-        }
-      }
-
-      return false
+      const isOnline =
+        typeof pocketTTSService.healthCheck === 'function'
+          ? await pocketTTSService.healthCheck()
+          : true
+      return isOnline
     } catch (e) {
-      console.error('Failed to ensure sidecar is running:', e)
-      setQwenServerStatus('errored')
+      console.error('Failed to ensure Pocket TTS is ready:', e)
       return false
     }
   }
@@ -188,34 +147,15 @@ export default function SettingsPage() {
     console.log('[Settings] voiceId changed:', voiceId)
   }, [voiceId])
 
-  // Load TTS provider settings and check Qwen server status
   useEffect(() => {
-    ;(async () => {
-      const savedProvider = await getSetting('tts_provider')
-      if (savedProvider === 'qwen' || savedProvider === 'elevenlabs') {
-        setTtsProvider(savedProvider)
-      }
-      const savedQwenSpeaker = await getSetting('qwen_speaker')
-      if (savedQwenSpeaker) setQwenSpeaker(savedQwenSpeaker)
-      const savedQwenVoiceActingMode = await getSetting('qwen_voice_acting_mode')
-      if (savedQwenVoiceActingMode !== null) setQwenVoiceActingMode(savedQwenVoiceActingMode === 'true')
-      const savedQwenInstructTemplate = await getSetting('qwen_instruct_template')
-      if (savedQwenInstructTemplate) setQwenInstructTemplate(savedQwenInstructTemplate)
-    })()
+    const unsubscribe = pocketTTSService.subscribeStatus((status, message) => {
+      setPocketStatus(status)
+      setPocketStatusMessage(message ?? null)
+    })
+    loadVoices()
+    ensurePocketReady()
+    return () => unsubscribe()
   }, [])
-
-  // Check Qwen server status when provider is qwen or on mount
-  useEffect(() => {
-    if (ttsProvider === 'qwen') {
-      ensureSidecarRunning()
-    }
-  }, [ttsProvider])
-
-  useEffect(() => {
-    if (elevenLabsApiKey.trim()) {
-      loadVoices()
-    }
-  }, [elevenLabsApiKey])
 
   // Set default voice if none is selected and voices are loaded
   useEffect(() => {
@@ -227,7 +167,7 @@ export default function SettingsPage() {
         console.log(
           '[Settings:DefaultVoice] Current voiceId is invalid or missing. Selecting default...',
         )
-        const firstValid = voices.find((v) => v.voice_id && v.category?.toLowerCase() !== 'famous')
+        const firstValid = voices.find((v) => v.voice_id)
         if (firstValid) {
           console.log('[Settings:DefaultVoice] Selected:', firstValid.name)
           setVoiceId(firstValid.voice_id)
@@ -262,29 +202,30 @@ export default function SettingsPage() {
     }
   }, [])
 
-  async function onPreviewQwenVoice() {
-    if (qwenPreviewing || qwenLoadingPreview) {
+  async function onPreviewPocketVoice() {
+    if (pocketPreviewing || pocketLoadingPreview) {
       if (audioRef.current) {
         audioRef.current.pause()
-        setQwenPreviewing(false)
-        setQwenLoadingPreview(false)
+        setPocketPreviewing(false)
+        setPocketLoadingPreview(false)
       }
       return
     }
 
-    setQwenLoadingPreview(true)
+    setPocketLoadingPreview(true)
     try {
-      const isRunning = await ensureSidecarRunning()
+      const isRunning = await ensurePocketReady()
       if (!isRunning) {
-        throw new Error('Could not start Qwen sidecar')
+        throw new Error('Could not start Pocket TTS engine')
       }
 
-      const response = await qwenTTSService.textToSpeech(
-        'This is a preview of the Qwen voice.',
-        qwenSpeaker,
+      const selectedVoice = voiceId || voices[0]?.voice_id || 'alba'
+      const response = await pocketTTSService.textToSpeech(
+        'This is a preview of the Pocket TTS voice.',
+        selectedVoice,
       )
-      setQwenLoadingPreview(false)
-      setQwenPreviewing(true)
+      setPocketLoadingPreview(false)
+      setPocketPreviewing(true)
 
       if (audioRef.current) {
         audioRef.current.pause()
@@ -293,54 +234,24 @@ export default function SettingsPage() {
       const audio = new Audio(`data:audio/wav;base64,${response.audio_base64}`)
       audioRef.current = audio
       audio.play().catch((e) => {
-        console.error('Failed to play Qwen preview:', e)
-        setQwenPreviewing(false)
+        console.error('Failed to play Pocket preview:', e)
+        setPocketPreviewing(false)
       })
-      audio.onended = () => setQwenPreviewing(false)
+      audio.onended = () => setPocketPreviewing(false)
     } catch (e) {
-      console.error('Failed to generate Qwen preview:', e)
-      setQwenLoadingPreview(false)
-      setQwenPreviewing(false)
+      console.error('Failed to generate Pocket preview:', e)
+      setPocketLoadingPreview(false)
+      setPocketPreviewing(false)
     }
-  }
-
-  async function onPreviewVoice(voice: Voice) {
-    if (!voice.preview_url) return
-
-    if (previewingId === voice.voice_id) {
-      if (audioRef.current) {
-        audioRef.current.pause()
-        setPreviewingId(null)
-      }
-      return
-    }
-
-    if (audioRef.current) {
-      audioRef.current.pause()
-    }
-
-    const audio = new Audio(voice.preview_url)
-    audioRef.current = audio
-    setPreviewingId(voice.voice_id)
-
-    audio.play().catch((e) => {
-      console.error('Failed to play preview:', e)
-      setPreviewingId(null)
-    })
-    audio.onended = () => setPreviewingId(null)
   }
 
   useEffect(() => {
     ;(async () => {
       console.log('[Settings] Initializing...')
       const savedKey = await getSetting('openai_api_key')
-      const savedElevenLabsKey = await getSetting('elevenlabs_api_key')
-      const savedVoiceId = await getSetting('elevenlabs_voice_id')
-      const savedStability = await getSetting('elevenlabs_stability')
-      const savedSimilarity = await getSetting('elevenlabs_similarity')
-      const savedStyle = await getSetting('elevenlabs_style')
-      const savedSpeakerBoost = await getSetting('elevenlabs_speaker_boost')
+      const savedVoiceId = await getSetting('pocket_voice_id')
       const savedModel = await getSetting('openai_model')
+      const savedLsd = await getSetting('pocket_lsd')
 
       let savedKeyStatus = { has_env_key: false, has_saved_key: false }
       try {
@@ -354,19 +265,19 @@ export default function SettingsPage() {
         console.log('[Settings] Found saved OpenAI key')
         setApiKey(savedKey)
       }
-      if (savedElevenLabsKey) {
-        setElevenLabsApiKey(savedElevenLabsKey)
-      }
       console.log('[Settings] Loading saved voice ID:', savedVoiceId)
       if (savedVoiceId) {
         setVoiceId(savedVoiceId)
       } else {
         console.log('[Settings] No saved voice ID, will use default when voices load')
       }
-      if (savedStability) setStability(parseFloat(savedStability))
-      if (savedSimilarity) setSimilarity(parseFloat(savedSimilarity))
-      if (savedStyle) setStyle(parseFloat(savedStyle))
-      if (savedSpeakerBoost !== null) setSpeakerBoost(savedSpeakerBoost === 'true')
+      if (savedLsd) {
+        const parsed = Number(savedLsd)
+        if (!Number.isNaN(parsed) && parsed >= 1) {
+          setLsdSteps(parsed)
+          pocketTTSService.setLsd(parsed)
+        }
+      }
       if (savedModel) setModel(savedModel)
 
       setKeyStatus(savedKeyStatus)
@@ -381,31 +292,25 @@ export default function SettingsPage() {
 
   async function loadVoices() {
     try {
-      const list = await elevenLabsService.getVoices()
-      setVoices(list)
+      const list = await pocketTTSService.getVoices()
+      const mapped = list.map((voice) => ({
+        voice_id: voice.id,
+        name: voice.name,
+        description: voice.description,
+        language: voice.language,
+      }))
+      setVoices(mapped)
     } catch (e) {
       console.error('Failed to load voices:', e)
+      setVoices(
+        POCKET_VOICES.map((voice) => ({
+          voice_id: voice.id,
+          name: voice.name,
+          description: voice.description,
+          language: voice.language,
+        })),
+      )
     }
-  }
-
-  async function handleTtsProviderChange(provider: TTSProvider) {
-    setTtsProvider(provider)
-    await audioPlayer.setTTSProvider(provider)
-  }
-
-  async function handleQwenSpeakerChange(speaker: string) {
-    setQwenSpeaker(speaker)
-    await setSetting({ key: 'qwen_speaker', value: speaker })
-  }
-
-  async function handleQwenVoiceActingModeChange(enabled: boolean) {
-    setQwenVoiceActingMode(enabled)
-    await setSetting({ key: 'qwen_voice_acting_mode', value: enabled.toString() })
-  }
-
-  async function handleQwenInstructTemplateChange(template: string) {
-    setQwenInstructTemplate(template)
-    await setSetting({ key: 'qwen_instruct_template', value: template })
   }
 
   async function onSave() {
@@ -413,23 +318,13 @@ export default function SettingsPage() {
     setLoading(true)
     try {
       await setSetting({ key: 'openai_api_key', value: apiKey.trim() })
-      await setSetting({ key: 'elevenlabs_api_key', value: elevenLabsApiKey.trim() })
-      await setSetting({ key: 'elevenlabs_voice_id', value: voiceId })
-      await setSetting({ key: 'elevenlabs_stability', value: stability.toString() })
-      await setSetting({ key: 'elevenlabs_similarity', value: similarity.toString() })
-      await setSetting({ key: 'elevenlabs_style', value: style.toString() })
-      await setSetting({ key: 'elevenlabs_speaker_boost', value: speakerBoost.toString() })
+      await setSetting({ key: 'pocket_voice_id', value: voiceId })
       await setSetting({ key: 'openai_model', value: model })
 
       // Save appearance settings
       await setSetting({ key: 'appearance_font_size', value: fontSize.toString() })
       await setSetting({ key: 'appearance_font_family', value: fontFamily })
       await setSetting({ key: 'appearance_theme', value: theme })
-
-      // Save TTS provider settings
-      await setSetting({ key: 'qwen_speaker', value: qwenSpeaker })
-      await setSetting({ key: 'qwen_voice_acting_mode', value: qwenVoiceActingMode.toString() })
-      await setSetting({ key: 'qwen_instruct_template', value: qwenInstructTemplate })
 
       try {
         const savedKeyStatus = await openAiKeyStatus()
@@ -468,20 +363,6 @@ export default function SettingsPage() {
     }
   }
 
-  async function onClearElevenLabsKey() {
-    setStatus(null)
-    setLoading(true)
-    try {
-      await setSetting({ key: 'elevenlabs_api_key', value: '' })
-      setElevenLabsApiKey('')
-      setStatus({ message: 'ElevenLabs API key cleared', type: 'success' })
-    } catch {
-      setStatus({ message: 'Failed to clear ElevenLabs API key', type: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   async function loadModels() {
     console.log('[Settings] loadModels called')
     setModelsStatus(null)
@@ -500,8 +381,6 @@ export default function SettingsPage() {
     }
   }
   const keyConfigured = keyStatus?.has_env_key || keyStatus?.has_saved_key || apiKey.trim()
-  const elevenLabsKeyConfigured = elevenLabsApiKey.trim()
-  const selectedVoice = voices.find((v) => v.voice_id === voiceId)
 
   // Combine fetched models with current model if not present, to avoid empty selection
   const allModels = useMemo(() => {
@@ -509,19 +388,6 @@ export default function SettingsPage() {
     if (model) set.add(model)
     return Array.from(set)
   }, [models, model])
-
-  const groupedVoices = useMemo(() => {
-    const groups: Record<string, Voice[]> = {}
-    // Filter out "famous" voices as they are usually restricted via API
-    voices
-      .filter((v) => v.voice_id && v.category?.toLowerCase() !== 'famous')
-      .forEach((v) => {
-        const cat = v.category || 'Other'
-        if (!groups[cat]) groups[cat] = []
-        groups[cat].push(v)
-      })
-    return groups
-  }, [voices])
 
   return (
     <div className="flex h-full bg-background overflow-hidden">
@@ -542,7 +408,7 @@ export default function SettingsPage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {activeTab === 'appearance' && 'Customize your reading environment'}
                 {activeTab === 'ai' && 'Configure OpenAI for intelligent analysis'}
-                {activeTab === 'audio' && 'Configure ElevenLabs for narration'}
+                {activeTab === 'audio' && 'Configure Pocket TTS for narration'}
               </p>
             </div>
 
@@ -739,7 +605,11 @@ export default function SettingsPage() {
                             ))}
                           </SelectContent>{' '}
                         </Select>
-                        <Button variant="outline" onClick={loadModels} disabled={!keyConfigured || loadingModels}>
+                        <Button
+                          variant="outline"
+                          onClick={loadModels}
+                          disabled={!keyConfigured || loadingModels}
+                        >
                           {loadingModels ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Refresh'}
                         </Button>
                       </div>
@@ -757,294 +627,121 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <SettingsSection
                   icon={<Headphones className="h-5 w-5" />}
-                  title="TTS Provider"
-                  description="Choose your text-to-speech engine"
+                  title="Pocket TTS"
+                  description="Web-based narration engine (runs fully in the app)"
                 >
-                  <SettingsRow
-                    label="TTS Provider"
-                    description="Select which TTS service to use for reading"
-                    vertical
-                  >
-                    <Select value={ttsProvider} onValueChange={handleTtsProviderChange}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a provider" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="elevenlabs">
-                          <SelectItemText>ElevenLabs</SelectItemText>
-                        </SelectItem>
-                        <SelectItem value="qwen">
-                          <SelectItemText>Qwen (Local)</SelectItemText>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </SettingsRow>
-                </SettingsSection>
-
-                {ttsProvider === 'qwen' && (
-                  <SettingsSection
-                    icon={<Volume2 className="h-5 w-5" />}
-                    title="Qwen TTS Settings"
-                    description="Configure local Qwen TTS server"
-                  >
-                    <div className="space-y-6">
-                      <div className="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
-                        <span className="text-sm text-muted-foreground">Server Status</span>
-                        {qwenServerStatus === 'checking' ? (
-                          <StatusBadge status="Checking..." type="info" />
-                        ) : qwenServerStatus === 'running' ? (
-                          <StatusBadge status="Online" type="success" />
-                        ) : qwenServerStatus === 'starting' ? (
-                          <StatusBadge status="Starting..." type="info" />
-                        ) : qwenServerStatus === 'errored' ? (
-                          <div className="flex items-center gap-2">
-                            <StatusBadge status="Error" type="error" />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-[10px] uppercase tracking-wider"
-                              onClick={() => ensureSidecarRunning()}
-                            >
-                              Try Again
-                            </Button>
-                          </div>
-                        ) : (
-                          <StatusBadge status="Offline" type="info" />
-                        )}
-                      </div>
-
-                      <SettingsRow
-                        label="Speaker"
-                        description="Select the Qwen voice speaker"
-                        vertical
-                      >
-                        <div className="flex gap-2">
-                          <Select value={qwenSpeaker} onValueChange={handleQwenSpeakerChange}>
-                            <SelectTrigger className="flex-1">
-                              <SelectValue placeholder="Select a speaker" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {QWEN_SPEAKERS.map((speaker) => (
-                                <SelectItem key={speaker.id} value={speaker.id}>
-                                  <div className="flex flex-col gap-0.5">
-                                    <SelectItemText>
-                                      <span className="font-medium text-sm">{speaker.name}</span>
-                                    </SelectItemText>
-                                    <span className="text-[10px] text-muted-foreground line-clamp-1">
-                                      {speaker.language} • {speaker.description}
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
+                      <span className="text-sm text-muted-foreground">Engine Status</span>
+                      {pocketStatus === 'loading' ? (
+                        <StatusBadge status={pocketStatusMessage || 'Loading models...'} type="info" />
+                      ) : pocketStatus === 'ready' ? (
+                        <StatusBadge status="Ready" type="success" />
+                      ) : pocketStatus === 'running' ? (
+                        <StatusBadge status="Generating..." type="info" />
+                      ) : pocketStatus === 'error' ? (
+                        <div className="flex items-center gap-2">
+                          <StatusBadge status="Error" type="error" />
                           <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={onPreviewQwenVoice}
-                            disabled={qwenServerStatus !== 'running'}
-                            className={cn((qwenPreviewing || qwenLoadingPreview) && 'text-primary')}
-                            title="Preview voice"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-[10px] uppercase tracking-wider"
+                            onClick={() => pocketTTSService.reload()}
                           >
-                            {qwenLoadingPreview ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : qwenPreviewing ? (
-                              <Volume2 className="h-4 w-4 animate-pulse" />
-                            ) : (
-                              <Play className="h-4 w-4" />
-                            )}
+                            Try Again
                           </Button>
                         </div>
-                        <ProgressBar loading={qwenLoadingPreview} />
-                      </SettingsRow>
-
-                      <SettingsRow
-                        label="Voice Acting Mode"
-                        description="Enable AI-powered dynamic voice style"
-                      >
-                        <Switch
-                          checked={qwenVoiceActingMode}
-                          onCheckedChange={handleQwenVoiceActingModeChange}
-                        />
-                      </SettingsRow>
-
-                      <SettingsRow
-                        label="Base Voice Style"
-                        description="Instruct template for voice style (e.g., 'Read in a clear, engaging audiobook style')"
-                        vertical
-                      >
-                        <Textarea
-                          value={qwenInstructTemplate}
-                          onChange={(e) => handleQwenInstructTemplateChange(e.currentTarget.value)}
-                          placeholder="Read in a clear, engaging audiobook style"
-                          className="min-h-20 resize-none"
-                        />
-                      </SettingsRow>
+                      ) : (
+                        <StatusBadge status="Offline" type="info" />
+                      )}
                     </div>
-                  </SettingsSection>
-                )}
+                    {pocketStatusMessage && (
+                      <p className="text-xs text-muted-foreground">{pocketStatusMessage}</p>
+                    )}
 
-                {ttsProvider === 'elevenlabs' && (
-                  <>
-                    <SettingsSection
-                      icon={<Headphones className="h-5 w-5" />}
-                      title="Service Connection"
-                      description="Connect to ElevenLabs for high-quality TTS"
+                    <SettingsRow
+                      label="Voice"
+                      description="Select the narrator voice for reading"
+                      vertical
                     >
-                      <div className="space-y-6">
-                        <div className="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
-                          <span className="text-sm text-muted-foreground">Connection Status</span>
-                          {elevenLabsKeyConfigured ? (
-                            <StatusBadge status="Connected" type="success" />
-                          ) : (
-                            <StatusBadge status="Not configured" type="info" />
+                      <div className="flex gap-2">
+                        <Select
+                          value={voiceId}
+                          onValueChange={setVoiceId}
+                          disabled={voices.length === 0}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Select a voice" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {voices.map((voice) => (
+                              <SelectItem key={voice.voice_id} value={voice.voice_id}>
+                                <div className="flex flex-col gap-0.5">
+                                  <SelectItemText>
+                                    <span className="font-medium text-sm">{voice.name}</span>
+                                  </SelectItemText>
+                                  {voice.description && (
+                                    <span className="text-[10px] text-muted-foreground line-clamp-1">
+                                      {voice.language ? `${voice.language} • ` : ''}
+                                      {voice.description}
+                                    </span>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={onPreviewPocketVoice}
+                          disabled={pocketStatus !== 'ready'}
+                          className={cn(
+                            (pocketPreviewing || pocketLoadingPreview) && 'text-primary',
                           )}
-                        </div>
-
-                        <SettingsRow
-                          label="API Key"
-                          description="Enter your ElevenLabs API key"
-                          vertical
+                          title="Preview voice"
                         >
-                          <div className="flex gap-2">
-                            <div className="relative flex-1">
-                              <Input
-                                type={showElevenLabsApiKey ? 'text' : 'password'}
-                                value={elevenLabsApiKey}
-                                onChange={(e) => setElevenLabsApiKey(e.currentTarget.value)}
-                                placeholder="Enter your API key"
-                                className="font-mono text-sm"
-                              />
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowElevenLabsApiKey(!showElevenLabsApiKey)}
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
-                              >
-                                {showElevenLabsApiKey ? 'Hide' : 'Show'}
-                              </Button>
-                            </div>
-                            {elevenLabsKeyConfigured && (
-                              <Button variant="outline" onClick={onClearElevenLabsKey}>
-                                Clear
-                              </Button>
-                            )}
-                          </div>
-                        </SettingsRow>
+                          {pocketLoadingPreview ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : pocketPreviewing ? (
+                            <Volume2 className="h-4 w-4 animate-pulse" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button variant="outline" onClick={loadVoices}>
+                          Refresh
+                        </Button>
                       </div>
-                    </SettingsSection>
+                      <ProgressBar loading={pocketLoadingPreview} />
+                    </SettingsRow>
 
-                    <SettingsSection
-                      icon={<Volume2 className="h-5 w-5" />}
-                      title="Voice & Style"
-                      description="Configure the narrator's voice"
+                    <SettingsRow
+                      label="Speed vs Quality (LSD steps)"
+                      description={`Lower is faster. Current: ${lsdSteps}`}
+                      vertical
                     >
-                      <div className="space-y-6">
-                        <SettingsRow
-                          label="Narrator Voice"
-                          description="Select the voice for reading"
-                          vertical
-                        >
-                          <div className="flex gap-2">
-                            <Select
-                              value={voiceId}
-                              onValueChange={setVoiceId}
-                              disabled={!elevenLabsKeyConfigured || voices.length === 0}
-                            >
-                              <SelectTrigger className="flex-1">
-                                <SelectValue placeholder="Select a voice" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {Object.entries(groupedVoices).map(([category, categoryVoices]) => (
-                                  <SelectGroup key={category}>
-                                    <SelectLabel className="capitalize text-[10px] tracking-widest opacity-70">
-                                      {category}
-                                    </SelectLabel>
-                                    {categoryVoices.map((v) => {
-                                      const [name, ...descParts] = v.name.split(' - ')
-                                      const description = descParts.join(' - ')
-
-                                      return (
-                                        <SelectItem
-                                          key={v.voice_id}
-                                          value={v.voice_id}
-                                          className="py-2.5"
-                                        >
-                                          <div className="flex flex-col gap-0.5">
-                                            <SelectItemText>
-                                              <span className="font-medium text-sm">{name}</span>
-                                            </SelectItemText>
-                                            <span className="text-[10px] text-muted-foreground line-clamp-1">
-                                              {v.category ? `${v.category} • ` : ''}
-                                              {description}
-                                            </span>
-                                          </div>
-                                        </SelectItem>
-                                      )
-                                    })}
-                                  </SelectGroup>
-                                ))}
-                              </SelectContent>
-                            </Select>
-
-                            {selectedVoice?.preview_url && (
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => onPreviewVoice(selectedVoice)}
-                                className={cn(previewingId === voiceId && 'text-primary')}
-                                title="Preview voice"
-                              >
-                                {previewingId === voiceId ? (
-                                  <Volume2 className="h-4 w-4 animate-pulse" />
-                                ) : (
-                                  <Play className="h-4 w-4" />
-                                )}
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              onClick={loadVoices}
-                              disabled={!elevenLabsKeyConfigured}
-                            >
-                              Refresh
-                            </Button>
-                          </div>
-                        </SettingsRow>
-
-                        <div className="space-y-4 pt-4 border-t border-border/40">
-                          <SettingsRow
-                            label="Stability"
-                            description={<span className="tabular-nums">{stability.toFixed(2)}</span>}
-                            vertical
-                          >
-                            <Slider
-                              value={[stability]}
-                              onValueChange={([v]) => v !== undefined && setStability(v)}
-                              min={0}
-                              max={1}
-                              step={0.01}
-                            />
-                          </SettingsRow>
-                          <SettingsRow
-                            label="Similarity Boost"
-                            description={<span className="tabular-nums">{similarity.toFixed(2)}</span>}
-                            vertical
-                          >
-                            <Slider
-                              value={[similarity]}
-                              onValueChange={([v]) => v !== undefined && setSimilarity(v)}
-                              min={0}
-                              max={1}
-                              step={0.01}
-                            />
-                          </SettingsRow>
-                        </div>
+                      <div className="space-y-2">
+                        <Slider
+                          value={[lsdSteps]}
+                          min={1}
+                          max={10}
+                          step={1}
+                          onValueChange={([value]) => {
+                            if (value === undefined) return
+                            setLsdSteps(value)
+                            pocketTTSService.setLsd(value)
+                            setSetting({ key: 'pocket_lsd', value: value.toString() })
+                          }}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          1–2 is fastest, 5+ is higher quality but slower.
+                        </p>
                       </div>
-                    </SettingsSection>
-                  </>
-                )}
+                    </SettingsRow>
+                  </div>
+                </SettingsSection>
               </div>
             )}
           </div>

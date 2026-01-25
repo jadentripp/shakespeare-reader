@@ -1,12 +1,12 @@
 mod books;
 mod db;
 mod gutendex;
-mod qwen;
+mod pocket;
 mod types;
 
 use anyhow::Context;
 use db::{Book, BookChatThread, BookMessage, BookPosition, Highlight, HighlightMessage};
-use qwen::{SidecarState, SidecarStatus};
+use pocket::{SidecarState, SidecarStatus};
 use sqlx::{Pool, Postgres};
 use std::fs;
 use tauri::{AppHandle, Manager, State};
@@ -676,9 +676,9 @@ pub fn run() {
             })?;
             app.manage(pool.clone());
             
-            let qwen_state = SidecarState::new();
-            let _ = qwen::start_qwen_sidecar_internal(app.app_handle(), &qwen_state);
-            app.manage(qwen_state);
+            let pocket_state = SidecarState::new();
+            let _ = pocket::start_pocket_sidecar_internal(app.app_handle(), &pocket_state);
+            app.manage(pocket_state);
             
             Ok(())
         })
@@ -714,9 +714,9 @@ pub fn run() {
             delete_book_message,
             clear_default_book_messages,
             delete_book_thread_messages,
-            qwen::get_qwen_status,
-            qwen::start_qwen_sidecar,
-            qwen::stop_qwen_sidecar,
+            pocket::get_pocket_status,
+            pocket::start_pocket_sidecar,
+            pocket::stop_pocket_sidecar,
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Destroyed = event {
@@ -735,8 +735,15 @@ fn stop_sidecar_on_exit(app: &AppHandle) {
     let mut child_guard = state.child.lock().unwrap();
 
     if let Some(child) = child_guard.take() {
-        println!("[Sidecar] Killing qwen-tts sidecar on exit...");
-        let _ = child.kill();
+        println!("[Sidecar] Killing pocket-tts sidecar on exit...");
+        match child {
+            pocket::PocketChild::Sidecar(child) => {
+                let _ = child.kill();
+            }
+            pocket::PocketChild::Process(mut child) => {
+                let _ = child.kill();
+            }
+        }
     }
     *status = SidecarStatus::Stopped;
 }

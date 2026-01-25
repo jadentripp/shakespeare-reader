@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import * as openai from '../lib/openai'
 import * as tauri from '../lib/tauri'
+import { pocketTTSService } from '../lib/pocket-tts'
 
 expect.extend(matchers)
 
@@ -33,8 +34,13 @@ describe('SettingsPage', () => {
       }),
     )
     spies.push(spyOn(tauri, 'dbInit').mockResolvedValue(undefined as any))
-
     spies.push(spyOn(openai, 'listModels').mockResolvedValue(['gpt-4', 'gpt-3.5-turbo']))
+    spies.push(spyOn(pocketTTSService, 'healthCheck').mockResolvedValue(true))
+    spies.push(
+      spyOn(pocketTTSService, 'getVoices').mockResolvedValue([
+        { id: 'alba', name: 'Alba', description: 'Clear female voice', language: 'English' },
+      ]),
+    )
   })
 
   afterEach(() => {
@@ -47,16 +53,16 @@ describe('SettingsPage', () => {
     fireEvent.click(screen.getByText(new RegExp(tabName, 'i')))
   }
 
-  it('renders the ElevenLabs API key input', async () => {
+  it('renders the Pocket TTS section', async () => {
     render(<SettingsPage />)
     navigateToTab('Audio & TTS')
-    expect(screen.getAllByText(/ElevenLabs API Key/i)[0]).toBeInTheDocument()
+    expect(screen.getAllByText(/Pocket TTS/i)[0]).toBeInTheDocument()
   })
 
-  it('renders the Connection Status section', async () => {
+  it('renders the Engine Status section', async () => {
     render(<SettingsPage />)
     navigateToTab('Audio & TTS')
-    expect(screen.getByText(/Connection Status/i)).toBeInTheDocument()
+    expect(screen.getByText(/Engine Status/i)).toBeInTheDocument()
   })
 
   it('shows the settings page content', async () => {

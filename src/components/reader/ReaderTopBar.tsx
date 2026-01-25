@@ -16,7 +16,7 @@ import AppearancePanel from '@/components/AppearancePanel'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import type { PlaybackState } from '@/lib/elevenlabs'
+import type { PlaybackState } from '@/lib/tts'
 
 type ReaderTopBarProps = {
   title?: string | undefined
@@ -206,10 +206,11 @@ export default function ReaderTopBar({
             variant="ghost"
             size="sm"
             onClick={columns === 1 ? undefined : onToggleColumns}
-            className={`flex items-center gap-1.5 px-3 py-1.5 h-auto text-[10px] font-bold uppercase tracking-widest rounded-none transition-[color,background-color] ${columns === 1
+            className={`flex items-center gap-1.5 px-3 py-1.5 h-auto text-[10px] font-bold uppercase tracking-widest rounded-none transition-[color,background-color] ${
+              columns === 1
                 ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
                 : 'text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5'
-              }`}
+            }`}
           >
             <BookOpen className="h-3.5 w-3.5" />
             <span>Single</span>
@@ -218,10 +219,11 @@ export default function ReaderTopBar({
             variant="ghost"
             size="sm"
             onClick={columns === 2 ? undefined : onToggleColumns}
-            className={`flex items-center gap-1.5 px-3 py-1.5 h-auto text-[10px] font-bold uppercase tracking-widest rounded-none transition-[color,background-color] ${columns === 2
+            className={`flex items-center gap-1.5 px-3 py-1.5 h-auto text-[10px] font-bold uppercase tracking-widest rounded-none transition-[color,background-color] ${
+              columns === 2
                 ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
                 : 'text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5'
-              }`}
+            }`}
           >
             <Columns2 className="h-3.5 w-3.5" />
             <span>Spread</span>

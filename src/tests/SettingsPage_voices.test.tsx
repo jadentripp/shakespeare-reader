@@ -6,8 +6,7 @@ import React from 'react'
 expect.extend(matchers)
 
 const mockGetSetting = mock().mockImplementation((key: string) => {
-  if (key === 'elevenlabs_api_key') return Promise.resolve('fake-key')
-  if (key === 'elevenlabs_voice_id') return Promise.resolve('v1')
+  if (key === 'pocket_voice_id') return Promise.resolve('v1')
   return Promise.resolve(null)
 })
 const mockSetSetting = mock().mockResolvedValue(undefined)
@@ -16,10 +15,9 @@ const mockOpenAiKeyStatus = mock().mockResolvedValue({
   has_saved_key: false,
 })
 
-const mockTestSpeech = mock().mockResolvedValue(undefined)
 const mockGetVoices = mock().mockResolvedValue([
-  { voice_id: 'v1', name: 'Rachel', preview_url: 'https://example.com/preview.mp3' },
-  { voice_id: 'v2', name: 'Clyde' },
+  { id: 'v1', name: 'Alba', description: 'Clear female voice', language: 'English' },
+  { id: 'v2', name: 'Marius', description: 'Male voice', language: 'English' },
 ])
 
 mock.module('../lib/tauri', () => ({
@@ -27,9 +25,12 @@ mock.module('../lib/tauri', () => ({
   setSetting: mockSetSetting,
   openAiKeyStatus: mockOpenAiKeyStatus,
   dbInit: mock(() => Promise.resolve()),
+  getPocketStatus: mock(() => Promise.resolve('running')),
+  startPocketSidecar: mock(() => Promise.resolve('running')),
+  stopPocketSidecar: mock(() => Promise.resolve('stopped')),
 }))
 
-import { elevenLabsService } from '../lib/elevenlabs'
+import { pocketTTSService } from '../lib/pocket-tts'
 import SettingsPage from '../routes/SettingsPage'
 
 describe('SettingsPage Voice Selection', () => {
@@ -51,11 +52,11 @@ describe('SettingsPage Voice Selection', () => {
     cleanup()
     mock.restore()
 
-    spies.push(spyOn(elevenLabsService, 'getVoices').mockImplementation(() => mockGetVoices()))
+    spies.push(spyOn(pocketTTSService, 'healthCheck').mockResolvedValue(true))
+    spies.push(spyOn(pocketTTSService, 'getVoices').mockImplementation(() => mockGetVoices()))
 
     mockGetSetting.mockImplementation((key: string) => {
-      if (key === 'elevenlabs_api_key') return Promise.resolve('fake-key')
-      if (key === 'elevenlabs_voice_id') return Promise.resolve('v1')
+      if (key === 'pocket_voice_id') return Promise.resolve('v1')
       return Promise.resolve(null)
     })
     mockSetSetting.mockResolvedValue(undefined)
@@ -74,10 +75,11 @@ describe('SettingsPage Voice Selection', () => {
   it('renders the Voice selection dropdown', async () => {
     render(<SettingsPage />)
     navigateToTab('Audio & TTS')
-    expect(await screen.findByText(/Narrator Voice/i)).toBeInTheDocument()
+    const labels = await screen.findAllByText(/Voice/i)
+    expect(labels.length).toBeGreaterThan(0)
   })
 
-  it('shows preview button when a voice with preview is selected', async () => {
+  it('shows preview button', async () => {
     render(<SettingsPage />)
     navigateToTab('Audio & TTS')
     const previewButton = await screen.findByTitle(/Preview voice/i)

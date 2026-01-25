@@ -33,27 +33,29 @@ _model_lock = threading.Lock()
 _model_name = "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
 
 # Detect best device
-# Default to CPU for now as MPS was slower in tests
-DEVICE = "cpu"
-DTYPE = torch.float32
+# MPS works on Intel Macs with AMD GPUs, not just Apple Silicon
+if torch.cuda.is_available():
+    DEVICE = "cuda"
+    DTYPE = torch.bfloat16
+elif torch.backends.mps.is_available():
+    DEVICE = "mps"
+    DTYPE = torch.float32 
+else:
+    DEVICE = "cpu"
+    DTYPE = torch.float32
+    torch.set_num_threads(8)  # Optimize for multi-core CPU
 
 print(f"[Qwen3-TTS] Using device: {DEVICE}, dtype: {DTYPE}")
 
-# Available speakers for CustomVoice model
 SPEAKERS = {
-    "vivian": {"id": "Vivian", "name": "Vivian", "description": "Bright, slightly edgy young female voice (Chinese native)", "language": "Chinese"},
-    "serena": {"id": "Serena", "name": "Serena", "description": "Warm, gentle young female voice (Chinese native)", "language": "Chinese"},
-    "uncle_fu": {"id": "Uncle_Fu", "name": "Uncle Fu", "description": "Seasoned male voice with a low, mellow timbre (Chinese native)", "language": "Chinese"},
-    "dylan": {"id": "Dylan", "name": "Dylan", "description": "Youthful Beijing male voice with a clear, natural timbre", "language": "Chinese"},
-    "eric": {"id": "Eric", "name": "Eric", "description": "Lively Chengdu male voice with a slightly husky brightness", "language": "Chinese"},
-    "ryan": {"id": "Ryan", "name": "Ryan", "description": "Dynamic male voice with strong rhythmic drive (English native)", "language": "English"},
-    "aiden": {"id": "Aiden", "name": "Aiden", "description": "Sunny American male voice with a clear midrange (English native)", "language": "English"},
-    "ono_anna": {"id": "Ono_Anna", "name": "Ono Anna", "description": "Playful Japanese female voice with a light, nimble timbre", "language": "Japanese"},
-    "sohee": {"id": "Sohee", "name": "Sohee", "description": "Warm Korean female voice with rich emotion (Korean native)", "language": "Korean"},
+    "Aiden": {"id": "Aiden", "name": "Aiden", "description": "Sunny American male voice with a clear midrange", "language": "English"},
+    "Ryan": {"id": "Ryan", "name": "Ryan", "description": "Dynamic male voice with strong rhythmic drive", "language": "English"},
+    "Vivian": {"id": "Vivian", "name": "Vivian", "description": "Bright, slightly edgy young female voice", "language": "Chinese"},
+    "Serena": {"id": "Serena", "name": "Serena", "description": "Warm, gentle young female voice", "language": "Chinese"},
+    "Ono_Anna": {"id": "Ono_Anna", "name": "Ono Anna", "description": "Playful Japanese female voice", "language": "Japanese"},
+    "Sohee": {"id": "Sohee", "name": "Sohee", "description": "Warm Korean female voice with rich emotion", "language": "Korean"},
 }
-
-DEFAULT_SPEAKER = "Aiden"  # English native speaker for book reading
-
+DEFAULT_SPEAKER = "Aiden"
 
 def get_model():
     """Lazily load the Qwen3-TTS model."""
@@ -64,7 +66,24 @@ def get_model():
                 from qwen_tts import Qwen3TTSModel
                 print(f"[Qwen3-TTS] Loading model: {_model_name}")
                 start = time.time()
-                _model = Qwen3TTSModel.from_pretrained(_model_name, device_map=DEVICE, torch_dtype=DTYPE)
+                
+                # Try to load from local cache first to avoid "Fetching" logs
+                try:
+                    _model = Qwen3TTSModel.from_pretrained(
+                        _model_name, 
+                        device_map=DEVICE, 
+                        torch_dtype=DTYPE,
+                        local_files_only=True
+                    )
+                    print("[Qwen3-TTS] Loaded from local cache.")
+                except Exception:
+                    print("[Qwen3-TTS] Local cache check failed or files missing, allowing download...")
+                    _model = Qwen3TTSModel.from_pretrained(
+                        _model_name, 
+                        device_map=DEVICE, 
+                        torch_dtype=DTYPE
+                    )
+                
                 print(f"[Qwen3-TTS] Model loaded in {time.time() - start:.2f}s")
                 print(f"[Qwen3-TTS] Supported speakers: {_model.get_supported_speakers()}")
     return _model
@@ -110,7 +129,7 @@ def tts():
             return jsonify({"error": "Missing 'text' field"}), 400
         
         text = data["text"]
-        speaker = data.get("speaker", DEFAULT_SPEAKER)
+        speaker = data.get("speaker", DEFAULT_SPEAKER).lower()
         language = data.get("language", "English")
         instruct = data.get("instruct")
         
@@ -160,7 +179,7 @@ def tts_stream():
             return jsonify({"error": "Missing 'text' field"}), 400
         
         text = data["text"]
-        speaker = data.get("speaker", DEFAULT_SPEAKER)
+        speaker = data.get("speaker", DEFAULT_SPEAKER).lower()
         language = data.get("language", "English")
         instruct = data.get("instruct")
         

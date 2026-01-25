@@ -237,17 +237,15 @@ export default function TocPanel({ entries, currentEntryId, onNavigate }: TocPan
             currentEntryId={currentEntryId}
             onNavigate={onNavigate}
           />
-        ) : (
-          group.entries[0] ? (
-            <TocItem
-              key={group.entries[0].id}
-              entry={group.entries[0]}
-              isActive={group.entries[0].id === currentEntryId}
-              onNavigate={onNavigate}
-              indent={Math.min(group.entries[0].level - 1, 3)}
-            />
-          ) : null
-        ),
+        ) : group.entries[0] ? (
+          <TocItem
+            key={group.entries[0].id}
+            entry={group.entries[0]}
+            isActive={group.entries[0].id === currentEntryId}
+            onNavigate={onNavigate}
+            indent={Math.min(group.entries[0].level - 1, 3)}
+          />
+        ) : null,
       )}
     </div>
   )

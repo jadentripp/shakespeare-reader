@@ -27,10 +27,10 @@ def get_target_triple():
     return f"{arch}-{os_name}"
 
 def run_bundle():
-    print("Starting Qwen TTS bundling process...")
+    print("Starting Pocket TTS bundling process...")
     
     target_triple = get_target_triple()
-    executable_name = f"qwen-tts-{target_triple}"
+    executable_name = f"pocket-tts-{target_triple}"
     
     # PyInstaller command
     # --onedir: bundle into a directory (faster startup, no extraction)
@@ -48,8 +48,8 @@ def run_bundle():
         "--hidden-import=scipy",
         "--hidden-import=scipy.signal",
         "--hidden-import=scipy.special",
-        "--hidden-import=scipy.special._cdflib",
-        "--hidden-import=qwen_tts",
+        "--hidden-import=pocket_tts",
+        "--hidden-import=sentencepiece",
         "server.py"
     ]
     

@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { renderHook } from '@testing-library/react'
-import { audioPlayer } from '@/lib/elevenlabs'
+import { audioPlayer } from '@/lib/tts'
 import * as readerUtils from '@/lib/readerUtils'
 import * as tauri from '@/lib/tauri'
 import { useTTS } from '../lib/reader/hooks/useTTS'
 
 describe('useTTS Progress', () => {
-  const mockGetDoc = mock(() => null as unknown as Document)
-  const mockGetPageMetrics = mock(() => ({} as any))
+  const mockGetDoc = mock(() => document)
+  const mockGetPageMetrics = mock(() => ({}) as any)
   const spies: any[] = []
 
   beforeEach(() => {
@@ -16,7 +16,7 @@ describe('useTTS Progress', () => {
     // Setup spies
     spies.push(spyOn(audioPlayer, 'play').mockResolvedValue(undefined as any))
     spies.push(spyOn(audioPlayer, 'getState').mockReturnValue('idle'))
-    spies.push(spyOn(audioPlayer, 'subscribe').mockReturnValue(() => { }))
+    spies.push(spyOn(audioPlayer, 'subscribe').mockReturnValue(() => {}))
 
     // Mock new methods
     spies.push(
@@ -26,7 +26,7 @@ describe('useTTS Progress', () => {
         isBuffering: false,
       }),
     )
-    spies.push(spyOn(audioPlayer, 'subscribeProgress').mockReturnValue(() => { }))
+    spies.push(spyOn(audioPlayer, 'subscribeProgress').mockReturnValue(() => {}))
 
     spies.push(
       spyOn(readerUtils, 'getPageContent').mockReturnValue({ text: 'Mocked page text' } as any),

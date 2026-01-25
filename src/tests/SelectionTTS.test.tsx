@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import * as matchers from '@testing-library/jest-dom/matchers'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 
 expect.extend(matchers)
+
+mock.module('react-dom', () => ({
+  createPortal: (node: React.ReactNode) => node,
+}))
 
 describe('ReaderPane Selection TTS', () => {
   const defaultProps: any = {
@@ -29,21 +33,19 @@ describe('ReaderPane Selection TTS', () => {
     onActiveCitationChange: mock(),
   }
 
-  beforeEach(() => {
-    cleanup()
-  })
-
   it('renders the Read button in the selection popover', () => {
-    render(<ReaderPane {...defaultProps} />)
+    const { unmount } = render(<ReaderPane {...defaultProps} />)
     const readButton = screen.getByText(/Read/i)
     expect(readButton).toBeInTheDocument()
+    unmount()
   })
 
   it('calls onReadAloud when the Read button is clicked', () => {
-    render(<ReaderPane {...defaultProps} />)
+    const { unmount } = render(<ReaderPane {...defaultProps} />)
     const readButton = screen.getByText(/Read/i)
     fireEvent.click(readButton)
     expect(defaultProps.onReadAloud).toHaveBeenCalledWith('Selected text to read aloud')
+    unmount()
   })
 })
 

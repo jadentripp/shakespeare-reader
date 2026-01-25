@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "sidecar-capability",
-  "description": "Capability for running the qwen-tts sidecar",
+  "description": "Capability for running the pocket-tts sidecar",
   "windows": ["main"],
   "permissions": [
     {
@@ -15,7 +15,7 @@
             { "validator": "\\d+" },
             { "validator": "--preload" }
           ],
-          "name": "binaries/qwen-tts",
+          "name": "binaries/pocket-tts",
           "sidecar": true
         }
       ]
