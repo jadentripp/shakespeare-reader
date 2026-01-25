@@ -890,6 +890,50 @@ function initState(session, stateShapes) {
     return state;
 }
 
+function coerceDims(inputDims, expectedDims) {
+    if (!expectedDims || expectedDims.length === 0) return null;
+    const hasDynamic = expectedDims.some((dim) => dim === 0);
+    const resolvedExpected = expectedDims.map((dim, idx) => dim === 0 ? inputDims[idx] : dim);
+
+    if (inputDims.length === expectedDims.length) {
+        const matches = resolvedExpected.every((dim, idx) => dim === inputDims[idx]);
+        if (matches) return hasDynamic ? resolvedExpected : null;
+        return null;
+    }
+
+    if (expectedDims.length === inputDims.length + 1 && expectedDims[0] === 1) {
+        const tailExpected = expectedDims.slice(1);
+        const resolvedTail = tailExpected.map((dim, idx) => dim === 0 ? inputDims[idx] : dim);
+        const matches = resolvedTail.every((dim, idx) => dim === inputDims[idx]);
+        if (matches) return [1, ...resolvedTail];
+    }
+
+    return null;
+}
+
+function getInputDims(session, name) {
+    if (!session || !session.inputMetadata || !session.inputMetadata[name]) return null;
+    return session.inputMetadata[name].dimensions || null;
+}
+
+function tensorSizeFromDims(dims) {
+    return dims.reduce((a, b) => a * b, 1);
+}
+
+function coerceTensorDims(tensor, expectedDims, label) {
+    const inputDims = tensor.dims || [];
+    const nextDims = coerceDims(inputDims, expectedDims);
+    if (!nextDims) return tensor;
+
+    const expectedSize = tensorSizeFromDims(nextDims);
+    const actualSize = tensor.data.length;
+    if (expectedSize !== actualSize) {
+        throw new Error(`Shape mismatch for ${label}: expected size ${expectedSize}, got ${actualSize}`);
+    }
+
+    return new ort.Tensor(tensor.type, tensor.data, nextDims);
+}
+
 async function startGeneration(text, voiceName) {
     isGenerating = true;
     currentLSD = defaultLSD;  // Reset to configured default for each new generation
@@ -963,6 +1007,14 @@ async function runGenerationPipeline(voiceEmb, chunks) {
             flowLmState[`state_${stateIdx}`] = condResult[outputName];
         }
     }
+
+    const flowInputDims = {
+        c: getInputDims(flowLmFlowSession, 'c'),
+        s: getInputDims(flowLmFlowSession, 's'),
+        t: getInputDims(flowLmFlowSession, 't'),
+        x: getInputDims(flowLmFlowSession, 'x')
+    };
+    const flowXDims = coerceDims([1, 32], flowInputDims.x) || [1, 32];
 
     // Streaming parameters
     const FIRST_CHUNK_FRAMES = 3;
@@ -1065,10 +1117,10 @@ async function runGenerationPipeline(voiceEmb, chunks) {
 
             for (let j = 0; j < lsdSteps; j++) {
                 const flowInputs = {
-                    c: conditioning,
-                    s: stTensors[lsdSteps][j].s,
-                    t: stTensors[lsdSteps][j].t,
-                    x: new ort.Tensor('float32', xData, [1, 32])
+                    c: coerceTensorDims(conditioning, flowInputDims.c, 'c'),
+                    s: coerceTensorDims(stTensors[lsdSteps][j].s, flowInputDims.s, 's'),
+                    t: coerceTensorDims(stTensors[lsdSteps][j].t, flowInputDims.t, 't'),
+                    x: new ort.Tensor('float32', xData, flowXDims)
                 };
 
                 const flowResult = await flowLmFlowSession.run(flowInputs);
